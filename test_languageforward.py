@@ -39,14 +39,22 @@ def test_time_step(lfs):
 
 def test_random_speaker(lfs):
     nodes = lfs.population_graph.nodes()
+    # FIXME: There are cleaner ways to run stochastic tests, use one.
     counter = {node: 0 for node in nodes}
     k = 10000
     for _ in range(len(nodes)*k):
         counter[lfs.random_speaker()] += 1
     for val in counter.values():
         assert k*0.9 < val < k/0.9
+
+
+def test_random_speaker_among(lfs):
+    speakers = {0: {}, 1: {}}
     # FIXME: There are cleaner ways to run stochastic tests, use one.
-
-
-def test_communication(lfs, speaker):
-    ...
+    counter = {id(lfs.population_graph.node[i]['speaker']): 0
+               for i in speakers}
+    k = 10000
+    for _ in range(len(speakers)*k):
+        counter[id(lfs.random_speaker_among(speakers))] += 1
+    for val in counter.values():
+        assert k*0.9 < val < k/0.9

@@ -58,3 +58,5 @@ def test_random_speaker_among(lfs):
         counter[id(lfs.random_speaker_among(speakers))] += 1
     for val in counter.values():
         assert k*0.9 < val < k/0.9
+
+

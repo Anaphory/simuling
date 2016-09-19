@@ -4,6 +4,18 @@ import numpy
 import bisect
 
 
+def weighted_choice(frequencies, weight=lambda v: v['weight']):
+    weights = numpy.cumsum([weight(v)
+                            for m, v in frequencies.items()
+                            if weight(v) > 0])
+    frequencies = [m
+                   for m, v in frequencies.items()
+                   if weight(v) > 0]
+    x = bisect.bisect(weights,
+                      numpy.random.random()*weights[-1])
+    return frequencies[x]
+
+
 class Speaker (object):
     """A single speaker agent in a LanguageForwardSimulation."""
     W = range(10000)
@@ -17,26 +29,18 @@ class Speaker (object):
         self.p_invent = 0
 
     def guess(self, meanings):
-        weights = numpy.cumsum([v['weight']
-                                for m, v in meanings.items()
-                                if v['weight'] > 0])
-        meanings = [m
-                    for m, v in meanings.items()
-                    if v['weight'] > 0]
-        x = bisect.bisect(weights,
-                          numpy.random.random()*weights[-1])
-        return meanings[x]
+        weighted_choice(meanings)
 
-    def enforce(self, message, context, value=1):
+    def strengthen(self, message, context, value=1):
         try:
             edge = self.vocabulary[message][context]
-        except KeyError as e:
+        except KeyError:
             self.vocabulary.add_edge(message, context, {'weight': 0})
             edge = self.vocabulary[message][context]
         edge['weight'] += value
 
-    def devalue(self, message, context):
-        self.enforce(message, context, -1)
+    def weaken(self, message, context):
+        self.strengthen(message, context, -1)
 
     def hear(self, message, context, desired):
         if context is None:
@@ -47,15 +51,15 @@ class Speaker (object):
                 m = self.guess({i: {'weight': len(self.concept_network[i])}
                                 for i in self.concept_network.nodes()})
             if m == desired:
-                self.enforce(message, m)
+                self.strengthen(message, m)
             else:
-                self.devalue(message, m)
+                self.weaken(message, m)
         else:
-            self.enforce(message, context)
+            self.strengthen(message, context)
 
     def speak(self, meaning, random=numpy.random):
         if random.random() < self.p_invent:
-            # Random error leads to inventing a new word
+            # Random error leads to effectively inventing a new word
             return "{:d}-{:d}".format(meaning, random.choice(self.W))
         else:
             polysemies = self.vocabulary[meaning]

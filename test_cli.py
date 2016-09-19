@@ -24,7 +24,9 @@ def test_does_run(tmpdir, run):
     input = tmpdir.join("example.json")
     json.dump(
         {'population_graph': 'krackhardt',
-         'time_steps': 500},
+         'time_steps': 0},
+        # Because we don't test output, don't run the simulation so
+        # as to not pretend too high coverage.
         input.open("w"))
     result = run(input)
     assert result.ret == 0

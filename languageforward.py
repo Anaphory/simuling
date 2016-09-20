@@ -2,7 +2,7 @@ import sys
 import json
 import networkx
 
-from .simulation import LanguageForwardSimulation
+from simuling.simulation import LanguageForwardSimulation
 
 options = json.load(open(sys.argv[1]))
 

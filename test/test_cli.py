@@ -6,14 +6,14 @@ pytest_plugins = ["pytester"]
 
 @pytest.fixture
 def path():
-    return os.path.dirname(__file__)
+    return os.path.dirname(os.path.dirname(__file__))
 
 
 @pytest.fixture
 def run(testdir, path):
     def do_run(*args):
         args = [
-            "python", os.path.join(path, "languageforward.py")] + list(args)
+            "python", "-m", "simuling"] + list(args)
         return testdir._run(*args)
     return do_run
 

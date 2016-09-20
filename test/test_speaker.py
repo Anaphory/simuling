@@ -2,7 +2,7 @@
 
 import pytest
 
-from speaker import *
+from simuling.speaker import *
 
 
 @pytest.fixture

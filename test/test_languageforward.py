@@ -1,4 +1,4 @@
-from languageforward import *
+from simuling import *
 import pytest
 
 import networkx

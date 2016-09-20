@@ -52,7 +52,7 @@ class LanguageForwardSimulation (object):
             for t in range(self.critical_period):
                 concept, context = self.generate_situation()
                 speaker = self.random_speaker_among(self.population_graph[die])
-                child.hear(speaker.speak(concept), context, concept)
+                child.hear(speaker.speak(concept, child), context, concept)
             self.log(child)
 
 

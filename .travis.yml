@@ -2,7 +2,6 @@ language: python
 python:
   - "3.5"
 install:
-  - ls
   - python setup.py develop
 script: 
   - py.test --pep8 --cov

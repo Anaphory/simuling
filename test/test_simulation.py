@@ -1,4 +1,4 @@
-from simuling import *
+from simuling.simulation import *
 import pytest
 
 import networkx

@@ -1,3 +1,9 @@
+import sys
+import json
+import networkx
+
+from .simulation import LanguageForwardSimulation
+
 options = json.load(open(sys.argv[1]))
 
 seed = options.get("seed", 0)

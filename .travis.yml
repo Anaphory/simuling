@@ -5,4 +5,4 @@ install:
   - ls
   - python setup.py develop
 script: 
-  - pytest --pep8 --cov
+  - py.test --pep8 --cov

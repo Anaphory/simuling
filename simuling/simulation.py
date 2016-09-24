@@ -27,7 +27,7 @@ class LanguageForwardSimulation (object):
         self.logfile = logfile
 
     def random_speaker(self):
-        return self.random.choice(self.population_graph.nodes())
+        return self.random.choice(list(self.population_graph.nodes()))
 
     def random_speaker_among(self, neighbours):
         return self.population_graph.node[

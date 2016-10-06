@@ -1,4 +1,3 @@
-import networkx as nx
 from collections import defaultdict
 from itertools import combinations
 import lingpy
@@ -200,7 +199,7 @@ class Phylogeny(object):
     the walk along the tree. A parameter "change_range" handles the amount of
     change (say: between 100 and 200 change runs, etc.). Later (this is
     inconsistent!), there's the param "change_min", allowing to set the minimal
-    amoun of change to happen.
+    amount of change to happen.
     """
 
     def __init__(self, signs, fields, max_syns=2, params=None):
@@ -272,8 +271,7 @@ class Phylogeny(object):
         wl = lingpy.basic.wordlist.Wordlist(D)
         return wl
 
-if __name__ == '__main__':
-
+def main():
     """
     Main idea is to run the simulation some time, calculate neighbor and upgma
     trees, and compare the results, using Robinson Foulds distance (or how this
@@ -334,3 +332,6 @@ if __name__ == '__main__':
     print('Neighbor: {0:.2f}'.format(sum(dists1) / len(dists1)))
     print('UGPMA:    {0:.2f}'.format(sum(dists2) / len(dists2)))
     print('UGPMA:    {0:.2f}'.format(sum(dists3) / len(dists3)))
+
+if __name__ == '__main__':
+    main()

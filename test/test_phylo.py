@@ -13,22 +13,22 @@ def language():
 def test_clone():
     l = language()
     m = l.clone()
-    assert set(l.signs) == set(m.signs)
+    assert l._signs.forwards == m._signs.forwards
     m._signs.add(None, None)
-    assert set(l.signs) != set(m.signs)
+    assert l._signs.forwards != m._signs.forwards
 
 
 def test_add_link():
     l = language()
-    old_signs = list(l.signs)
+    old_signs = list(l._signs.to_pairs())
     l._add_link()
-    new_signs = list(l.signs)
+    new_signs = list(l._signs.to_pairs())
     assert len(old_signs) + 1 == len(new_signs)
 
 
 def test_lose_link():
     l = language()
-    old_signs = list(l.signs)
+    old_signs = list(l._signs.to_pairs())
     l._lose_link()
-    new_signs = list(l.signs)
+    new_signs = list(l._signs.to_pairs())
     assert len(old_signs) - 1 == len(new_signs)

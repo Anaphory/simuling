@@ -4,7 +4,8 @@ from itertools import combinations
 import lingpy
 import random
 
-from .bipartite import Bipartite
+from .bipartite import MultiBipartite
+
 
 class Language(object):
     """
@@ -52,7 +53,7 @@ class Language(object):
         for c in self.concepts:
             self.concept2field[c] = random.choice(self.fields)
 
-        self.signs = []
+        self._signs = MultiBipartite({})
         self.concept2form = defaultdict(set)
         for i, j in combinations(self.concepts, r=2):
             if not random.randint(0, 1):
@@ -63,16 +64,8 @@ class Language(object):
                         self._signs.add(i, j)
                     self.concept2form[i].add(j)
 
-        self.tracer = {0: [(a, b) for a, b in self.signs]}
+        self.tracer = [self._signs]
 
-    @property
-    def signs(self):
-        return self._signs.to_pairs()
-
-    @signs.setter
-    def signs(self, value):
-        self._signs = Bipartite.from_pairs(value)
-    
     def _lose_link(self):
         """
         Delete a link from the set of links.
@@ -86,8 +79,13 @@ class Language(object):
         """
 
         idx = random.randint(0, len(self._signs)-1)
-        word, concept = list(self.signs)[idx]
-        self._signs.remove(word, concept)
+        for key, values in self._signs.forwards.items():
+            for value, frequency in values.items():
+                idx -= frequency
+                if idx <= 0:
+                    self._signs.remove(key, value)
+                    return
+        raise ValueError("idx was too large")
 
     def _add_link(self):
         """
@@ -104,7 +102,10 @@ class Language(object):
         widx = random.choice(self.words)
 
         # get the concepts
-        concepts = [l[0] for l in self.signs if l[1] == widx]
+        try:
+            concepts = self._signs.inv[widx]
+        except KeyError:
+            return
 
         # get the semantic fields
         fields = [self.concept2field[c] for c in concepts]
@@ -132,7 +133,7 @@ class Language(object):
         else:
             new_word = max(self.words)+1
         concept = random.choice(self.concepts)
-        self.signs.add(concept, new_word)
+        self._signs.add(concept, new_word)
         self.words += [new_word]
 
     def clone(self):
@@ -146,8 +147,9 @@ class Language(object):
         tmp.fields = [i for i in self.fields]
         tmp.concept2field = dict([(a, b) for a, b in
                                   self.concept2field.items()])
-        tmp.signs = [(a, b) for a, b in self.signs]
-        tmp.tracer = {0: [(a, b) for a, b in tmp.signs]}
+        tmp._signs = MultiBipartite(
+            self._signs.forwards.copy())
+        tmp.tracer = [tmp._signs]
         return tmp
 
     def change(self, time, words=[]):
@@ -167,17 +169,14 @@ class Language(object):
             if not random.randint(0, self.params['nw']):
                 self._add_word(words)
 
-        nidx = max(self.tracer) + 1
-        self.tracer[nidx] = [(a, b) for a, b in self.signs]
+        self.tracer.append(self._signs)
 
     def count(self, basic):
-        comp = defaultdict(list)
-        for a, b in self.signs:
-            comp[a] += [b]
         basics = {}
         for idx in basic:
-            refs = comp.get(idx, [])
-            refs_sorted = sorted(set(refs), key=lambda x: refs.count(x),
+            refs = self._signs.forwards
+            refs_sorted = sorted(refs,
+                                 key=lambda x: refs.count(x),
                                  reverse=True)
             if refs:
                 best_refs = sum([refs.count(x) for x in refs_sorted[:3]])
@@ -227,7 +226,7 @@ class Phylogeny(object):
         self.log = dict(
                 root=self.language.tracer[0]
                 )
-        self.tracer = {}
+        self.tracer = []
         self.siblings = {}
         for node in self.tree.preorder():
             if node.Name == 'root':

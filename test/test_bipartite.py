@@ -2,7 +2,7 @@
 
 import pytest
 
-from phylo.phylo import Bipartite
+from phylo.bipartite import Bipartite
 
 
 @pytest.fixture

@@ -4,6 +4,56 @@ from itertools import combinations
 import lingpy
 import random
 
+class Bipartite(dict):
+    def __init__(self, forwards, backwards=None):
+        self.forwards = forwards
+        if backwards is None:
+            self.backwards = {}
+            for key, values in forwards.items():
+                for value in values:
+                    self.backwards.setdefault(
+                        value, set()).add(key)
+        else:
+            self.backwards = backwards
+
+    @classmethod
+    def from_pairs(klass, pairs):
+        new = klass({})
+        for pair1, pair2 in pairs:
+            new.add(pair1, pair2)
+        return new
+
+    def to_pairs(self):
+        for key, values in self.forwards.items():
+            for value in values:
+                yield key, value
+
+    @property
+    def inv(self):
+        return Bipartite(self.backwards, self.forwards)
+    
+    def __getitem__(self, item):
+        return self.forwards[item]
+
+    def add(self, item, value):
+        self.forwards.setdefault(
+            item, set()).add(value)
+        self.backwards.setdefault(
+            value, set()).add(item)
+
+    def remove(self, item, value):
+        self.forwards[item].remove(value)
+        self.backwards[value].remove(item)
+
+    def keys(self):
+        return self.forwards.keys()
+
+    def values(self):
+        return self.backwards.keys()
+
+    def __len__(self):
+        return len(self.forwards)
+
 
 class Language(object):
     """
@@ -27,7 +77,7 @@ class Language(object):
         initialization.
     params: parameters for random selection
         Dunno if this is the right approach, but so far, we have:
-        * ll: loose link parameter
+        * ll: lose link parameter
         * al: add link parameter
         * nw: new word parameter
         * ww: parameter to handle the probability of cross-linking concept and
@@ -64,7 +114,7 @@ class Language(object):
 
         self.tracer = {0: [(a, b) for a, b in self.signs]}
 
-    def _loose_link(self):
+    def _lose_link(self):
         """
         Delete a link from the set of links.
 
@@ -151,7 +201,7 @@ class Language(object):
         """
         for i in range(time):
             if random.randint(0, self.params['ll']):
-                self._loose_link()
+                self._lose_link()
             if random.randint(0, self.params['al']):
                 self._add_link()
             if not random.randint(0, self.params['nw']):

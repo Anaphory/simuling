@@ -153,7 +153,7 @@ class Language(object):
 
     def change(self, time, words=[]):
         """
-        Basic process, time is an integer.
+        Basic process time is an integer.
 
         Notes
         -----
@@ -332,6 +332,7 @@ def main():
     print('Neighbor: {0:.2f}'.format(sum(dists1) / len(dists1)))
     print('UGPMA:    {0:.2f}'.format(sum(dists2) / len(dists2)))
     print('UGPMA:    {0:.2f}'.format(sum(dists3) / len(dists3)))
+
 
 if __name__ == '__main__':
     main()

@@ -271,6 +271,7 @@ class Phylogeny(object):
         wl = lingpy.basic.wordlist.Wordlist(D)
         return wl
 
+
 def main():
     """
     Main idea is to run the simulation some time, calculate neighbor and upgma

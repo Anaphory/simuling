@@ -63,7 +63,7 @@ class Language(object):
                         self._signs.add(i, j)
                     self.concept2form[i].add(j)
 
-        self.tracer = [self._signs]
+        self.tracer = {0: self._signs}
 
     def _lose_link(self):
         """
@@ -148,7 +148,7 @@ class Language(object):
                                   self.concept2field.items()])
         tmp._signs = MultiBipartite(
             self._signs.forwards.copy())
-        tmp.tracer = [tmp._signs]
+        tmp.tracer = {0: tmp._signs}
         return tmp
 
     def change(self, time, words=[]):
@@ -168,7 +168,9 @@ class Language(object):
             if not random.randint(0, self.params['nw']):
                 self._add_word(words)
 
-        self.tracer.append(self._signs)
+        nidx = max(self.tracer) + 1
+        self.tracer[nidx] = [(a, b) for a, b in self.signs]
+
 
     def count(self, basic):
         basics = {}
@@ -225,9 +227,9 @@ class Phylogeny(object):
         self.log = dict(
                 root=self.language.tracer[0]
                 )
-        self.tracer = []
+        self.tracer = {}
         self.siblings = {}
-        for node in self.tree.preorder():
+        for i, node in enumerate(self.tree.preorder()):
             if node.Name == 'root':
                 self.tracer[node.Name] = dict(
                         language=self.language,

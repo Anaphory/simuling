@@ -4,6 +4,7 @@ from itertools import combinations
 import lingpy
 import random
 
+from .bipartite import Bipartite
 
 class Language(object):
     """
@@ -59,11 +60,19 @@ class Language(object):
                     pass
                 else:
                     for k in range(random.randint(0, self.params['ww'])):
-                        self.signs += [(i, j)]
+                        self._signs.add(i, j)
                     self.concept2form[i].add(j)
 
         self.tracer = {0: [(a, b) for a, b in self.signs]}
 
+    @property
+    def signs(self):
+        return self._signs.to_pairs()
+
+    @signs.setter
+    def signs(self, value):
+        self._signs = Bipartite.from_pairs(value)
+    
     def _lose_link(self):
         """
         Delete a link from the set of links.
@@ -76,8 +85,9 @@ class Language(object):
         be deleted).
         """
 
-        idx = random.randint(0, len(self.signs)-1)
-        self.signs.pop(idx)
+        idx = random.randint(0, len(self._signs)-1)
+        word, concept = list(self.signs)[idx]
+        self._signs.remove(word, concept)
 
     def _add_link(self):
         """
@@ -105,7 +115,7 @@ class Language(object):
                        if self.concept2field[c] in fields]
 
             new_link = random.choice(targets)
-            self.signs += [(new_link, widx)]
+            self._signs.add(new_link, widx)
 
     def _add_word(self, words=[]):
         """
@@ -122,7 +132,7 @@ class Language(object):
         else:
             new_word = max(self.words)+1
         concept = random.choice(self.concepts)
-        self.signs += [(concept, new_word)]
+        self.signs.add(concept, new_word)
         self.words += [new_word]
 
     def clone(self):

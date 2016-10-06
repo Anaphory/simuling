@@ -46,5 +46,5 @@ class Bipartite(dict):
         return self.backwards.keys()
 
     def __len__(self):
-        return len(self.forwards)
+        return sum(len(x) for x in self.forwards.values())
 

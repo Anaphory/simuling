@@ -11,7 +11,7 @@ def original():
             2: set(['b', 'c'])}
 
 
-def test_bipartit_inv():
+def test_bipartite_inv():
     o = original()
     bipartite = Bipartite(o)
     assert bipartite.inv['a'] == {1}
@@ -32,3 +32,20 @@ def test_to_from_pairs():
     bipartite = Bipartite(o)
     assert (Bipartite.from_pairs(
         bipartite.to_pairs()).forwards == bipartite.forwards)
+
+
+def test_len():
+    o = original()
+    bipartite = Bipartite(o)
+    assert len(bipartite) == sum(
+        [len(vs) for vs in o.values()])
+
+
+def test_add_remove():
+    o = original()
+    bipartite = Bipartite(o)
+    l = len(bipartite)
+    bipartite.add(None, None)
+    assert len(bipartite) == l + 1
+    bipartite.remove(None, None)
+    assert len(bipartite) == l

@@ -162,24 +162,15 @@ class Language(object):
         self.tracer[nidx] = [self._signs]
 
     def count(self, basic):
-        comp = defaultdict(list)
-        for a, b in self._signs.to_pairs():
-            comp[a] += [b]
-        basics = {}
-        for idx in basic:
-            refs = comp.get(idx, [])
-            refs_sorted = sorted(set(refs), key=lambda x: len(refs[x]),
-                                 reverse=True)
-            if refs:
-                best_refs = sum([len(refs[x]) for x in refs_sorted[:3]])
-                selected = [
-                    x
-                    for x in refs_sorted[:3]
-                    if len(refs[x]) > best_refs / 3] or [refs_sorted[0]]
-            else:
-                selected = []
-            basics[idx] = selected
-        return basics
+        basic_vocabulary = defaultdict([])
+        for basic_concept in basic:
+            best_words = self._signs[basic_concept].most_common(3)
+            average = sum(best_words.values())/3
+            basic_vocabulary[basic_concept] = [
+                word
+                for word, frequency in best_words.items()
+                if frequency > average]
+        return basic_vocabulary
 
 
 class Phylogeny(object):

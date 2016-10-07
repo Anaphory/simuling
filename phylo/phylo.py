@@ -34,6 +34,7 @@ class Language(object):
         * ww: parameter to handle the probability of cross-linking concept and
               word connections upon initialization
     """
+    words = [0]
     def __init__(self,
                  signs, fields, max_syns=2, params=None):
 
@@ -44,24 +45,24 @@ class Language(object):
                 ww=10,
                 )
         self.concepts = list(range(signs))
-        self.words = list(range(signs))
-        self.fields = list(range(fields))
 
         # distribute fields over concepts
-        self.concept2field = {}
+        self.related_concepts = {}
+        concept2field = defaultdict(set)
         for c in self.concepts:
-            self.concept2field[c] = random.choice(self.fields)
+            concept2field[random.randint(0, fields-1)].add(c)
+        for field in concept2field.values():
+            for concept in field:
+                self.related_concepts[concept] = field - {concept}
 
+        # Connect words and concepts randomly
         self._signs = MultiBipartite({})
-        self.concept2form = defaultdict(set)
-        for i, j in combinations(self.concepts, r=2):
-            if not random.randint(0, 1):
-                if len(self.concept2form[i]) >= max_syns:
-                    pass
-                else:
-                    for k in range(random.randint(0, self.params['ww'])):
-                        self._signs.add(i, j)
-                    self.concept2form[i].add(j)
+        for word in range(signs):
+            for concept in self.concepts:
+                w = random.randint(1, self.params["ww"])
+                self._signs.add(concept, word)
+                self._signs.forwards[concept][word] = w
+                self._signs.backwards[word][concept] = w
 
         self.tracer = {0: self._signs}
 
@@ -78,11 +79,11 @@ class Language(object):
         """
 
         idx = random.randint(0, len(self._signs)-1)
-        for key, values in self._signs.forwards.items():
-            for value, frequency in values.items():
-                idx -= frequency
+        for concept, words in self._signs.forwards.items():
+            for word, weight in words.items():
+                idx -= weight
                 if idx <= 0:
-                    self._signs.remove(key, value)
+                    self._signs.remove(concept, word)
                     return
         raise ValueError("idx was too large")
 
@@ -98,26 +99,19 @@ class Language(object):
         restricted set.
         """
 
-        widx = random.choice(self.words)
+        word = random.choice(list(self._signs.values()))
 
-        # get the concepts
-        try:
-            concepts = self._signs.inv[widx]
-        except KeyError:
-            return
+        # get the concepts this word belongs to
+        concepts = self._signs.inv[word]
 
-        # get the semantic fields
-        fields = [self.concept2field[c] for c in concepts]
+        other_concepts = set()
+        for concept in concepts:
+            other_concepts |= self.related_concepts[concept]
 
-        if fields:
-            targets = [c
-                       for c in self.concepts
-                       if self.concept2field[c] in fields]
+        new_concept = random.choice(list(other_concepts))
+        self._signs.add(new_concept, word)
 
-            new_link = random.choice(targets)
-            self._signs.add(new_link, widx)
-
-    def _add_word(self, words=[]):
+    def _add_word(self):
         """
         Add another word to the language.
 
@@ -127,13 +121,9 @@ class Language(object):
         languages so far, to avoid that this language creates the same ones.
         """
 
-        if words:
-            new_word = max(words)+1
-        else:
-            new_word = max(self.words)+1
+        self.words[0] += 1
         concept = random.choice(self.concepts)
-        self._signs.add(concept, new_word)
-        self.words += [new_word]
+        self._signs.add(concept, self.words[0])
 
     def clone(self):
         """
@@ -142,16 +132,15 @@ class Language(object):
 
         tmp = Language(1, 1)
         tmp.concepts = [i for i in self.concepts]
-        tmp.words = [i for i in self.words]
-        tmp.fields = [i for i in self.fields]
-        tmp.concept2field = dict([(a, b) for a, b in
-                                  self.concept2field.items()])
+
+        tmp.related_concepts = self.related_concepts
+
         tmp._signs = MultiBipartite(
             self._signs.forwards.copy())
         tmp.tracer = {0: tmp._signs}
         return tmp
 
-    def change(self, time, words=[]):
+    def change(self, time):
         """
         Basic process time is an integer.
 
@@ -166,18 +155,20 @@ class Language(object):
             if random.randint(0, self.params['al']):
                 self._add_link()
             if not random.randint(0, self.params['nw']):
-                self._add_word(words)
+                self._add_word()
 
         nidx = max(self.tracer) + 1
-        self.tracer[nidx] = [(a, b) for a, b in self.signs]
+        self.tracer[nidx] = [self._signs]
 
 
     def count(self, basic):
+        comp = defaultdict(list)
+        for a, b in self._signs.to_pairs():
+            comp[a] += [b]
         basics = {}
         for idx in basic:
-            refs = self._signs.forwards
-            refs_sorted = sorted(refs,
-                                 key=lambda x: refs.count(x),
+            refs = comp.get(idx, [])
+            refs_sorted = sorted(set(refs), key=lambda x: refs.count(x),
                                  reverse=True)
             if refs:
                 best_refs = sum([refs.count(x) for x in refs_sorted[:3]])
@@ -223,7 +214,6 @@ class Phylogeny(object):
 
     def start(self, basic=None, verbose=True):
         self.basic = basic or list(range(100))
-        self.words = self.language.words
         self.log = dict(
                 root=self.language.tracer[0]
                 )
@@ -246,14 +236,11 @@ class Phylogeny(object):
                     print('... analyzing node {0} ({1})'.format(
                         node.Name, distance))
 
-                new_language.change(distance, words=self.words)
+                new_language.change(distance)
                 self.tracer[node.Name] = dict(
                         language=new_language,
                         tracer=new_language.tracer[1],
                         distance=distance)
-                self.words += [w
-                               for w in new_language.words
-                               if w not in self.words]
                 if node.istip():
                     self.siblings[node.Name] = new_language.count(self.basic)
 
@@ -321,7 +308,7 @@ def main():
         dists3 += [d3]
 
         adist = sum([sum(x) for x in wl.distances]) / (len(wl.distances) ** 2)
-        wlen = len(phy.words)
+        wlen = phy.siblings.pop().words[0]
         print(
             "[i] generated tree {0} with distance of "
             "{1:.2f} vs. {2:.2f} vs. {4:.2f} ({3:.2f}, {5}, {6:.2f}).".format(

@@ -175,7 +175,7 @@ class Language(object):
         for idx in basic:
             refs = self._signs.forwards
             refs_sorted = sorted(refs,
-                                 key=lambda x: len(refs[x]), #.count(x),
+                                 key=lambda x: len(refs[x]),
                                  reverse=True)
             if refs:
                 best_refs = sum([len(refs[x]) for x in refs_sorted[:3]])

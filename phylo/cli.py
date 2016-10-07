@@ -1,8 +1,9 @@
 from phylo.phylo import Phylogeny
 import lingpy
 
+
 def run(times=100, signs=1000, fields=50,
-        taxa=list('abcdefghijklmnopqrst'.upper()), 
+        taxa=list('abcdefghijklmnopqrst'.upper()),
         change_range=2000,
         change_min=1900,
         basic_list=list(range(200))):
@@ -63,6 +64,7 @@ def parse_dash(dash, datatype, args, default):
         return datatype(args[args.index('-'+dash)+1])
     return default
 
+
 def main():
 
     from sys import argv
@@ -72,9 +74,14 @@ def main():
     cmin = parse_dash('-min', int, argv, 1900)
     signs = parse_dash('s', int, argv, 1000)
     fields = parse_dash('f', int, argv, 50)
-    taxa = parse_dash('l', lambda x: list(x.upper), argv, list('abcdefghijklmn'.upper()))
+    taxa = parse_dash(
+            'l',
+            lambda x: list(x.upper),
+            argv,
+            list('abcdefghijklmn'.upper())
+            )
     basic = parse_dash('b', lambda x: list(range(x)), argv, list(range(200)))
 
     if 'run' in argv:
         run(times=times, signs=signs, fields=fields, taxa=taxa,
-                change_range=cmax, change_min=cmin, basic_list=basic)
+            change_range=cmax, change_min=cmin, basic_list=basic)

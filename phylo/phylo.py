@@ -162,14 +162,16 @@ class Language(object):
         self.tracer[nidx] = [self._signs]
 
     def count(self, basic):
-        basic_vocabulary = defaultdict([])
+        basic_vocabulary = defaultdict(list)
         for basic_concept in basic:
-            best_words = self._signs[basic_concept].most_common(3)
-            average = sum(best_words.values())/3
+            words = self._signs[basic_concept]
+            best_words = words.most_common(3)
+            average = sum(
+                words[w] for w in best_words)/3
             basic_vocabulary[basic_concept] = [
                 word
-                for word, frequency in best_words.items()
-                if frequency > average]
+                for word in best_words
+                if words[word] > average]
         return basic_vocabulary
 
 

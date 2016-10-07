@@ -35,6 +35,7 @@ class Language(object):
               word connections upon initialization
     """
     words = [0]
+
     def __init__(self,
                  signs, fields, max_syns=2, params=None):
 
@@ -160,26 +161,16 @@ class Language(object):
         nidx = max(self.tracer) + 1
         self.tracer[nidx] = [self._signs]
 
-
     def count(self, basic):
-        comp = defaultdict(list)
-        for a, b in self._signs.to_pairs():
-            comp[a] += [b]
-        basics = {}
-        for idx in basic:
-            refs = comp.get(idx, [])
-            refs_sorted = sorted(set(refs), key=lambda x: refs.count(x),
-                                 reverse=True)
-            if refs:
-                best_refs = sum([refs.count(x) for x in refs_sorted[:3]])
-                selected = [
-                    x
-                    for x in refs_sorted[:3]
-                    if refs.count(x) > best_refs / 3] or [refs_sorted[0]]
-            else:
-                selected = []
-            basics[idx] = selected
-        return basics
+        basic_vocabulary = defaultdict([])
+        for basic_concept in basic:
+            best_words = self._signs[basic_concept].most_common(3)
+            average = sum(best_words.values())/3
+            basic_vocabulary[basic_concept] = [
+                word
+                for word, frequency in best_words.items()
+                if frequency > average]
+        return basic_vocabulary
 
 
 class Phylogeny(object):
@@ -259,70 +250,3 @@ class Phylogeny(object):
         D[0] = ['doculect', 'concept', 'ipa', 'cogid']
         wl = lingpy.basic.wordlist.Wordlist(D)
         return wl
-
-
-def main():
-    """
-    Main idea is to run the simulation some time, calculate neighbor and upgma
-    trees, and compare the results, using Robinson Foulds distance (or how this
-    guy is called). The scores which are output for generated trees are:
-
-    1. neighbor
-    2. upgma
-    3. random distance (distance to random tree)
-    4. average distance in the matrix
-    5. number of words in the language.
-    """
-    dists1, dists2, dists3 = [], [], []
-    for i in range(100):
-        # print('[i] analyzing setting {0}'.format(i+1))
-        phy = Phylogeny(1000, 50)
-
-        # add more letters to get more taxa
-        taxa = list('abcdefghijklmnopqrst'.upper())
-        # change range: maximal number of changes, change_min: minimal number
-        # of changes (if it's not enough, nothing will change)
-        phy.prepare(taxa,
-                    change_range=2000,
-                    change_min=1900)
-        # "basic" is the number of words we afterwards use to to infer
-        # phylogeny with neighbor-joining
-        phy.start(basic=list(range(200)))
-        wl = phy.wordlist()
-
-        wl.add_entries('cog2', 'concept,cogid',
-                       lambda x, y: str(x[y[0]]) + '-' + str(x[y[1]]))
-        wl.renumber('cog2')
-        wl.calculate('diversity', ref='cog2id')
-
-        wl.calculate('tree', ref='cog2id', tree_calc='neighbor')
-        t2 = lingpy.upgma(wl.distances, wl.taxa)
-
-        d1 = phy.tree.get_distance(wl.tree, distance='rf')
-        d2 = phy.tree.get_distance(t2, distance='rf')
-        d3 = phy.tree.get_distance(
-            lingpy.basic.tree.Tree(lingpy.basic.tree.random_tree(taxa)),
-            distance='rf')
-        dists1 += [d1]
-        dists2 += [d2]
-        dists3 += [d3]
-
-        adist = sum([sum(x) for x in wl.distances]) / (len(wl.distances) ** 2)
-        wlen = phy.siblings.pop().words[0]
-        print(
-            "[i] generated tree {0} with distance of "
-            "{1:.2f} vs. {2:.2f} vs. {4:.2f} ({3:.2f}, {5}, {6:.2f}).".format(
-                i+1,
-                d1,
-                d2,
-                adist,
-                d3,
-                wlen,
-                wl.diversity))
-    print('Neighbor: {0:.2f}'.format(sum(dists1) / len(dists1)))
-    print('UGPMA:    {0:.2f}'.format(sum(dists2) / len(dists2)))
-    print('UGPMA:    {0:.2f}'.format(sum(dists3) / len(dists3)))
-
-
-if __name__ == '__main__':
-    main()

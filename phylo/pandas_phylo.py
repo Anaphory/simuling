@@ -65,6 +65,25 @@ class Language:
             self.concept_weights.index.levels[1].max()+1] = (
                 self.concept_weights.iloc[-1] + 1)
 
+    def flat_frequencies(self):
+        v = self.concept_weights.values
+        return pandas.Series(
+            index=self.concept_weights.index,
+            data=numpy.concatenate(
+                ([v[0]], v[1:]-v[:-1])))
+
+    def basic_vocabulary(self, basic, threshold=3):
+        weights = self.flat_frequencies()
+        for concept in basic:
+            words_for = weights[
+                self.concept_weights.index.get_level_values(
+                    'concept').values == concept]
+            best_words = words_for.sort_values()[-threshold:]
+            target_weight = best_words.sum()/threshold
+            for index, weight in best_words.items():
+                if weight>target_weight:
+                    yield index[1]
+
 
 rc = {i: range(10) if i < 10 else range(10, 20)
       for i in range(20)}
@@ -78,4 +97,4 @@ for c in range(20):
     l.gain(rc)
     l.gain(rc)
     l.new_word(rc)
-    print(l.concept_weights)
+    print(list(l.basic_vocabulary(range(7,13))))

@@ -17,7 +17,7 @@ class Language:
             self.concept_weights[
                 numpy.random.randint(len(related_concepts)),
                 i] = cum_weight
-        print(self.concept_weights)
+        self.tracer = [self.concept_weights.copy()]
 
     def random_edge(self):
         draw = self.concept_weights
@@ -49,7 +49,7 @@ class Language:
     def gain(self, related_concepts):
         concept, word = self.random_edge()
         rc = related_concepts[concept]
-        new_concept = rc[numpy.random.randint(len(rc))]
+        new_concept = list(rc)[numpy.random.randint(len(rc))]
         try:
             i = self.concept_weights.index.get_loc((concept, word))
             self.concept_weights.values[i:] += 1
@@ -84,17 +84,19 @@ class Language:
                 if weight>target_weight:
                     yield index[1]
 
+    def change(self, related_concepts,
+               p_lose=0.5,
+               p_gain=0.5,
+               p_new=0.9):
+        if numpy.random.random() < p_lose:
+            self.loss()
+        if numpy.random.random() < p_gain:
+            self.gain(related_concepts)
+        if numpy.random.random() < p_new:
+            self.new_word(related_concepts)
+        self.tracer.append(self.concept_weights.copy())
 
-rc = {i: range(10) if i < 10 else range(10, 20)
-      for i in range(20)}
-l = Language(rc)
-for c in range(20):
-    l.loss()
-    l.loss()
-    l.loss()
-    l.loss()
-    l.gain(rc)
-    l.gain(rc)
-    l.gain(rc)
-    l.new_word(rc)
-    print(list(l.basic_vocabulary(range(7,13))))
+    def clone(self):
+        l = Language({})
+        l.concept_weights = self.concept_weights.copy()
+        return l

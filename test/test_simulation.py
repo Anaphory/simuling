@@ -42,7 +42,7 @@ def test_random_speaker(lfs):
     # FIXME: There are cleaner ways to run stochastic tests, use one.
     counter = {node: 0 for node in nodes}
     k = 10000
-    for _ in range(len(nodes)*k):
+    for _ in range(len(list(nodes))*k):
         counter[lfs.random_speaker()] += 1
     for val in counter.values():
         assert k*0.9 < val < k/0.9

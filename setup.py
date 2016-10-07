@@ -14,6 +14,7 @@ setup(
         "networkx",
         "lingpy",
         "numpy",
+        "pandas",
         "pytest",
         "pytest-cov",
         "pytest-pep8",

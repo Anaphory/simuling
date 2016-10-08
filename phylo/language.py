@@ -45,6 +45,9 @@ class Language(object):
         will be initialized with a random integer between 1 and
         `initial_max_wt` inclusively.
 
+        >>> Language({1:[2,3],2:[1],3:[2]})
+        
+
         Args:
             related_concepts (`dict`): Maps concepts to semantically
                 related concepts.
@@ -171,3 +174,7 @@ class Language(object):
         l = Language({})
         l._cum_concept_weights = self._cum_concept_weights.copy()
         return l
+
+    def __repr__(self):
+        return "<Language\n{:}>".format(
+            self.flat_frequencies())

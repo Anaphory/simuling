@@ -9,9 +9,13 @@ setup(
     author="Gereon Kaiping",
     author_email="g.a.kaiping@hum.leidenuniv.nl",
     url="http://github.com/Anaphory/simuling",
-    packages=["simuling"],
+    packages=["simuling", "phylo"],
+    entry_points={
+        'console_scripts': ['phylo=phylo.cli:main'],
+        },
     install_requires=[
         "networkx",
+        "lingpy",
         "numpy",
         "pytest",
         "pytest-cov",

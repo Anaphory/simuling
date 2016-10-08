@@ -4,20 +4,23 @@ import bisect
 
 
 class Language:
+    max_word = 0
+
     def __init__(self, related_concepts, initial_max_wt=10):
         n_words = len(related_concepts)
         self.concept_weights = pandas.Series(
             index=pandas.MultiIndex.from_tuples(
-                [(0, 0)],
+                [(-1, -1)],
                 names=["concept", "word"]))
-        del self.concept_weights[(0, 0)]
+        del self.concept_weights[(-1, -1)]
         cum_weight = 0
-        for i in range(1, n_words):
+        for i in range(Language.max_word,
+                       Language.max_word+n_words):
             cum_weight += numpy.random.randint(initial_max_wt)+1
             self.concept_weights[
                 numpy.random.randint(len(related_concepts)),
                 i] = cum_weight
-        self.tracer = [self.concept_weights.copy()]
+        Language.max_word += n_words
 
     def random_edge(self):
         draw = self.concept_weights
@@ -62,8 +65,9 @@ class Language:
         new_concept = list(rc)[numpy.random.randint(len(rc))]
         self.concept_weights[
             new_concept,
-            self.concept_weights.index.levels[1].max()+1] = (
+            Language.max_word] = (
                 self.concept_weights.iloc[-1] + 1)
+        Language.max_word += 1
 
     def flat_frequencies(self):
         v = self.concept_weights.values
@@ -82,19 +86,18 @@ class Language:
             target_weight = best_words.sum()/threshold
             for index, weight in best_words.items():
                 if weight>target_weight:
-                    yield index[1]
+                    yield index
 
     def change(self, related_concepts,
                p_lose=0.5,
-               p_gain=0.5,
-               p_new=0.9):
+               p_gain=0.4,
+               p_new=0.1):
         if numpy.random.random() < p_lose:
             self.loss()
         if numpy.random.random() < p_gain:
             self.gain(related_concepts)
         if numpy.random.random() < p_new:
             self.new_word(related_concepts)
-        self.tracer.append(self.concept_weights.copy())
 
     def clone(self):
         l = Language({})

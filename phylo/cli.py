@@ -1,4 +1,6 @@
 from phylo.phylo import Phylogeny
+from collections import defaultdict
+import random
 import lingpy
 
 
@@ -10,20 +12,29 @@ def run(times=100, signs=1000, fields=50,
     """
     Run one phylo-simulation.
     """
+    # print('[i] analyzing setting {0}'.format(i+1))
+    concept2field = defaultdict(set)
+    for c in range(signs):
+        concept2field[random.randint(0, fields-1)].add(c)
+    related_concepts = {}
+    for field in concept2field.values():
+        for concept in field:
+            related_concepts[concept] = field - {concept}
+
     dists1, dists2, dists3 = [], [], []
     for i in range(times):
-        # print('[i] analyzing setting {0}'.format(i+1))
-        phy = Phylogeny(signs, fields)
+        phy = Phylogeny(
+            related_concepts,
+            tree = lingpy.basic.tree.Tree(
+                lingpy.basic.tree.random_tree(
+                    taxa, branch_lengths=False)))
 
-        # change range: maximal number of changes, change_min: minimal number
-        # of changes (if it's not enough, nothing will change)
-        phy.prepare(taxa,
-                    change_range=change_range,
-                    change_min=change_min)
         # "basic" is the number of words we afterwards use to to infer
         # phylogeny with neighbor-joining
-        phy.start(basic=basic_list)
-        wl = phy.wordlist()
+        phy.collect_word_list(basic=basic_list).to_csv(
+            'word_list.tsv', sep='\t')
+
+        wl = lingpy.basic.Wordlist('word_list.tsv')
 
         wl.add_entries('cog2', 'concept,cogid',
                        lambda x, y: str(x[y[0]]) + '-' + str(x[y[1]]))
@@ -43,7 +54,7 @@ def run(times=100, signs=1000, fields=50,
         dists3 += [d3]
 
         adist = sum([sum(x) for x in wl.distances]) / (len(wl.distances) ** 2)
-        wlen = len(phy.words)
+        wlen = len(wl)
         print(
             "[i] generated tree {0} with distance of "
             "{1:.2f} vs. {2:.2f} vs. {4:.2f} ({3:.2f}, {5}, {6:.2f}).".format(

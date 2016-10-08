@@ -1,21 +1,11 @@
 import lingpy
 import random
 import pandas 
-import numpy
 
-from .pandas_phylo import Language
+
+from .language import Language
 class Phylogeny(object):
-    """
-    The main simulation handler.
-
-    Notes
-    -----
-    Uses lingpy to get a random tree, uses also the lingpy.Tree class to handle
-    the walk along the tree. A parameter "change_range" handles the amount of
-    change (say: between 100 and 200 change runs, etc.). Later (this is
-    inconsistent!), there's the param "change_min", allowing to set the minimal
-    amount of change to happen.
-    """
+    """A phylogenetic linguistic simulation"""
 
     def __init__(
             self,
@@ -24,7 +14,6 @@ class Phylogeny(object):
             root=None,
             basic=range(100),
             initial_max_wt=10):
-        # distribute fields over concepts
         self.related_concepts = related_concepts
         self.tree = tree
 
@@ -44,9 +33,8 @@ class Phylogeny(object):
             collect_tips_only=True):
         columns = ('doculect', 'concept', 'ipa', 'cogid')
         word_list = pandas.DataFrame(
-            columns=columns,
-            data=[['None', 0, 0, 0]])
-        meaning_cogid_pairs = {}
+            columns=columns)
+        concept_cogid_pairs = {}
         for i, node in enumerate(self.tree.preorder()):
             if node.Name == 'root':
                 self.tracer[node.Name] = {
@@ -68,12 +56,12 @@ class Phylogeny(object):
                 if not collect_tips_only or node.istip():
                     for concept, word in new_language.basic_vocabulary(
                             self.basic):
-                        x = (0
-                             if word_list['doculect'][0] == 'None'
-                             else len(word_list))
-                        word_list.loc[x] = (
-                            node.Name, concept, word,
-                            meaning_cogid_pairs.setdefault(
+                        idx = len(word_list)
+                        word_list.loc[idx] = (
+                            node.Name,
+                            concept,
+                            word,
+                            concept_cogid_pairs.setdefault(
                                 (concept, word),
-                                len(meaning_cogid_pairs)))
+                                len(concept_cogid_pairs)))
         return word_list

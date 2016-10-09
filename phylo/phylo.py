@@ -32,8 +32,7 @@ class Phylogeny(object):
             verbose=True,
             collect_tips_only=True):
         columns = ('doculect', 'concept', 'ipa', 'cogid')
-        word_list = pandas.DataFrame(
-            columns=columns)
+        word_list = []
         concept_cogid_pairs = {}
         for i, node in enumerate(self.tree.preorder()):
             if node.Name == 'root':
@@ -56,12 +55,11 @@ class Phylogeny(object):
                 if not collect_tips_only or node.istip():
                     for concept, word in new_language.basic_vocabulary(
                             self.basic):
-                        idx = len(word_list)
-                        word_list.loc[idx] = (
+                        word_list.append(
                             node.Name,
                             concept,
                             word,
                             concept_cogid_pairs.setdefault(
                                 (concept, word),
                                 len(concept_cogid_pairs)))
-        return word_list
+        return word_list, columns

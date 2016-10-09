@@ -31,9 +31,9 @@ def run(times=100, signs=1000, fields=50,
 
         # "basic" is the number of words we afterwards use to to infer
         # phylogeny with neighbor-joining
-        dataframe = phy.collect_word_list(basic=basic_list)
-        D = {index+1: list(row) for index, row in dataframe.iterrows()}
-        D[0] = dataframe.columns
+        dataframe, columns = phy.collect_word_list(basic=basic_list)
+        D = {index+1: list(row) for index, row in enumerate(dataframe)}
+        D[0] = columns
 
         wl = lingpy.basic.Wordlist(D)
 

@@ -31,10 +31,11 @@ def run(times=100, signs=1000, fields=50,
 
         # "basic" is the number of words we afterwards use to to infer
         # phylogeny with neighbor-joining
-        phy.collect_word_list(basic=basic_list).to_csv(
-            'word_list.tsv', sep='\t')
+        dataframe = phy.collect_word_list(basic=basic_list)
+        D = {index+1: list(row) for index, row in dataframe.iterrows()}
+        D[0] = dataframe.columns
 
-        wl = lingpy.basic.Wordlist('word_list.tsv')
+        wl = lingpy.basic.Wordlist(D)
 
         wl.add_entries('cog2', 'concept,cogid',
                        lambda x, y: str(x[y[0]]) + '-' + str(x[y[1]]))

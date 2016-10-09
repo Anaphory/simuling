@@ -55,11 +55,11 @@ class Phylogeny(object):
                 if not collect_tips_only or node.istip():
                     for concept, word in new_language.basic_vocabulary(
                             self.basic):
-                        word_list.append(
+                        word_list.append((
                             node.Name,
                             concept,
                             word,
                             concept_cogid_pairs.setdefault(
                                 (concept, word),
-                                len(concept_cogid_pairs)))
+                                len(concept_cogid_pairs))))
         return word_list, columns

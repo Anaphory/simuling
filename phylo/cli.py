@@ -21,7 +21,7 @@ def run(times=100, signs=1000, fields=50,
         for concept in field:
             related_concepts[concept] = field - {concept}
 
-    dists1, dists2, dists3 = [], [], []
+    dists_nn, dists_upgma, dists_random = [], [], []
     for i in range(times):
         phy = Phylogeny(
             related_concepts,
@@ -42,29 +42,29 @@ def run(times=100, signs=1000, fields=50,
         wl.calculate('tree', ref='cogid', tree_calc='neighbor')
         t2 = lingpy.upgma(wl.distances, wl.taxa)
 
-        d1 = phy.tree.get_distance(wl.tree, distance='rf')
-        d2 = phy.tree.get_distance(t2, distance='rf')
-        d3 = phy.tree.get_distance(
+        d_nn = phy.tree.get_distance(wl.tree, distance='rf')
+        d_upgma = phy.tree.get_distance(t2, distance='rf')
+        d_random = phy.tree.get_distance(
             lingpy.basic.tree.Tree(lingpy.basic.tree.random_tree(taxa)),
             distance='rf')
-        dists1 += [d1]
-        dists2 += [d2]
-        dists3 += [d3]
+        dists_nn += [d_nn]
+        dists_upgma += [d_upgma]
+        dists_random += [d_random]
 
         adist = sum([sum(x) for x in wl.distances]) / (len(wl.distances) ** 2)
         print(
             "[i] Generated tree {}.".format(i),
             "The reconstructed trees have rf-distances",
-            "{:.2f} (NN)".format(d1),
-            "{:.2f} (UPGMA)".format(d2),
-            "{:.2f} (random)".format(d3),
+            "{:.2f} (NN)".format(d_nn),
+            "{:.2f} (UPGMA)".format(d_upgma),
+            "{:.2f} (random)".format(d_random),
             "to the original tree (adist: {:.2f}, counterparts: {:d}, diversity: {:.2f}).".format(
                 adist, len(dataframe), wl.diversity),
             sep="\n    ")
     print('Average distances to true tree:')
-    print('Neighbor: {0:.2f}'.format(sum(dists1) / len(dists1)))
-    print('UGPMA:    {0:.2f}'.format(sum(dists2) / len(dists2)))
-    print('Random:   {0:.2f}'.format(sum(dists3) / len(dists3)))
+    print('Neighbor: {0:.2f}'.format(sum(dists_nn) / len(dists_nn)))
+    print('UGPMA:    {0:.2f}'.format(sum(dists_upgma) / len(dists_upgma)))
+    print('Random:   {0:.2f}'.format(sum(dists_random) / len(dists_random)))
 
 
 def parse_dash(dash, datatype, args, default):

@@ -37,12 +37,9 @@ def run(times=100, signs=1000, fields=50,
 
         wl = lingpy.basic.Wordlist(D)
 
-        wl.add_entries('cog2', 'concept,cogid',
-                       lambda x, y: str(x[y[0]]) + '-' + str(x[y[1]]))
-        wl.renumber('cog2')
-        wl.calculate('diversity', ref='cog2id')
+        wl.calculate('diversity', ref='cogid')
 
-        wl.calculate('tree', ref='cog2id', tree_calc='neighbor')
+        wl.calculate('tree', ref='cogid', tree_calc='neighbor')
         t2 = lingpy.upgma(wl.distances, wl.taxa)
 
         d1 = phy.tree.get_distance(wl.tree, distance='rf')
@@ -55,20 +52,19 @@ def run(times=100, signs=1000, fields=50,
         dists3 += [d3]
 
         adist = sum([sum(x) for x in wl.distances]) / (len(wl.distances) ** 2)
-        wlen = len(wl)
         print(
-            "[i] generated tree {0} with distance of "
-            "{1:.2f} vs. {2:.2f} vs. {4:.2f} ({3:.2f}, {5}, {6:.2f}).".format(
-                i+1,
-                d1,
-                d2,
-                adist,
-                d3,
-                wlen,
-                wl.diversity))
+            "[i] Generated tree {}.".format(i),
+            "The reconstructed trees have rf-distances",
+            "{:.2f} (NN)".format(d1),
+            "{:.2f} (UPGMA)".format(d2),
+            "{:.2f} (random)".format(d3),
+            "to the original tree (adist: {:.2f}, counterparts: {:d}, diversity: {:.2f}).".format(
+                adist, len(dataframe), wl.diversity),
+            sep="\n    ")
+    print('Average distances to true tree:')
     print('Neighbor: {0:.2f}'.format(sum(dists1) / len(dists1)))
     print('UGPMA:    {0:.2f}'.format(sum(dists2) / len(dists2)))
-    print('UGPMA:    {0:.2f}'.format(sum(dists3) / len(dists3)))
+    print('Random:   {0:.2f}'.format(sum(dists3) / len(dists3)))
 
 
 def parse_dash(dash, datatype, args, default):

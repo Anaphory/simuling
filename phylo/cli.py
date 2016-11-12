@@ -1,7 +1,7 @@
-from phylo.phylo import Phylogeny
-from collections import defaultdict
 import random
 import lingpy
+from collections import defaultdict
+from .phylo import Phylogeny
 
 
 def run(times=100, signs=1000, fields=50,
@@ -65,31 +65,3 @@ def run(times=100, signs=1000, fields=50,
     print('Neighbor: {0:.2f}'.format(sum(dists_nn) / len(dists_nn)))
     print('UGPMA:    {0:.2f}'.format(sum(dists_upgma) / len(dists_upgma)))
     print('Random:   {0:.2f}'.format(sum(dists_random) / len(dists_random)))
-
-
-def parse_dash(dash, datatype, args, default):
-    if '-'+dash in args:
-        return datatype(args[args.index('-'+dash)+1])
-    return default
-
-
-def main():
-
-    from sys import argv
-
-    times = parse_dash('t', int, argv, 100)
-    cmax = parse_dash('-max', int, argv, 2000)
-    cmin = parse_dash('-min', int, argv, 1900)
-    signs = parse_dash('s', int, argv, 1000)
-    fields = parse_dash('f', int, argv, 50)
-    taxa = parse_dash(
-            'l',
-            lambda x: list(x.upper),
-            argv,
-            list('abcdefghijklmn'.upper())
-            )
-    basic = parse_dash('b', lambda x: list(range(x)), argv, list(range(200)))
-
-    if 'run' in argv:
-        run(times=times, signs=signs, fields=fields, taxa=taxa,
-            change_range=cmax, change_min=cmin, basic_list=basic)

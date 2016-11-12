@@ -138,8 +138,9 @@ class Language(object):
             self._word_meaning_pairs.append(
                 word, new_concept)
 
-    def new_word(self, rc):
-        """ A specified concept gains an entirely new word"""
+    def new_word(self):
+        """A random concept gains an entirely new word"""
+        rc = self.related_concepts
         new_concept = list(rc)[self.random.randint(len(rc))]
         self._cum_concept_weights.append(
             self._cum_concept_weights[-1] + 1)
@@ -151,7 +152,7 @@ class Language(object):
     def flat_frequencies(self):
         return {
             (word, meaning): (frequency - prev_frequency)
-            for (word, meaning), (frequency, prev_frequency) in zip(
+            for (word, meaning), frequency, prev_frequency in zip(
                     self._word_meaning_pairs,
                     self._cum_concept_weights,
                     [0] + self._cum_concept_weights)}
@@ -163,7 +164,9 @@ class Language(object):
             best_word_weights = []
             for (word, meaning), weight in weights.items():
                 if meaning == concept:
-                    if weight > best_word_weights[0]:
+                    if (
+                            not best_word_weights) or (
+                            weight > best_word_weights[0]):
                         i = bisect.bisect(
                             best_word_weights,
                             weight)
@@ -171,25 +174,26 @@ class Language(object):
                         best_word_weights.insert(i, weight)
                         
             weightsum = 0
-            for i, (word, weight) in enumerate(reversed(zip(
-                    best_words_for, best_word_weights))):
+            for i, (word, weight) in enumerate(zip(
+                    reversed(best_words_for),
+                    reversed(best_word_weights))):
                 if i >= threshold:
                     break
                 if weight < weightsum/(i+0.5):
                     break
-                yield word
+                yield concept, word
                 weightsum += weight
 
-    def change(self, related_concepts,
+    def change(self,
                p_lose=0.5,
                p_gain=0.4,
                p_new=0.1):
         if self.random.random() < p_lose:
             self.loss()
         if self.random.random() < p_gain:
-            self.gain(related_concepts)
+            self.gain()
         if self.random.random() < p_new:
-            self.new_word(related_concepts)
+            self.new_word()
 
     def clone(self):
         l = Language({})

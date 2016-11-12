@@ -1,6 +1,4 @@
-import lingpy
 import random
-import pandas 
 
 
 from .language import Language
@@ -48,7 +46,7 @@ class Phylogeny(object):
                         node.Name, distance))
 
                 for _ in range(distance):
-                    new_language.change(self.related_concepts)
+                    new_language.change()
                 self.tracer[node.Name] = {
                         'language': new_language,
                         'distance': distance}

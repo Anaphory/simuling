@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 
+
 """Language model.
 
 This module supplies the functionality of a basic language model.
 
 """
 
+
 import numpy
 import bisect
+
 
 class Language(object):
     """A simulated language.
@@ -45,12 +48,12 @@ class Language(object):
         `initial_max_wt` inclusively.
 
         >>> Language({1:[2,3],2:[1],3:[2]})
-        
+
 
         Args:
             related_concepts (`dict`): Maps concepts to semantically
                 related concepts.
-        
+
             initial_max_wt (`int`, optional): The maximum weight of a
                 concept-word connection weight. Defaults to 10.
 
@@ -67,7 +70,7 @@ class Language(object):
         # choice, very fast, and in the average case should net us
         # about half a complete iteration of the list advantage of
         # calculating it anew every draw step.
-        
+
         self.related_concepts = related_concepts
 
         self._cum_concept_weights = []
@@ -124,7 +127,13 @@ class Language(object):
             del self._word_meaning_pairs[i]
 
     def gain(self):
-        """A random word for a concept gains the meaning of one related concept"""
+        """Add a meaning to a word
+
+        A random word (with probability proportional to ‘use’) gains
+        the meaning of one concept related to a meaning it already
+        has
+
+        """
         word, concept = self.random_edge()
         rc = self.related_concepts[concept]
         new_concept = list(rc)[self.random.randint(len(rc))]
@@ -146,7 +155,7 @@ class Language(object):
             self._cum_concept_weights[-1] + 1)
         self._word_meaning_pairs.append(
             (Language.max_word,
-            new_concept))
+             new_concept))
         Language.max_word += 1
 
     def flat_frequencies(self):
@@ -172,7 +181,7 @@ class Language(object):
                             weight)
                         best_words_for.insert(i, word)
                         best_word_weights.insert(i, weight)
-                        
+
             weightsum = 0
             for i, (word, weight) in enumerate(zip(
                     reversed(best_words_for),

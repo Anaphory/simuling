@@ -24,14 +24,14 @@ def test_clone():
     l = language()
     m = l.clone()
     assert l._word_meaning_pairs == m._word_meaning_pairs
-    m.new_word(["b", "c"])
+    m.new_word()
     assert l._word_meaning_pairs != m._word_meaning_pairs
 
 
 def test_add_link():
     l = language()
     old_signs = l._word_meaning_pairs[:]
-    l.new_word(["b", "c"])
+    l.new_word()
     new_signs = l._word_meaning_pairs[:]
     assert len(old_signs) + 1 == len(new_signs)
 

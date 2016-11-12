@@ -25,7 +25,7 @@ def run(times=100, signs=1000, fields=50,
     for i in range(times):
         phy = Phylogeny(
             related_concepts,
-            tree = lingpy.basic.tree.Tree(
+            tree=lingpy.basic.tree.Tree(
                 lingpy.basic.tree.random_tree(
                     taxa, branch_lengths=False)))
 
@@ -58,7 +58,8 @@ def run(times=100, signs=1000, fields=50,
             "{:.2f} (NN)".format(d_nn),
             "{:.2f} (UPGMA)".format(d_upgma),
             "{:.2f} (random)".format(d_random),
-            "to the original tree (adist: {:.2f}, counterparts: {:d}, diversity: {:.2f}).".format(
+            "to the original tree (adist: {:.2f}, "
+            "counterparts: {:d}, diversity: {:.2f}).".format(
                 adist, len(dataframe), wl.diversity),
             sep="\n    ")
     print('Average distances to true tree:')

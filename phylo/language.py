@@ -6,7 +6,6 @@ This module supplies the functionality of a basic language model.
 
 """
 
-import pandas
 import numpy
 import bisect
 
@@ -62,20 +61,17 @@ class Language(object):
 
         self.random = random
 
-        # The weighted word-concept map is represented by a
-        # `pandas.Series` containing the *cumulative* weights, because
-        # that makes our most frequent calculation, the weighted
-        # random choice, very fast, and in the average case should net
-        # us about half a complete iteration of the list advantage of
+        # The weighted word-concept map is represented by two lists
+        # containing the indices *cumulative* weights, because that
+        # makes our most frequent calculation, the weighted random
+        # choice, very fast, and in the average case should net us
+        # about half a complete iteration of the list advantage of
         # calculating it anew every draw step.
         
-        # It is not easy to create an empy MultiIndex, so we create a
-        # non-empty one and delete the entry.
-        self._cum_concept_weights = pandas.Series(
-            index=pandas.MultiIndex.from_tuples(
-                [(-1, -1)],
-                names=["concept", "word"]))
-        del self._cum_concept_weights[(-1, -1)]
+        self.related_concepts = related_concepts
+
+        self._cum_concept_weights = []
+        self._word_meaning_pairs = []
         cum_weight = 0
 
         n_words = len(related_concepts)
@@ -84,80 +80,105 @@ class Language(object):
             # Draw a random weight according to `initial_max_wt`. (And
             # immediately add it to the cumulative weight.)
             cum_weight += self.random.randint(initial_max_wt)+1
-            self._cum_concept_weights[
-                self.random.randint(len(related_concepts)),
-                i] = cum_weight
+            self._cum_concept_weights.append(cum_weight)
+            self._word_meaning_pairs.append((
+                i,
+                self.random.choice(list(
+                    related_concepts.keys()))))
 
+        assert len(self._cum_concept_weights) == len(self._word_meaning_pairs)
         # None of the words in this language should be cognate with
         # words in other languages, so we need to adjust the minimum
         # new word pointer.
         Language.max_word += n_words
 
-    def random_edge(self):
+    def random_edge(self, return_word_meaning_pair=True):
         draw = self._cum_concept_weights
-        max = draw.iloc[-1]
+        max = draw[-1]
         point = self.random.random() * max
-        return draw.index[bisect.bisect(draw.values, point)]
+        index = bisect.bisect(draw, point)
+        if return_word_meaning_pair:
+            return self._word_meaning_pairs[index]
+        else:
+            return index
 
     def words_for_concept(self, concept):
-        index = self._cum_concept_weights.index
-        return index.get_level_values(
-            'word').values[
-                index.get_level_values('concept').values == concept]
+        return {word
+                for word, meaning in self._word_meaning_pairs
+                if meaning == concept}
 
     def concepts_for_word(self, word):
-        index = self._cum_concept_weights.index
-        return self._cum_concept_weights.index.get_level_values(
-            'concept').values[
-                index.get_level_values('word').values == word]
+        return {meaning
+                for word_, meaning in self._word_meaning_pairs
+                if word_ == word}
 
     def loss(self):
-        concept, word = self.random_edge()
-        i = self._cum_concept_weights.index.get_loc((concept, word))
-        self._cum_concept_weights.values[i:] -= 1
-        new_val = self._cum_concept_weights.iloc[i]
+        i = self.random_edge(return_word_meaning_pair=False)
+        word, concept = self._word_meaning_pairs[i]
+        for j in range(i, len(self._cum_concept_weights)):
+            self._cum_concept_weights[j] -= 1
+        new_val = self._cum_concept_weights[i]
         if (new_val == 0 or
-                new_val == self._cum_concept_weights.iloc[i-1]):
-            del self._cum_concept_weights[concept, word]
+                new_val == self._cum_concept_weights[i-1]):
+            del self._cum_concept_weights[i]
+            del self._word_meaning_pairs[i]
 
-    def gain(self, related_concepts):
-        concept, word = self.random_edge()
-        rc = related_concepts[concept]
+    def gain(self):
+        """A random word for a concept gains the meaning of one related concept"""
+        word, concept = self.random_edge()
+        rc = self.related_concepts[concept]
         new_concept = list(rc)[self.random.randint(len(rc))]
         try:
-            i = self._cum_concept_weights.index.get_loc((concept, word))
-            self._cum_concept_weights.values[i:] += 1
-        except KeyError:
-            self._cum_concept_weights[
-                new_concept,
-                word] = self._cum_concept_weights.iloc[-1] + 1
+            i = self._word_meaning_pairs.index((word, concept))
+            for j in range(i, len(self._cum_concept_weights)):
+                self._cum_concept_weights[j] += 1
+        except ValueError:
+            self._cum_concept_weights.append(
+                self._cum_concept_weights[-1] + 1)
+            self._word_meaning_pairs.append(
+                word, new_concept)
 
     def new_word(self, rc):
+        """ A specified concept gains an entirely new word"""
         new_concept = list(rc)[self.random.randint(len(rc))]
-        self._cum_concept_weights[
-            new_concept,
-            Language.max_word] = (
-                self._cum_concept_weights.iloc[-1] + 1)
+        self._cum_concept_weights.append(
+            self._cum_concept_weights[-1] + 1)
+        self._word_meaning_pairs.append(
+            (Language.max_word,
+            new_concept))
         Language.max_word += 1
 
     def flat_frequencies(self):
-        v = self._cum_concept_weights.values
-        return pandas.Series(
-            index=self._cum_concept_weights.index,
-            data=numpy.concatenate(
-                ([v[0]], v[1:]-v[:-1])))
+        return {
+            (word, meaning): (frequency - prev_frequency)
+            for (word, meaning), (frequency, prev_frequency) in zip(
+                    self._word_meaning_pairs,
+                    self._cum_concept_weights,
+                    [0] + self._cum_concept_weights)}
 
     def basic_vocabulary(self, basic, threshold=3):
         weights = self.flat_frequencies()
         for concept in basic:
-            words_for = weights[
-                self._cum_concept_weights.index.get_level_values(
-                    'concept').values == concept]
-            best_words = words_for.sort_values()[-threshold:]
-            target_weight = best_words.sum()/threshold
-            for index, weight in best_words.items():
-                if weight>target_weight:
-                    yield index
+            best_words_for = []
+            best_word_weights = []
+            for (word, meaning), weight in weights.items():
+                if meaning == concept:
+                    if weight > best_word_weights[0]:
+                        i = bisect.bisect(
+                            best_word_weights,
+                            weight)
+                        best_words_for.insert(i, word)
+                        best_word_weights.insert(i, weight)
+                        
+            weightsum = 0
+            for i, (word, weight) in enumerate(reversed(zip(
+                    best_words_for, best_word_weights))):
+                if i >= threshold:
+                    break
+                if weight < weightsum/(i+0.5):
+                    break
+                yield word
+                weightsum += weight
 
     def change(self, related_concepts,
                p_lose=0.5,
@@ -172,7 +193,9 @@ class Language(object):
 
     def clone(self):
         l = Language({})
-        l._cum_concept_weights = self._cum_concept_weights.copy()
+        l._cum_concept_weights = self._cum_concept_weights[:]
+        l._word_meaning_pairs = self._word_meaning_pairs[:]
+        l.related_concepts = self.related_concepts
         return l
 
     def __repr__(self):

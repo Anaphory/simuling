@@ -46,7 +46,8 @@ def run(times=100, signs=1000, fields=50,
         wlen = len(phy.words)
         print(
             "[i] generated tree {0} with distance of "
-            "{1:.2f} vs. {2:.2f} vs. {4:.2f} ({3:.2f}, {5}, {6:.2f}).".format(
+            "NJ: {1:.2f} vs. UPGMA: {2:.2f} vs. RANDOM: {4:.2f} ({3:.2f}, {5} "
+            "DIV: {6:.2f}).".format(
                 i+1,
                 d1,
                 d2,
@@ -56,7 +57,7 @@ def run(times=100, signs=1000, fields=50,
                 wl.diversity))
     print('Neighbor: {0:.2f}'.format(sum(dists1) / len(dists1)))
     print('UGPMA:    {0:.2f}'.format(sum(dists2) / len(dists2)))
-    print('UGPMA:    {0:.2f}'.format(sum(dists3) / len(dists3)))
+    print('RANDOM:    {0:.2f}'.format(sum(dists3) / len(dists3)))
 
 
 def parse_dash(dash, datatype, args, default):
@@ -70,17 +71,17 @@ def main():
     from sys import argv
 
     times = parse_dash('t', int, argv, 100)
-    cmax = parse_dash('-max', int, argv, 2000)
-    cmin = parse_dash('-min', int, argv, 1900)
+    cmax = parse_dash('-max', int, argv, 1000)
+    cmin = parse_dash('-min', int, argv, 500)
     signs = parse_dash('s', int, argv, 1000)
     fields = parse_dash('f', int, argv, 50)
     taxa = parse_dash(
             'l',
-            lambda x: list(x.upper),
+            lambda x: list(x.upper()),
             argv,
             list('abcdefghijklmn'.upper())
             )
-    basic = parse_dash('b', lambda x: list(range(x)), argv, list(range(200)))
+    basic = parse_dash('b', lambda x: list(range(int(x))), argv, list(range(200)))
 
     if 'run' in argv:
         run(times=times, signs=signs, fields=fields, taxa=taxa,

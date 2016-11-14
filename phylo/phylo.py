@@ -85,6 +85,35 @@ class Language(object):
                     self._signs.remove(key, value)
                     return
         raise ValueError("idx was too large")
+    
+    def remove_links(self, number):
+        for i in range(number):
+            idx = random.randint(0, len(self._signs)-1)
+            for key, values in self._signs.forwards.items():
+               for value, frequency in values.items():
+                   idx -= frequency
+                   if idx <= 0:
+                       self._signs.remove(key, value)
+                       return
+
+    def add_links(self, number):
+        
+        widxs = [random.choice(self.words) for i in range(number)]
+        targets = defaultdict(list)
+        for c in self.concepts:
+            targets[self.concept2field[c]] += [c]
+        for widx in widxs:
+            try:
+                concepts = self._signs.inv[widx]
+            except KeyError:
+                concepts = []
+            fields = [self.concept2field[c] for c in concepts]
+            if fields:
+                _targets = []
+                for f in fields:
+                    _targets += targets[f]
+                new_link = random.choice(_targets)
+                self._signs.add(new_link, widx)
 
     def _add_link(self):
         """
@@ -97,7 +126,7 @@ class Language(object):
         to, e.g., homophony), and then select the new 'concept' from this
         restricted set.
         """
-
+        
         widx = random.choice(self.words)
 
         # get the concepts
@@ -135,6 +164,17 @@ class Language(object):
         self._signs.add(concept, new_word)
         self.words += [new_word]
 
+    def add_words(self, number, words=[]):
+        if words:
+            new_word = max(words) + 1
+        else:
+            new_word = max(self.words)+1
+        for i in range(number):
+            concept = random.choice(self.concepts)
+            self._signs.add(concept, new_word)
+            self.words += [new_word]
+            new_word += 1
+
     def clone(self):
         """
         Make a copy of a language of itself. Needed for phylogenies.
@@ -151,7 +191,7 @@ class Language(object):
         tmp.tracer = [tmp._signs]
         return tmp
 
-    def change(self, time, words=[]):
+    def change(self, time, ctype=1, words=[]):
         """
         Basic process time is an integer.
 
@@ -160,13 +200,30 @@ class Language(object):
         'words' are needed to make sure the language creates NEW words, not the
         ones that have been created by another language.
         """
-        for i in range(time):
-            if random.randint(0, self.params['ll']):
-                self._lose_link()
-            if random.randint(0, self.params['al']):
-                self._add_link()
-            if not random.randint(0, self.params['nw']):
-                self._add_word(words)
+
+        if ctype == 1:
+            for i in range(time):
+                if random.randint(0, self.params['ll']):
+                    self._lose_link()
+                if random.randint(0, self.params['al']):
+                    self._add_link()
+                if not random.randint(0, self.params['nw']):
+                    self._add_word(words)
+        else:
+            addlinks = 0
+            remlinks = 0
+            newwords = 0
+            for i in range(time):
+                if random.randint(0, self.params['ll']):
+                    self._lose_link()
+                    #remlinks += 1
+                if random.randint(0, self.params['al']):
+                    addlinks += 1
+                if not random.randint(0, self.params['nw']):
+                    newwords += 1
+            self.remove_links(remlinks)
+            self.add_links(addlinks)
+            self.add_words(newwords)
 
         self.tracer.append(self._signs)
 
@@ -244,7 +301,7 @@ class Phylogeny(object):
                     print('... analyzing node {0} ({1})'.format(
                         node.Name, distance))
 
-                new_language.change(distance, words=self.words)
+                new_language.change(distance, words=self.words, ctype=0)
                 self.tracer[node.Name] = dict(
                         language=new_language,
                         tracer=new_language.tracer[1],

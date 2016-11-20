@@ -23,7 +23,7 @@ class Phylogeny(object):
                 self.related_concepts, initial_max_wt)
         else:
             self.root = root
-        self.change_range = change_range 
+        self.change_range = change_range
         self.basic = basic
         self.tracer = {}
 

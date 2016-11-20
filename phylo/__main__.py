@@ -7,8 +7,9 @@ from .cli import run
 parser = argparse.ArgumentParser(description=""" Run a very simple forward-time
 phylogenetic simulation of cognate class evolution in a language
 family.""")
-parser.add_argument('-t', type=int, default=100,
-                    help="Number of simulations to run with the same concept graph")
+parser.add_argument(
+    '-t', type=int, default=100,
+    help="Number of simulations to run with the same concept graph")
 parser.add_argument('--max', type=int, default=11000,
                     help="Minimum number of change events along a branch")
 parser.add_argument('--min', type=int, default=9000,

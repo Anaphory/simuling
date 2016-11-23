@@ -90,7 +90,6 @@ def run(times=100, signs=1000, fields=50,
             "counterparts: {:d}, diversity: {:.2f}).".format(
                 adist, len(dataframe), wl.diversity),
             sep="\n    ")
-        wl.output('tsv', filename='/home/mattis/wordlist')
     print('Average distances to true tree:')
     print('Neighbor: {0:.2f}'.format(sum(dists_nn) / len(dists_nn)))
     print('UGPMA:    {0:.2f}'.format(sum(dists_upgma) / len(dists_upgma)))

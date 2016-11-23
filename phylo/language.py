@@ -193,6 +193,25 @@ class Language(object):
                 yield concept, word
                 weightsum += weight
 
+    def all_reflexes(self, threshold=0):
+        """Sequence of all reflexes in the language
+
+        For each cognate class (i.e. each word) that has any meaning
+        with activation above `threshold`, give it and its most
+        salient meaning.
+
+        Language.all_reflexes is one possible value for the `method`
+        argument of `Phylogeny.collect_wordlist`.
+
+        """
+        words = {}
+        for (word, meaning), weight in self.flat_frequencies().items():
+            old_meaning, old_weight = words.get(word, (None, threshold))
+            if weight > old_weight:
+                words[word] = (meaning, weight)
+        for word, (meaning, weight) in words.items():
+            yield (meaning, word)
+
     def change(self,
                p_lose=0.5,
                p_gain=0.4,

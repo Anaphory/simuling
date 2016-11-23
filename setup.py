@@ -11,7 +11,7 @@ setup(
     url="http://github.com/Anaphory/simuling",
     packages=["simuling", "phylo"],
     entry_points={
-        'console_scripts': ['phylo=phylo.cli:main'],
+        'console_scripts': ['phylo=phylo.__main__'],
         },
     install_requires=[
         "networkx",

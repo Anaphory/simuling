@@ -3,7 +3,24 @@ import lingpy
 from collections import defaultdict
 from .phylo import Phylogeny
 
+def semantic_shift(wordlist, ref='cogid', concept='concept'):
+    """
+    Very bad, and very slow calculation of cross-semantic cognates.
 
+    This is just to test it out of curiosity, but should be replaced and
+    enhanced along with the use of the new lingpy3 wordlist class.
+    """
+    etd = wordlist.get_etymdict(ref='cogid', entry='ipa')
+    mixed = []
+    for k, v in etd.items():
+        meanings = set()
+        for vals in v:
+            if vals:
+                for val in vals:
+                    meanings.add(val)
+        mixed += [len(meanings)]
+    return sum(mixed) / len(mixed)
+                
 def run(times=100, signs=1000, fields=50,
         taxa=list('abcdefghijklmnopqrst'.upper()),
         change_range=20000,
@@ -44,6 +61,11 @@ def run(times=100, signs=1000, fields=50,
 
         print(phy.tree)
         wl.calculate('diversity', ref='cogid')
+        print('Concepts per cognate sets: {0:.2f}'.format(
+            semantic_shift(wl, ref='cogid', concept='concept')))
+
+        # calculate amount of semantic shift
+
 
         wl.calculate('tree', ref='cogid', tree_calc='neighbor')
         t2 = lingpy.upgma(wl.distances, wl.taxa)
@@ -68,7 +90,9 @@ def run(times=100, signs=1000, fields=50,
             "counterparts: {:d}, diversity: {:.2f}).".format(
                 adist, len(dataframe), wl.diversity),
             sep="\n    ")
+        wl.output('tsv', filename='/home/mattis/wordlist')
     print('Average distances to true tree:')
     print('Neighbor: {0:.2f}'.format(sum(dists_nn) / len(dists_nn)))
     print('UGPMA:    {0:.2f}'.format(sum(dists_upgma) / len(dists_upgma)))
     print('Random:   {0:.2f}'.format(sum(dists_random) / len(dists_random)))
+

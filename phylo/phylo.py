@@ -27,14 +27,8 @@ class Phylogeny(object):
         self.basic = basic
         self.tracer = {}
 
-    def collect_word_list(
-            self,
-            basic=None,
-            verbose=True,
-            collect_tips_only=True):
-        columns = ('doculect', 'concept', 'ipa', 'cogid')
-        word_list = []
-        concept_cogid_pairs = {}
+    def simulate(self,
+                 verbose=True):
         for i, node in enumerate(self.tree.preorder()):
             if node.Name == 'root':
                 self.tracer[node.Name] = {
@@ -53,14 +47,44 @@ class Phylogeny(object):
                 self.tracer[node.Name] = {
                         'language': new_language,
                         'distance': distance}
-                if not collect_tips_only or node.istip():
-                    for concept, word in new_language.basic_vocabulary(
-                            self.basic):
-                        word_list.append((
-                            node.Name,
-                            concept,
-                            word,
-                            concept_cogid_pairs.setdefault(
-                                (concept, word),
-                                len(concept_cogid_pairs))))
+        
+    def collect_word_list(
+            self,
+            method=None,
+            collect_tips_only=True):
+        """Collect word lists from all (tip) languages in the tree.
+        
+        Create a CLDF-/lingpy-like list of (language_id, feature_id,
+        value, cognate_class) tuples by sampling each language
+        according to method.
+
+        Parameters:
+
+        `method`: A function Language → sequence of (concept, word)
+          pairs, such as `Language.basic_vocabulary`, which is the
+          default.
+
+        `collect_tips_only`: boolean
+          If True, collect word lists from the tips only, otherwise
+          from every node in the tree. Default: True.
+        """
+        if method is None:
+            def method(language):
+                return Language.basic_vocabulary(language, self.basic)
+            
+        columns = ('doculect', 'concept', 'ipa', 'cogid')
+        word_list = []
+        concept_cogid_pairs = {}
+
+        for i, node in enumerate(self.tree.preorder()):
+            if not collect_tips_only or node.istip():
+                language = self.tracer[node.Name]['language']
+                for concept, word in method(language):
+                    word_list.append((
+                        node.Name,
+                        concept,
+                        word,
+                        concept_cogid_pairs.setdefault(
+                            (concept, word),
+                            len(concept_cogid_pairs))))
         return word_list, columns

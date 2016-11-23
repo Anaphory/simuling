@@ -25,14 +25,17 @@ def run(times=100, signs=1000, fields=50,
     for i in range(times):
         phy = Phylogeny(
             related_concepts,
+            basic=basic_list,
             tree=lingpy.basic.tree.Tree(
                 lingpy.basic.tree.random_tree(
                     taxa, branch_lengths=False)),
             change_range=(change_min, change_range))
 
+        phy.simulate()
+
         # "basic" is the number of words we afterwards use to to infer
         # phylogeny with neighbor-joining
-        dataframe, columns = phy.collect_word_list(basic=basic_list)
+        dataframe, columns = phy.collect_word_list()
         D = {index+1: list(row) for index, row in enumerate(dataframe)}
         D[0] = columns
 

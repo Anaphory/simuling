@@ -47,13 +47,13 @@ class Phylogeny(object):
                 self.tracer[node.Name] = {
                         'language': new_language,
                         'distance': distance}
-        
+
     def collect_word_list(
             self,
             method=None,
             collect_tips_only=True):
         """Collect word lists from all (tip) languages in the tree.
-        
+
         Create a CLDF-/lingpy-like list of (language_id, feature_id,
         value, cognate_class) tuples by sampling each language
         according to method.
@@ -71,7 +71,7 @@ class Phylogeny(object):
         if method is None:
             def method(language):
                 return Language.basic_vocabulary(language, self.basic)
-            
+
         columns = ('doculect', 'concept', 'ipa', 'cogid')
         word_list = []
         concept_cogid_pairs = {}

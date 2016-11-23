@@ -199,7 +199,7 @@ class Language(object):
         For each cognate class (i.e. each word) that has any meaning
         with activation above `threshold`, give it and its most
         salient meaning.
-        
+
         Language.all_reflexes is one possible value for the `method`
         argument of `Phylogeny.collect_wordlist`.
 

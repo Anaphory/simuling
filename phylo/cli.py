@@ -3,6 +3,7 @@ import lingpy
 from collections import defaultdict
 from .phylo import Phylogeny
 
+
 def semantic_shift(wordlist, ref='cogid', concept='concept'):
     """
     Very bad, and very slow calculation of cross-semantic cognates.
@@ -20,7 +21,8 @@ def semantic_shift(wordlist, ref='cogid', concept='concept'):
                     meanings.add(val)
         mixed += [len(meanings)]
     return sum(mixed) / len(mixed)
-                
+
+
 def run(times=100, signs=1000, fields=50,
         taxa=list('abcdefghijklmnopqrst'.upper()),
         change_range=20000,
@@ -65,8 +67,6 @@ def run(times=100, signs=1000, fields=50,
             semantic_shift(wl, ref='cogid', concept='concept')))
 
         # calculate amount of semantic shift
-
-
         wl.calculate('tree', ref='cogid', tree_calc='neighbor')
         t2 = lingpy.upgma(wl.distances, wl.taxa)
 
@@ -94,4 +94,3 @@ def run(times=100, signs=1000, fields=50,
     print('Neighbor: {0:.2f}'.format(sum(dists_nn) / len(dists_nn)))
     print('UGPMA:    {0:.2f}'.format(sum(dists_upgma) / len(dists_upgma)))
     print('Random:   {0:.2f}'.format(sum(dists_random) / len(dists_random)))
-

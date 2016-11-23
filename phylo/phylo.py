@@ -1,6 +1,7 @@
 import random
 from .language import Language
 
+
 class Phylogeny(object):
     """A phylogenetic linguistic simulation"""
 

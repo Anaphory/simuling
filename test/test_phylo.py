@@ -17,6 +17,7 @@ def specific_language():
     l._cum_concept_weights = [1, 2]
     l._word_meaning_pairs = [(0, "a"),
                              (1, "a")]
+    l.related_concepts = {"a": ["b"], "b": ["b"]}
     return l
 
 
@@ -42,6 +43,14 @@ def test_gain():
     l.gain()
     new_weights = l._cum_concept_weights[-1]
     assert (old_weights) + 1 == (new_weights)
+
+
+def test_gain_new_concept():
+    l = specific_language()
+    l.gain()
+    assert (
+        (0, "b") in l._word_meaning_pairs or
+        (1, "b") in l._word_meaning_pairs)
 
 
 def test_loss():

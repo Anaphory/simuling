@@ -1,6 +1,4 @@
 import random
-
-
 from .language import Language
 
 
@@ -28,12 +26,15 @@ class Phylogeny(object):
         self.tracer = {}
 
     def simulate(self,
-                 verbose=True):
+                 verbose=True,
+                 p_lose=0.5,
+                 p_gain=0.4,
+                 p_new=0.1):
         for i, node in enumerate(self.tree.preorder()):
             if node.Name == 'root':
                 self.tracer[node.Name] = {
-                        'language': self.root,
-                        'distance': 0}
+                    'language': self.root,
+                    'distance': 0}
             else:
                 new_language = self.tracer[
                     node.Parent.Name]['language'].clone()
@@ -43,10 +44,10 @@ class Phylogeny(object):
                         node.Name, distance))
 
                 for _ in range(distance):
-                    new_language.change()
+                    new_language.change(p_lose, p_gain, p_new)
                 self.tracer[node.Name] = {
-                        'language': new_language,
-                        'distance': distance}
+                    'language': new_language,
+                    'distance': distance}
 
     def collect_word_list(
             self,

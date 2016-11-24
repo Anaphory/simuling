@@ -138,14 +138,14 @@ class Language(object):
         rc = self.related_concepts[concept]
         new_concept = list(rc)[self.random.randint(len(rc))]
         try:
-            i = self._word_meaning_pairs.index((word, concept))
+            i = self._word_meaning_pairs.index((word, new_concept))
             for j in range(i, len(self._cum_concept_weights)):
                 self._cum_concept_weights[j] += 1
         except ValueError:
             self._cum_concept_weights.append(
                 self._cum_concept_weights[-1] + 1)
-            self._word_meaning_pairs.append(
-                word, new_concept)
+            self._word_meaning_pairs.append((
+                word, new_concept))
 
     def new_word(self):
         """A random concept gains an entirely new word"""

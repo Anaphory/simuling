@@ -22,6 +22,17 @@ parser.add_argument("-l", type=list, default="ABCDEFGHIJKLMN",
                     help="Taxon names")
 parser.add_argument('-b', type=int, default=200,
                     help="Basic vocabulary size to be sampled")
+parser.add_argument('--wordlist', type=str, default=None,
+                    help="Filename to write the word lists to. "
+                    "'{:run_number}.tsv' is appended automatically.")
+parser.add_argument('--p-lose', type=float, default=0.5,
+                    help="Probability, per time step, that a word becomes "
+                    "less likely for a meaning")
+parser.add_argument('--p-gain', type=float, default=0.4,
+                    help="Probability, per time step, that a word gains a "
+                    "related meaning")
+parser.add_argument('--p-new', type=float, default=0.1,
+                    help="Probability, per time step, that a new word arises")
 
 
 args = parser.parse_args()
@@ -31,4 +42,5 @@ run(times=args.t,
     taxa=args.l,
     change_range=args.max,
     change_min=args.min,
+    wordlist_filename=args.wordlist,
     basic_list=range(args.b))

@@ -4,10 +4,29 @@ from collections import defaultdict
 from .phylo import Phylogeny
 
 
+def semantic_shift(wordlist, ref='cogid', concept='concept'):
+    """
+    Very bad, and very slow calculation of cross-semantic cognates.
+
+    This is just to test it out of curiosity, but should be replaced and
+    enhanced along with the use of the new lingpy3 wordlist class.
+    """
+    etd = wordlist.get_etymdict(ref='cogid', entry='ipa')
+    mixed = []
+    for k, v in etd.items():
+        meanings = set()
+        for vals in v:
+            if vals:
+                for val in vals:
+                    meanings.add(val)
+        mixed += [len(meanings)]
+    return sum(mixed) / len(mixed)
+
+
 def run(times=100, signs=1000, fields=50,
         taxa=list('abcdefghijklmnopqrst'.upper()),
-        change_range=2000,
-        change_min=1900,
+        change_range=20000,
+        change_min=15000,
         basic_list=list(range(200))):
     """
     Run one phylo-simulation.
@@ -35,6 +54,7 @@ def run(times=100, signs=1000, fields=50,
 
         # "basic" is the number of words we afterwards use to to infer
         # phylogeny with neighbor-joining
+
         dataframe, columns = phy.collect_word_list()
         D = {index+1: list(row) for index, row in enumerate(dataframe)}
         D[0] = columns
@@ -43,7 +63,10 @@ def run(times=100, signs=1000, fields=50,
 
         print(phy.tree)
         wl.calculate('diversity', ref='cogid')
+        print('Concepts per cognate sets: {0:.2f}'.format(
+            semantic_shift(wl, ref='cogid', concept='concept')))
 
+        # calculate amount of semantic shift
         wl.calculate('tree', ref='cogid', tree_calc='neighbor')
         t2 = lingpy.upgma(wl.distances, wl.taxa)
 

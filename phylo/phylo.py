@@ -1,6 +1,4 @@
 import random
-
-
 from .language import Language
 
 

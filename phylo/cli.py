@@ -75,4 +75,3 @@ def run(times=100, signs=1000, fields=50,
             wl.calculate('diversity', ref='cogid')
             print('Wordlist diversity: {0:.2f}'.format(
                 wl.diversity))
-

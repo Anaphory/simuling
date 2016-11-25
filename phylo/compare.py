@@ -34,7 +34,7 @@ parser = argparse.ArgumentParser(
     to average the quality of UPGMA trees over word list samples with
     various list sizes, each generated from the same simulated
     language phylogeny.
-    
+
     """)
 parser.add_argument("wordlists", nargs="+", help="Lingpy wordlist tsv file")
 parser.add_argument(

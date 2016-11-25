@@ -1,2 +1,6 @@
 .cache/
 simuling.egg-info/
+
+# Simulation outputs
+*.tre
+*.tsv

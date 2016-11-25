@@ -5,12 +5,19 @@ from .phylo import Phylogeny
 from .helpers import semantic_width
 
 
+def basic_vocabulary_sampler_of_size(n):
+    n = int(n)
+    return ("b{:d}".format(n),
+            lambda language: language.basic_vocabulary(range(n)))
+
+
 def run(times=100, signs=1000, fields=50,
         taxa=list('abcdefghijklmnopqrst'.upper()),
         change_range=20000,
         change_min=15000,
         wordlist_filename=None,
-        basic_list=list(range(200)),
+        tree_filename=None,
+        samplers=[basic_vocabulary_sampler_of_size(200)],
         p_lose=0.5,
         p_gain=0.4,
         p_new=0.1):
@@ -26,11 +33,10 @@ def run(times=100, signs=1000, fields=50,
         for concept in field:
             related_concepts[concept] = field - {concept}
 
-    dists_nn, dists_upgma, dists_random = [], [], []
     for i in range(times):
         phy = Phylogeny(
             related_concepts,
-            basic=basic_list,
+            basic=[],
             tree=lingpy.basic.tree.Tree(
                 lingpy.basic.tree.random_tree(
                     taxa, branch_lengths=False)),
@@ -44,44 +50,28 @@ def run(times=100, signs=1000, fields=50,
         # "basic" is the number of words we afterwards use to to infer
         # phylogeny with neighbor-joining
 
-        dataframe, columns = phy.collect_word_list()
-        D = {index+1: list(row) for index, row in enumerate(dataframe)}
-        D[0] = columns
-
-        wl = lingpy.basic.Wordlist(D)
-        if wordlist_filename:
-            wl.output("tsv", filename=wordlist_filename+str(i))
-
         print(phy.tree)
-        wl.calculate('diversity', ref='cogid')
-        print('Concepts per cognate sets: {0:.2f}'.format(
-            semantic_width(wl, 'ipa')))
+        if tree_filename:
+            with open("{:}-{:d}.tre".format(
+                        tree_filename, i), "w") as tree_file:
+                tree_file.write(phy.tree.getNewick())
+        for sampler_name, sampler in samplers:
+            dataframe, columns = phy.collect_word_list(sampler)
+            D = {index+1: list(row) for index, row in enumerate(dataframe)}
+            print(len(D))
+            D[0] = columns
 
-        # calculate amount of semantic shift
-        wl.calculate('tree', ref='cogid', tree_calc='neighbor')
-        t2 = lingpy.upgma(wl.distances, wl.taxa)
+            wl = lingpy.basic.Wordlist(D)
+            if wordlist_filename:
+                wl.output(
+                    "tsv",
+                    filename="{:}-{:}-{:d}".format(
+                        wordlist_filename,
+                        sampler_name,
+                        i))
 
-        d_nn = phy.tree.get_distance(wl.tree, distance='rf')
-        d_upgma = phy.tree.get_distance(t2, distance='rf')
-        d_random = phy.tree.get_distance(
-            lingpy.basic.tree.Tree(lingpy.basic.tree.random_tree(taxa)),
-            distance='rf')
-        dists_nn += [d_nn]
-        dists_upgma += [d_upgma]
-        dists_random += [d_random]
-
-        adist = sum([sum(x) for x in wl.distances]) / (len(wl.distances) ** 2)
-        print(
-            "[i] Generated tree {}.".format(i),
-            "The reconstructed trees have rf-distances",
-            "{:.2f} (NN: {:})".format(d_nn, wl.tree),
-            "{:.2f} (UPGMA: {:})".format(d_upgma, t2),
-            "{:.2f} (random)".format(d_random),
-            "to the original tree (adist: {:.2f}, "
-            "counterparts: {:d}, diversity: {:.2f}).".format(
-                adist, len(dataframe), wl.diversity),
-            sep="\n    ")
-    print('Average distances to true tree:')
-    print('Neighbor: {0:.2f}'.format(sum(dists_nn) / len(dists_nn)))
-    print('UGPMA:    {0:.2f}'.format(sum(dists_upgma) / len(dists_upgma)))
-    print('Random:   {0:.2f}'.format(sum(dists_random) / len(dists_random)))
+            print('Concepts per cognate sets: {0:.2f}'.format(
+                semantic_width(wl, 'ipa')))
+            wl.calculate('diversity', ref='cogid')
+            print('Wordlist diversity: {0:.2f}'.format(
+                wl.diversity))

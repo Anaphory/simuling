@@ -86,8 +86,7 @@ class Language(object):
             self._cum_concept_weights.append(cum_weight)
             self._word_meaning_pairs.append((
                 i,
-                self.rng.choice(list(
-                    related_concepts.keys()))))
+                self.rng.choice([x for x in related_concepts])))
 
         assert len(self._cum_concept_weights) == len(self._word_meaning_pairs)
         # None of the words in this language should be cognate with

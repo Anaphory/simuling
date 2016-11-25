@@ -1,6 +1,4 @@
-import random
 import lingpy
-from collections import defaultdict
 from .phylo import Phylogeny
 from .helpers import semantic_width
 
@@ -11,7 +9,19 @@ def basic_vocabulary_sampler_of_size(n):
             lambda language: language.basic_vocabulary(range(n)))
 
 
-def run(times=100, signs=1000, fields=50,
+def basic_vocabulary_sampler_from(string_concepts):
+    concepts = []
+    for entry in concepts:
+        try:
+            concepts.append(int(entry))
+        except ValueError:
+            concepts.append(entry)
+    return ("b{:}{:d}".format(concepts[0], len(concepts)),
+            lambda language: language.basic_vocabulary(concepts))
+
+
+def run(times=100,
+        related_concepts={i: range(2000) for i in range(2000)},
         taxa=list('abcdefghijklmnopqrst'.upper()),
         change_range=20000,
         change_min=15000,
@@ -24,15 +34,6 @@ def run(times=100, signs=1000, fields=50,
     """
     Run one phylo-simulation.
     """
-    # print('[i] analyzing setting {0}'.format(i+1))
-    concept2field = defaultdict(set)
-    for c in range(signs):
-        concept2field[random.randint(0, fields-1)].add(c)
-    related_concepts = {}
-    for field in concept2field.values():
-        for concept in field:
-            related_concepts[concept] = field - {concept}
-
     for i in range(times):
         phy = Phylogeny(
             related_concepts,
@@ -58,7 +59,6 @@ def run(times=100, signs=1000, fields=50,
         for sampler_name, sampler in samplers:
             dataframe, columns = phy.collect_word_list(sampler)
             D = {index+1: list(row) for index, row in enumerate(dataframe)}
-            print(len(D))
             D[0] = columns
 
             wl = lingpy.basic.Wordlist(D)

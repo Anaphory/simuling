@@ -1,7 +1,13 @@
+#!/usr/bin/env python
+
+from collections import defaultdict
 import argparse
+import random
+import networkx
 
 
-from .cli import run, basic_vocabulary_sampler_of_size
+from .cli import (run, basic_vocabulary_sampler_of_size,
+                  basic_vocabulary_sampler_from)
 from .language import Language
 
 
@@ -13,10 +19,13 @@ parser.add_argument(
     help="Number of simulations to run with the same concept graph")
 
 group = parser.add_argument_group("Shared properties of the languages")
-group.add_argument('-s', type=int, default=2000,
+group.add_argument("--concepts", '-s', type=int, default=2000,
                    help="Number of concepts to be simulated")
-group.add_argument('-f', type=int, default=50,
+group.add_argument("--fields", '-f', type=int, default=50,
                    help="Number of semantic fields the concepts show")
+group.add_argument("--semantic-network", type=argparse.FileType('r'),
+                   help="File containing the semantic network to be used (eg. "
+                   "a colexification graph) in GLM format")
 group = parser.add_argument_group("Properties of the phylogenetic simulation")
 group.add_argument("-l", type=str, nargs="+", default=list("ABCDEFGHIJKLMN"),
                    help="Taxon names")
@@ -45,6 +54,11 @@ group.add_argument(
     action='append', dest='sampler',
     help="Add a basic wordlist sampler for vocabulary size B")
 group.add_argument(
+    "--basic-concepts", type=basic_vocabulary_sampler_from,
+    action='append', dest='sampler', nargs='+',
+    help="Add a basic wordlist sampler that samples all the arguments given "
+    "after this one")
+group.add_argument(
     '--wordlist', type=str, default="simulation",
     help="Filename to write the word lists to. "
     "'-{sampler:}-{run_number:}.tsv' is appended automatically.")
@@ -54,10 +68,19 @@ args = parser.parse_args()
 if args.sampler is None:
     args.sampler = [basic_vocabulary_sampler_of_size(200)]
 
+if args.semantic_network:
+    related_concepts = networkx.parse_gml(args.semantic_network)
+else:
+    concept2field = defaultdict(set)
+    for c in range(args.concepts):
+        concept2field[random.randint(0, args.fields-1)].add(c)
+    related_concepts = {}
+    for field in concept2field.values():
+        for concept in field:
+            related_concepts[concept] = field - {concept}
 
 run(times=args.t,
-    signs=args.s,
-    fields=args.f,
+    related_concepts=related_concepts,
     taxa=args.l,
     change_range=args.max,
     change_min=args.min,

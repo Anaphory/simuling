@@ -3,20 +3,18 @@ from .phylo import Phylogeny
 from .helpers import semantic_width
 
 
-def basic_vocabulary_sampler_of_size(n):
-    n = int(n)
-    return ("b{:d}".format(n),
-            lambda language: language.basic_vocabulary(range(n)))
-
-
-def basic_vocabulary_sampler_from(string_concepts):
+def basic_vocabulary_sampler(strings):
     concepts = []
-    for entry in concepts:
+    for entry in strings:
         try:
             concepts.append(int(entry))
         except ValueError:
             concepts.append(entry)
-    return ("b{:}{:d}".format(concepts[0], len(concepts)),
+    if type(strings) == range:
+        name = "b{:d}".format(len(strings))
+    else:
+        name = "b{:}{:d}".format(concepts[0], len(concepts))
+    return (name,
             lambda language: language.basic_vocabulary(concepts))
 
 
@@ -27,13 +25,14 @@ def run(times=100,
         change_min=15000,
         wordlist_filename=None,
         tree_filename=None,
-        samplers=[basic_vocabulary_sampler_of_size(200)],
+        samplers=[basic_vocabulary_sampler(range(200))],
         p_lose=0.5,
         p_gain=0.4,
         p_new=0.1):
     """
     Run one phylo-simulation.
     """
+    print(samplers)
     for i in range(times):
         phy = Phylogeny(
             related_concepts,
@@ -59,6 +58,8 @@ def run(times=100,
         for sampler_name, sampler in samplers:
             dataframe, columns = phy.collect_word_list(sampler)
             D = {index+1: list(row) for index, row in enumerate(dataframe)}
+            if not D:
+                continue
             D[0] = columns
 
             wl = lingpy.basic.Wordlist(D)

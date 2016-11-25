@@ -47,6 +47,8 @@ def semantic_width(wordlist, cognate_column="cogid", concept_column="concept"):
                 cogid,
                 set()).add(concept)
 
+    if not concepts_per_cognate:
+        return float('nan')
     return sum(len(x)
                for x in concepts_per_cognate.values())/len(
                        concepts_per_cognate)

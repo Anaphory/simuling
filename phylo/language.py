@@ -8,7 +8,7 @@ This module supplies the functionality of a basic language model.
 """
 
 
-import numpy
+import random
 import bisect
 
 
@@ -30,13 +30,13 @@ class Language(object):
 
     """
 
-    random = numpy.random
+    rng = random.Random()
     """Random number generator to use."""
 
     def __init__(self,
                  related_concepts,
                  initial_max_wt=10,
-                 random=numpy.random):
+                 random=random.Random()):
         """Create a random language.
 
         Given a dictionary mapping concepts to their
@@ -62,7 +62,7 @@ class Language(object):
 
         """
 
-        self.random = random
+        self.rng = random
 
         # The weighted word-concept map is represented by two lists
         # containing the indices *cumulative* weights, because that
@@ -82,11 +82,11 @@ class Language(object):
                        Language.max_word+n_words):
             # Draw a random weight according to `initial_max_wt`. (And
             # immediately add it to the cumulative weight.)
-            cum_weight += self.random.randint(initial_max_wt)+1
+            cum_weight += self.rng.randrange(initial_max_wt)+1
             self._cum_concept_weights.append(cum_weight)
             self._word_meaning_pairs.append((
                 i,
-                self.random.choice(list(
+                self.rng.choice(list(
                     related_concepts.keys()))))
 
         assert len(self._cum_concept_weights) == len(self._word_meaning_pairs)
@@ -95,10 +95,12 @@ class Language(object):
         # new word pointer.
         Language.max_word += n_words
 
+        self._flat = None
+
     def random_edge(self, return_word_meaning_pair=True):
         draw = self._cum_concept_weights
         max = draw[-1]
-        point = self.random.random() * max
+        point = self.rng.random() * max
         index = bisect.bisect(draw, point)
         if return_word_meaning_pair:
             return self._word_meaning_pairs[index]
@@ -116,6 +118,7 @@ class Language(object):
                 if word_ == word}
 
     def loss(self):
+        self._flat = None
         i = self.random_edge(return_word_meaning_pair=False)
         word, concept = self._word_meaning_pairs[i]
         for j in range(i, len(self._cum_concept_weights)):
@@ -127,6 +130,7 @@ class Language(object):
             del self._word_meaning_pairs[i]
 
     def gain(self):
+        self._flat = None
         """Add a meaning to a word
 
         A random word (with probability proportional to ‘use’) gains
@@ -136,7 +140,7 @@ class Language(object):
         """
         word, concept = self.random_edge()
         rc = self.related_concepts[concept]
-        new_concept = list(rc)[self.random.randint(len(rc))]
+        new_concept = list(rc)[self.rng.randrange(len(rc))]
         try:
             i = self._word_meaning_pairs.index((word, new_concept))
             for j in range(i, len(self._cum_concept_weights)):
@@ -148,9 +152,10 @@ class Language(object):
                 word, new_concept))
 
     def new_word(self):
+        self._flat = None
         """A random concept gains an entirely new word"""
         rc = self.related_concepts
-        new_concept = list(rc)[self.random.randint(len(rc))]
+        new_concept = list(rc)[self.rng.randrange(len(rc))]
         self._cum_concept_weights.append(
             self._cum_concept_weights[-1] + 1)
         self._word_meaning_pairs.append(
@@ -159,12 +164,14 @@ class Language(object):
         Language.max_word += 1
 
     def flat_frequencies(self):
-        return {
-            (word, meaning): (frequency - prev_frequency)
-            for (word, meaning), frequency, prev_frequency in zip(
-                    self._word_meaning_pairs,
-                    self._cum_concept_weights,
-                    [0] + self._cum_concept_weights)}
+        if not self._flat:
+            self._flat = {
+                (word, meaning): (frequency - prev_frequency)
+                for (word, meaning), frequency, prev_frequency in zip(
+                        self._word_meaning_pairs,
+                        self._cum_concept_weights,
+                        [0] + self._cum_concept_weights)}
+        return self._flat
 
     def basic_vocabulary(self, basic, threshold=3):
         weights = self.flat_frequencies()
@@ -216,11 +223,11 @@ class Language(object):
                p_lose=0.5,
                p_gain=0.4,
                p_new=0.1):
-        if self.random.random() < p_lose:
+        if self.rng.random() < p_lose:
             self.loss()
-        if self.random.random() < p_gain:
+        if self.rng.random() < p_gain:
             self.gain()
-        if self.random.random() < p_new:
+        if self.rng.random() < p_new:
             self.new_word()
 
     def clone(self):

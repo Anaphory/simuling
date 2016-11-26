@@ -9,6 +9,7 @@ import lingpy
 
 
 from .phylo import Phylogeny
+from .language import Language
 
 
 parser = argparse.ArgumentParser(description=""" Run a very simple forward-time
@@ -35,9 +36,11 @@ group.add_argument('--p-gain', type=float, default=0.4,
 group.add_argument('--p-new', type=float, default=0.1,
                    help="Probability, per time step, that a new word arises")
 group.add_argument(
-    '--wordlist', type=str, default="simulation",
-    help="Filename to write the word lists to. '"
-    "-{run_number:}.tsv' is appended automatically.")
+    '--wordlist', type=str, default="{tree}-{i}.tsv",
+    help="""Filename to write the word lists to.  You can use the placeholders
+    {tree} to get the corresponding tree file base name (without
+    `.tsv`), and {i} for the number of the simulation (starting at `0`
+    for the first simulation).""")
 
 
 args = parser.parse_args()
@@ -71,18 +74,13 @@ for i, tree_file in enumerate(args.trees):
     # "basic" is the number of words we afterwards use to to infer
     # phylogeny with neighbor-joining
 
-    for sampler_name, sampler in args.samplers:
-        dataframe, columns = phy.collect_word_list(sampler)
-        if sampler_name:
-            filename = "{:}-{:}-{:d}.tsv".format(
-                args.wordlist_filename,
-                sampler_name,
-                i)
-        else:
-            filename = "{:}-{:d}.tsv".format(
-                args.wordlist_filename,
-                i)
-        with open(filename, "w") as wordlist_file:
-            writer = csv.writer(wordlist_file, 'excel-tab')
-            writer.writerow(columns)
-            writer.writerows(dataframe)
+    dataframe, columns = phy.collect_word_list(Language.vocabulary)
+    filename = args.wordlist.format(
+        tree=tree_file.name[:-4]
+        if tree_file.name.endswith(".tre")
+        else tree_file,
+        i=i)
+    with open(filename, "w") as wordlist_file:
+        writer = csv.writer(wordlist_file, 'excel-tab')
+        writer.writerow(columns)
+        writer.writerows(dataframe)

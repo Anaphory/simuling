@@ -1,3 +1,4 @@
+import csv
 import lingpy
 from .phylo import Phylogeny
 from .helpers import semantic_width
@@ -32,7 +33,6 @@ def run(times=100,
     """
     Run one phylo-simulation.
     """
-    print(samplers)
     for i in range(times):
         phy = Phylogeny(
             related_concepts,
@@ -57,22 +57,16 @@ def run(times=100,
                 tree_file.write(phy.tree.getNewick())
         for sampler_name, sampler in samplers:
             dataframe, columns = phy.collect_word_list(sampler)
-            D = {index+1: list(row) for index, row in enumerate(dataframe)}
-            if not D:
-                continue
-            D[0] = columns
-
-            wl = lingpy.basic.Wordlist(D)
-            if wordlist_filename:
-                wl.output(
-                    "tsv",
-                    filename="{:}-{:}-{:d}".format(
-                        wordlist_filename,
-                        sampler_name,
-                        i))
-
-            print('Concepts per cognate sets: {0:.2f}'.format(
-                semantic_width(wl, 'ipa')))
-            wl.calculate('diversity', ref='cogid')
-            print('Wordlist diversity: {0:.2f}'.format(
-                wl.diversity))
+            if sampler_name:
+                filename="{:}-{:}-{:d}.tsv".format(
+                    wordlist_filename,
+                    sampler_name,
+                    i)
+            else:
+                filename="{:}-{:d}.tsv".format(
+                    wordlist_filename,
+                    i)
+            with open(filename, "w") as wordlist_file:
+                writer = csv.writer(wordlist_file, 'excel-tab')
+                writer.writerow(columns)
+                writer.writerows(dataframe)

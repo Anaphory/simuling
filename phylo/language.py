@@ -196,7 +196,7 @@ class Language(object):
                     break
                 if weight < weightsum/(i+0.5):
                     break
-                yield concept, word
+                yield (concept, word, weight)
                 weightsum += weight
 
     def all_reflexes(self, threshold=0):
@@ -216,7 +216,17 @@ class Language(object):
             if weight > old_weight:
                 words[word] = (meaning, weight)
         for word, (meaning, weight) in words.items():
-            yield (meaning, word)
+            yield (meaning, word, weight)
+
+    def vocabulary(self):
+        """Sequence of all forms/meaning-pairs in the language
+
+        Language.vocabulary is one possible value for the `method`
+        argument of `Phylogeny.collect_wordlist`.
+
+        """
+        for (word, meaning), weight in self.flat_frequencies().items():
+            yield (word, meaning, weight)
 
     def change(self,
                p_lose=0.5,

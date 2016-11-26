@@ -43,38 +43,39 @@ group.add_argument('--p-new', type=float, default=0.1,
 group.add_argument("--tree", default="simulation",
                    help="Filename to write the tree to. "
                    "'-{run_number:}.tre is appended automatically.")
-group = parser.add_argument_group("Wordlist sampling")
-group.add_argument(
-    "-b", "--sample-basic-wordlist-size",
-    type=lambda x: range(int(x)),
-    action='append', dest='basic_concepts',
-    help="Add a basic wordlist sampler for vocabulary size B")
-group.add_argument(
-    "--basic-concepts",
-    action='append', nargs='+',
-    help="Add a basic wordlist sampler that samples all the arguments given "
-    "after this one", default=[])
-group.add_argument(
-    "--sample-all-roots", "-r",
-    action='append_const', const=("r", Language.all_reflexes))
+#~ group = parser.add_argument_group("Wordlist sampling")
+#~ group.add_argument(
+#~     "-b", "--sample-basic-wordlist-size",
+#~     type=lambda x: range(int(x)),
+#~     action='append', dest='basic_concepts',
+#~     help="Add a basic wordlist sampler for vocabulary size B")
+#~ group.add_argument(
+#~     "--basic-concepts",
+#~     action='append', nargs='+',
+#~     help="Add a basic wordlist sampler that samples all the arguments given "
+#~     "after this one", default=[])
+#~ group.add_argument(
+#~     "--sample-all-roots", "-r",
+#~    action='append_const', const=("r", Language.all_reflexes))
 group.add_argument(
     '--wordlist', type=str, default="simulation",
-    help="Filename to write the word lists to. "
-    "'-{sampler:}-{run_number:}.tsv' is appended automatically.")
+    help="Filename to write the word lists to. '"
+#~    "-{sampler:}"
+    "-{run_number:}.tsv' is appended automatically.")
 
 
 args = parser.parse_args()
-sampler = []
-if args.basic_concepts is None:
-    if not args.sample_all_roots:
-        sampler = [basic_vocabulary_sampler(range(200))]
-else:
-    for basic_vocabulary in args.basic_concepts:
-        sampler.append(basic_vocabulary_sampler(basic_vocabulary))
-
-
-if args.sample_all_roots:
-    sampler.append(("r", Language.all_reflexes))
+#~ sampler = []
+#~ if args.basic_concepts is None:
+#~     if not args.sample_all_roots:
+#~         sampler = [basic_vocabulary_sampler(range(200))]
+#~ else:
+#~     for basic_vocabulary in args.basic_concepts:
+#~         sampler.append(basic_vocabulary_sampler(basic_vocabulary))
+#~ 
+#~ 
+#~ if args.sample_all_roots:
+#~    sampler.append(("r", Language.all_reflexes))
 
 
 if args.semantic_network:
@@ -95,4 +96,4 @@ run(times=args.t,
     change_min=args.min,
     wordlist_filename=args.wordlist,
     tree_filename=args.tree,
-    samplers=sampler)
+    samplers=[("", Language.vocabulary)])

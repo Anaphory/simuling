@@ -44,7 +44,7 @@ group.add_argument(
     '--wordlist', type=str, default="{tree}-{i}.tsv",
     help="""Filename to write the word lists to.  You can use the placeholders
     {tree} to get the corresponding tree file base name (without
-    `.tsv`), and {i} for the number of the simulation (starting at `0`
+    `.tsv`), and {i} for the number of the simulation (starting at `1`
     for the first simulation).""")
 
 
@@ -62,30 +62,32 @@ else:
         for concept in field:
             related_concepts[concept] = field - {concept}
 
+i = 0
+for tree_file in enumerate(args.trees):
+    for newick in tree_file:
+        i += 1
 
-for i, tree_file in enumerate(args.trees):
-    newick = tree_file.read()
-    phy = Phylogeny(
-        related_concepts,
-        basic=[],
-        tree=lingpy.basic.tree.Tree(newick),
-        scale=args.scale)
+        phy = Phylogeny(
+            related_concepts,
+            basic=[],
+            tree=lingpy.basic.tree.Tree(newick),
+            scale=args.scale)
 
-    phy.simulate(
-        p_lose=args.p_lose,
-        p_gain=args.p_gain,
-        p_new=args.p_new)
+        phy.simulate(
+            p_lose=args.p_lose,
+            p_gain=args.p_gain,
+            p_new=args.p_new)
 
-    # "basic" is the number of words we afterwards use to to infer
-    # phylogeny with neighbor-joining
+        # "basic" is the number of words we afterwards use to to infer
+        # phylogeny with neighbor-joining
 
-    dataframe, columns = phy.collect_word_list(Language.vocabulary)
-    filename = args.wordlist.format(
-        tree=tree_file.name[:-4]
-        if tree_file.name.endswith(".tre")
-        else tree_file,
-        i=i)
-    with open(filename, "w") as wordlist_file:
-        writer = csv.writer(wordlist_file, 'excel-tab')
-        writer.writerow(columns)
-        writer.writerows(dataframe)
+        dataframe, columns = phy.collect_word_list(Language.vocabulary)
+        filename = args.wordlist.format(
+            tree=tree_file.name[:-4]
+            if tree_file.name.endswith(".tre")
+            else tree_file,
+            i=i)
+        with open(filename, "w") as wordlist_file:
+            writer = csv.writer(wordlist_file, 'excel-tab')
+            writer.writerow(columns)
+            writer.writerows(dataframe)

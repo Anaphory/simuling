@@ -30,23 +30,23 @@ class Phylogeny(object):
                  p_lose=0.5,
                  p_gain=0.4,
                  p_new=0.1):
-        for i, node in enumerate(self.tree.preorder()):
-            if node.Name == 'root':
-                self.tracer[node.Name] = {
+        for i, node in enumerate(self.tree.walk('preorder')):
+            if node.ancestor is None:
+                self.tracer[node.name] = {
                     'language': self.root,
                     'distance': 0}
             else:
                 new_language = self.tracer[
-                    node.Parent.Name]['language'].clone()
+                    node.ancestor.name]['language'].clone()
                 distance = int(
-                    (node.Length or 1) * self.scale)
+                    (node.length or 1) * self.scale)
                 if verbose:
                     print('... analyzing node {0} ({1})'.format(
-                        node.Name, distance))
+                        node.name, distance))
 
                 for _ in range(distance):
                     new_language.change(p_lose, p_gain, p_new)
-                self.tracer[node.Name] = {
+                self.tracer[node.name] = {
                     'language': new_language,
                     'distance': distance}
 
@@ -80,14 +80,14 @@ class Phylogeny(object):
         concept_cogid_pairs = {}
 
         i = 0
-        for _, node in enumerate(self.tree.preorder()):
-            if not collect_tips_only or node.istip():
-                language = self.tracer[node.Name]['language']
+        for _, node in enumerate(self.tree.walk('preorder')):
+            if not collect_tips_only or node.is_leaf:
+                language = self.tracer[node.name]['language']
                 for concept, word, weight in method(language):
                     i += 1
                     word_list.append((
                         i,
-                        node.Name,
+                        node.name,
                         concept,
                         "",  # This would be the IPA string or
                              # something like that.

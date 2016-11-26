@@ -10,7 +10,8 @@ if __name__ == "__main__":
     parser.add_argument(
         '-t', type=int, default=100,
         help="Number of trees to generate")
-    parser.add_argument("--taxa", "--languages", "-l", type=str, nargs="+", default=list("ABCDEFGHIJKLMN"),
+    parser.add_argument("--taxa", "--languages", "-l", type=str,
+                        nargs="+", default=list("ABCDEFGHIJKLMN"),
                         help="Taxon names")
     parser.add_argument('--max', type=int, default=11000,
                         help="Minimum number of change events along a branch")

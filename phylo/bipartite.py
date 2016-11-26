@@ -2,6 +2,7 @@ from collections import Counter
 
 
 class Bipartite():
+
     def __init__(self, forwards, backwards=None):
         self.forwards = forwards
         if backwards is None:
@@ -60,6 +61,7 @@ class Bipartite():
 
 
 class MultiBipartite(Bipartite):
+
     def __init__(self, forwards, backwards=None):
         self.forwards = forwards
         if backwards is None:

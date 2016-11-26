@@ -73,19 +73,26 @@ class Phylogeny(object):
             def method(language):
                 return Language.basic_vocabulary(language, self.basic)
 
-        columns = ('doculect', 'concept', 'ipa', 'cogid')
+        columns = ("ID", "Language_ID", "Feature_ID", "Value",
+                   "Weight", "Global_CogID", "Concept_CogID")
         word_list = []
         concept_cogid_pairs = {}
 
-        for i, node in enumerate(self.tree.preorder()):
+        i = 0
+        for _, node in enumerate(self.tree.preorder()):
             if not collect_tips_only or node.istip():
                 language = self.tracer[node.Name]['language']
-                for concept, word in method(language):
+                for concept, word, weight in method(language):
+                    i += 1
                     word_list.append((
+                        i,
                         node.Name,
                         concept,
+                        "",  # This would be the IPA string or
+                             # something like that.
+                        weight,
                         word,
                         concept_cogid_pairs.setdefault(
                             (concept, word),
-                            len(concept_cogid_pairs))))
+                            len(concept_cogid_pairs) + 1)))
         return word_list, columns

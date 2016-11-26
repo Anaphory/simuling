@@ -79,15 +79,14 @@ class Language(object):
 
         n_words = len(related_concepts)
         for i in range(Language.max_word,
-                       Language.max_word+n_words):
+                       Language.max_word + n_words):
             # Draw a random weight according to `initial_max_wt`. (And
             # immediately add it to the cumulative weight.)
-            cum_weight += self.rng.randrange(initial_max_wt)+1
+            cum_weight += self.rng.randrange(initial_max_wt) + 1
             self._cum_concept_weights.append(cum_weight)
             self._word_meaning_pairs.append((
                 i,
-                self.rng.choice(list(
-                    related_concepts.keys()))))
+                self.rng.choice([x for x in related_concepts])))
 
         assert len(self._cum_concept_weights) == len(self._word_meaning_pairs)
         # None of the words in this language should be cognate with
@@ -125,7 +124,7 @@ class Language(object):
             self._cum_concept_weights[j] -= 1
         new_val = self._cum_concept_weights[i]
         if (new_val == 0 or
-                new_val == self._cum_concept_weights[i-1]):
+                new_val == self._cum_concept_weights[i - 1]):
             del self._cum_concept_weights[i]
             del self._word_meaning_pairs[i]
 
@@ -168,9 +167,9 @@ class Language(object):
             self._flat = {
                 (word, meaning): (frequency - prev_frequency)
                 for (word, meaning), frequency, prev_frequency in zip(
-                        self._word_meaning_pairs,
-                        self._cum_concept_weights,
-                        [0] + self._cum_concept_weights)}
+                    self._word_meaning_pairs,
+                    self._cum_concept_weights,
+                    [0] + self._cum_concept_weights)}
         return self._flat
 
     def basic_vocabulary(self, basic, threshold=3):
@@ -195,9 +194,9 @@ class Language(object):
                     reversed(best_word_weights))):
                 if i >= threshold:
                     break
-                if weight < weightsum/(i+0.5):
+                if weight < weightsum / (i + 0.5):
                     break
-                yield concept, word
+                yield (concept, word, weight)
                 weightsum += weight
 
     def all_reflexes(self, threshold=0):
@@ -217,7 +216,17 @@ class Language(object):
             if weight > old_weight:
                 words[word] = (meaning, weight)
         for word, (meaning, weight) in words.items():
-            yield (meaning, word)
+            yield (meaning, word, weight)
+
+    def vocabulary(self):
+        """Sequence of all forms/meaning-pairs in the language
+
+        Language.vocabulary is one possible value for the `method`
+        argument of `Phylogeny.collect_wordlist`.
+
+        """
+        for (word, meaning), weight in self.flat_frequencies().items():
+            yield (word, meaning, weight)
 
     def change(self,
                p_lose=0.5,

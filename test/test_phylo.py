@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import networkx
+
 import pytest
 
 from phylo.phylo import Language
@@ -12,12 +14,24 @@ def language():
                      "c": ["b"]})
 
 
+@pytest.fixture
 def specific_language():
     l = Language({})
     l._cum_concept_weights = [1, 2]
     l._word_meaning_pairs = [(0, "a"),
                              (1, "a")]
     l.related_concepts = {"a": ["b"], "b": ["b"]}
+    return l
+
+
+@pytest.fixture
+def specific_language():
+    l = Language({})
+    l._cum_concept_weights = [1, 2]
+    l._word_meaning_pairs = [(0, "a"),
+                             (1, "a")]
+    l.related_concepts = networkx.Graph()
+    l.related_concepts.add_edges_from([("a", "b"), ("b", "b")])
     return l
 
 

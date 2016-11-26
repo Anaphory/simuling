@@ -26,9 +26,9 @@ group.add_argument("--semantic-network", type=argparse.FileType('r'),
                    "a colexification graph) in GLM format")
 group = parser.add_argument_group("Properties of the phylogenetic simulation")
 group.add_argument("trees", type=argparse.FileType("r"), nargs="+",
-                   help="""Files containing Newick trees to be simulated. You can specify the
-                   same tree file multiple times to obtain multiple
-                   simulations.""")
+                   help="""Files containing Newick trees (one tree per line) to be
+                   simulated. You can specify the same tree file
+                   multiple times to obtain multiple simulations.""")
 group.add_argument("--scale", type=float, default=1,
                    help="""Scaling factor of the tree, or equivalently the number of change
                    events per unit of branchlength.""")

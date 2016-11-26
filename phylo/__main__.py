@@ -3,11 +3,12 @@
 from collections import defaultdict
 import argparse
 import random
+import csv
 import networkx
+import lingpy
 
 
-from .cli import (run, basic_vocabulary_sampler)
-from .language import Language
+from .phylo import Phylogeny
 
 
 parser = argparse.ArgumentParser(description=""" Run a very simple forward-time
@@ -53,7 +54,35 @@ else:
         for concept in field:
             related_concepts[concept] = field - {concept}
 
-run(related_concepts=related_concepts,
-    wordlist_filename=args.wordlist,
-    tree_filename=args.trees,
-    samplers=[("", Language.vocabulary)])
+
+for i, tree_file in enumerate(args.trees):
+    newick = tree_file.read()
+    phy = Phylogeny(
+        related_concepts,
+        basic=[],
+        tree=lingpy.basic.tree.Tree(newick),
+        change_range=(9000, 11000))
+
+    phy.simulate(
+        p_lose=args.p_lose,
+        p_gain=args.p_gain,
+        p_new=args.p_new)
+
+    # "basic" is the number of words we afterwards use to to infer
+    # phylogeny with neighbor-joining
+
+    for sampler_name, sampler in args.samplers:
+        dataframe, columns = phy.collect_word_list(sampler)
+        if sampler_name:
+            filename = "{:}-{:}-{:d}.tsv".format(
+                args.wordlist_filename,
+                sampler_name,
+                i)
+        else:
+            filename = "{:}-{:d}.tsv".format(
+                args.wordlist_filename,
+                i)
+        with open(filename, "w") as wordlist_file:
+            writer = csv.writer(wordlist_file, 'excel-tab')
+            writer.writerow(columns)
+            writer.writerows(dataframe)

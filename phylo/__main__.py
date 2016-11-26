@@ -13,9 +13,6 @@ from .language import Language
 parser = argparse.ArgumentParser(description=""" Run a very simple forward-time
 phylogenetic simulation of cognate class evolution in a language
 family.""")
-parser.add_argument(
-    '-t', type=int, default=100,
-    help="Number of simulations to run with the same concept graph")
 
 group = parser.add_argument_group("Shared properties of the languages")
 group.add_argument("--concepts", '-s', type=int, default=2000,
@@ -26,12 +23,8 @@ group.add_argument("--semantic-network", type=argparse.FileType('r'),
                    help="File containing the semantic network to be used (eg. "
                    "a colexification graph) in GLM format")
 group = parser.add_argument_group("Properties of the phylogenetic simulation")
-group.add_argument("-l", type=str, nargs="+", default=list("ABCDEFGHIJKLMN"),
-                   help="Taxon names")
-group.add_argument('--max', type=int, default=11000,
-                   help="Minimum number of change events along a branch")
-group.add_argument('--min', type=int, default=9000,
-                   help="Maximum number of change events along a branch")
+group.add_argument("trees", type=argparse.FileType("r"), nargs="+",
+                   help="Files containing Newick trees to be simulated. You can specify the same tree file multiple times to obtain multiple simulations.")
 group.add_argument('--p-lose', type=float, default=0.5,
                    help="Probability, per time step, that a word becomes "
                    "less likely for a meaning")
@@ -40,9 +33,6 @@ group.add_argument('--p-gain', type=float, default=0.4,
                    "related meaning")
 group.add_argument('--p-new', type=float, default=0.1,
                    help="Probability, per time step, that a new word arises")
-group.add_argument("--tree", default="simulation",
-                   help="Filename to write the tree to. "
-                   "'-{run_number:}.tre is appended automatically.")
 group.add_argument(
     '--wordlist', type=str, default="simulation",
     help="Filename to write the word lists to. '"
@@ -63,11 +53,7 @@ else:
         for concept in field:
             related_concepts[concept] = field - {concept}
 
-run(times=args.t,
-    related_concepts=related_concepts,
-    taxa=args.l,
-    change_range=args.max,
-    change_min=args.min,
+run(related_concepts=related_concepts,
     wordlist_filename=args.wordlist,
-    tree_filename=args.tree,
+    tree_filename=args.trees,
     samplers=[("", Language.vocabulary)])

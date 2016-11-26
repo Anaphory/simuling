@@ -33,13 +33,11 @@ def run(times=100,
     """
     Run one phylo-simulation.
     """
-    for i in range(times):
+    if False:
         phy = Phylogeny(
             related_concepts,
             basic=[],
-            tree=lingpy.basic.tree.Tree(
-                lingpy.basic.tree.random_tree(
-                    taxa, branch_lengths=False)),
+            tree=lingpy.basic.tree.Tree(newick),
             change_range=(change_min, change_range))
 
         phy.simulate(
@@ -50,11 +48,6 @@ def run(times=100,
         # "basic" is the number of words we afterwards use to to infer
         # phylogeny with neighbor-joining
 
-        print(phy.tree)
-        if tree_filename:
-            with open("{:}-{:d}.tre".format(
-                    tree_filename, i), "w") as tree_file:
-                tree_file.write(phy.tree.getNewick())
         for sampler_name, sampler in samplers:
             dataframe, columns = phy.collect_word_list(sampler)
             if sampler_name:

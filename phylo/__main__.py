@@ -26,7 +26,12 @@ group.add_argument("--semantic-network", type=argparse.FileType('r'),
                    "a colexification graph) in GLM format")
 group = parser.add_argument_group("Properties of the phylogenetic simulation")
 group.add_argument("trees", type=argparse.FileType("r"), nargs="+",
-                   help="Files containing Newick trees to be simulated. You can specify the same tree file multiple times to obtain multiple simulations.")
+                   help="""Files containing Newick trees to be simulated. You can specify the
+                   same tree file multiple times to obtain multiple
+                   simulations.""")
+group.add_argument("--scale", type=float, default=1,
+                   help="""Scaling factor of the tree, or equivalently the number of change
+                   events per unit of branchlength.""")
 group.add_argument('--p-lose', type=float, default=0.5,
                    help="Probability, per time step, that a word becomes "
                    "less likely for a meaning")
@@ -64,7 +69,7 @@ for i, tree_file in enumerate(args.trees):
         related_concepts,
         basic=[],
         tree=lingpy.basic.tree.Tree(newick),
-        change_range=(9000, 11000))
+        scale=args.scale)
 
     phy.simulate(
         p_lose=args.p_lose,

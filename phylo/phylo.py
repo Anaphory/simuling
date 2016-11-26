@@ -11,7 +11,7 @@ class Phylogeny(object):
             tree,
             root=None,
             basic=range(100),
-            change_range=(500, 1000),
+            scale=1000,
             initial_max_wt=10):
         self.related_concepts = related_concepts
         self.tree = tree
@@ -21,7 +21,7 @@ class Phylogeny(object):
                 self.related_concepts, initial_max_wt)
         else:
             self.root = root
-        self.scale = change_range[1]
+        self.scale = scale
         self.basic = basic
         self.tracer = {}
 
@@ -38,7 +38,8 @@ class Phylogeny(object):
             else:
                 new_language = self.tracer[
                     node.Parent.Name]['language'].clone()
-                distance = (node.Length or 1) * self.scale
+                distance = int(
+                    (node.Length or 1) * self.scale)
                 if verbose:
                     print('... analyzing node {0} ({1})'.format(
                         node.Name, distance))

@@ -12,7 +12,7 @@ setup(
     packages=["simuling", "phylo"],
     entry_points={
         'console_scripts': ['phylo=phylo.__main__'],
-        },
+    },
     install_requires=[
         "networkx",
         "lingpy",
@@ -22,4 +22,4 @@ setup(
         "pytest-pep8",
         "sumatra",
         "gitpython",
-        ])
+    ])

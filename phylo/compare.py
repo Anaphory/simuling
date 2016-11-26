@@ -81,4 +81,4 @@ for wordlist, real_tree in zip(args.wordlists, itertools.cycle(real_tree)):
 
 if args.real_tree:
     print("Average distance to real tree: {:.3f}".format(
-        sum(distances)/len(distances)))
+        sum(distances) / len(distances)))

@@ -83,15 +83,16 @@ class Phylogeny(object):
             if not collect_tips_only or node.istip():
                 language = self.tracer[node.Name]['language']
                 for concept, word, weight in method(language):
+                    i += 1
                     word_list.append((
                         i,
                         node.Name,
                         concept,
-                        "", # This would be the IPA string or
-                            # something like that.
+                        "",  # This would be the IPA string or
+                             # something like that.
                         weight,
                         word,
                         concept_cogid_pairs.setdefault(
                             (concept, word),
-                            len(concept_cogid_pairs))))
+                            len(concept_cogid_pairs) + 1)))
         return word_list, columns

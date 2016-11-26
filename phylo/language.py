@@ -79,10 +79,10 @@ class Language(object):
 
         n_words = len(related_concepts)
         for i in range(Language.max_word,
-                       Language.max_word+n_words):
+                       Language.max_word + n_words):
             # Draw a random weight according to `initial_max_wt`. (And
             # immediately add it to the cumulative weight.)
-            cum_weight += self.rng.randrange(initial_max_wt)+1
+            cum_weight += self.rng.randrange(initial_max_wt) + 1
             self._cum_concept_weights.append(cum_weight)
             self._word_meaning_pairs.append((
                 i,
@@ -124,7 +124,7 @@ class Language(object):
             self._cum_concept_weights[j] -= 1
         new_val = self._cum_concept_weights[i]
         if (new_val == 0 or
-                new_val == self._cum_concept_weights[i-1]):
+                new_val == self._cum_concept_weights[i - 1]):
             del self._cum_concept_weights[i]
             del self._word_meaning_pairs[i]
 
@@ -167,9 +167,9 @@ class Language(object):
             self._flat = {
                 (word, meaning): (frequency - prev_frequency)
                 for (word, meaning), frequency, prev_frequency in zip(
-                        self._word_meaning_pairs,
-                        self._cum_concept_weights,
-                        [0] + self._cum_concept_weights)}
+                    self._word_meaning_pairs,
+                    self._cum_concept_weights,
+                    [0] + self._cum_concept_weights)}
         return self._flat
 
     def basic_vocabulary(self, basic, threshold=3):
@@ -194,7 +194,7 @@ class Language(object):
                     reversed(best_word_weights))):
                 if i >= threshold:
                     break
-                if weight < weightsum/(i+0.5):
+                if weight < weightsum / (i + 0.5):
                     break
                 yield (concept, word, weight)
                 weightsum += weight

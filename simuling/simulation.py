@@ -14,6 +14,7 @@ class LanguageForwardSimulation (object):
     A LanguageForwardSimulation represents a forward-time stochastic
     simulation of an evolving population of speakers.
     """
+
     def __init__(self,
                  population_graph, critical_period,
                  p_context=0.5, seed=0, logfile=None):

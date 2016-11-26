@@ -12,7 +12,7 @@ def weighted_choice(frequencies, weight=lambda v: v['weight']):
                    for m, v in frequencies.items()
                    if weight(v) > 0]
     x = bisect.bisect(weights,
-                      numpy.random.random()*weights[-1])
+                      numpy.random.random() * weights[-1])
     return frequencies[x]
 
 

@@ -53,17 +53,17 @@ def run(times=100,
         print(phy.tree)
         if tree_filename:
             with open("{:}-{:d}.tre".format(
-                        tree_filename, i), "w") as tree_file:
+                    tree_filename, i), "w") as tree_file:
                 tree_file.write(phy.tree.getNewick())
         for sampler_name, sampler in samplers:
             dataframe, columns = phy.collect_word_list(sampler)
             if sampler_name:
-                filename="{:}-{:}-{:d}.tsv".format(
+                filename = "{:}-{:}-{:d}.tsv".format(
                     wordlist_filename,
                     sampler_name,
                     i)
             else:
-                filename="{:}-{:d}.tsv".format(
+                filename = "{:}-{:d}.tsv".format(
                     wordlist_filename,
                     i)
             with open(filename, "w") as wordlist_file:

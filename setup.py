@@ -22,4 +22,5 @@ setup(
         "pytest-pep8",
         "sumatra",
         "gitpython",
+        "newick",
     ])

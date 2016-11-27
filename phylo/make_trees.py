@@ -1,7 +1,36 @@
 #!/usr/bin/env python
 
 import argparse
-import lingpy
+import newick
+import random
+
+
+def random_tree(taxa, branch_length=lambda: random.random()):
+    """Generate a random tree typology
+
+    This is a re-implementation of the random tree generator from
+    lingpy.
+
+    """
+    taxa_list = [t for t in taxa]
+    random.shuffle(taxa_list)
+
+    clades = []
+    for taxon in taxa_list:
+        clades.append(
+            newick.Node(str(taxon),
+                        length=str(branch_length())))
+    while len(clades) > 1:
+        ulti_elem = clades.pop()
+        penulti_elem = clades.pop()
+        clades.insert(
+            0,
+            newick.Node.create(
+                length=str(branch_length()),
+                descendants=[ulti_elem, penulti_elem]))
+        random.shuffle(clades)
+    return clades[0]
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="""Generate random trees
@@ -25,12 +54,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     for i in range(args.t):
-        tree = lingpy.basic.tree.random_tree(
-            args.taxa, branch_lengths=False)
+        tree = random_tree(
+            args.taxa, branch_length=lambda: 1)
 
         if args.tree_file == "-":
-            print(tree)
+            print(tree.newick)
         else:
             with open("{:}-{:d}.tre".format(
                     args.tree_file, i), "w") as tree_file:
-                tree_file.write(tree)
+                newick.dump(tree, tree_file)

@@ -5,7 +5,7 @@ import argparse
 import random
 import csv
 import networkx
-import lingpy
+import newick
 
 
 from .phylo import Phylogeny
@@ -63,14 +63,14 @@ else:
             related_concepts[concept] = field - {concept}
 
 i = 0
-for tree_file in enumerate(args.trees):
-    for newick in tree_file:
+for _, tree_file in enumerate(args.trees):
+    for tree in newick.load(tree_file):
         i += 1
 
         phy = Phylogeny(
             related_concepts,
             basic=[],
-            tree=lingpy.basic.tree.Tree(newick),
+            tree=tree,
             scale=args.scale)
 
         phy.simulate(

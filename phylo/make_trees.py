@@ -19,7 +19,7 @@ def random_tree(taxa, branch_length=lambda: random.random()):
     for taxon in taxa_list:
         clades.append(
             newick.Node(str(taxon),
-                        length = str(branch_length())))
+                        length=str(branch_length())))
     while len(clades) > 1:
         ulti_elem = clades.pop()
         penulti_elem = clades.pop()
@@ -30,7 +30,6 @@ def random_tree(taxa, branch_length=lambda: random.random()):
                 descendants=[ulti_elem, penulti_elem]))
         random.shuffle(clades)
     return clades[0]
-
 
 
 if __name__ == "__main__":

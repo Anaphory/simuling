@@ -61,7 +61,6 @@ class Language(object):
                 generator to use. Defaults to `numpy.random`.
 
         """
-
         self.rng = random
 
         # The weighted word-concept map is represented by two lists
@@ -97,6 +96,13 @@ class Language(object):
         self._flat = None
 
     def random_edge(self, return_word_meaning_pair=True):
+        """Return a random edge from the language.
+
+        Choose a random word-meaning pair proportional to its weight,
+        and return either it or its index, depending on
+        return_word_meaning_pair.
+
+        """
         draw = self._cum_concept_weights
         max = draw[-1]
         point = self.rng.random() * max
@@ -107,11 +113,13 @@ class Language(object):
             return index
 
     def words_for_concept(self, concept):
+        """Return the set of all words that mean `concept`."""
         return {word
                 for word, meaning in self._word_meaning_pairs
                 if meaning == concept}
 
     def concepts_for_word(self, word):
+        """Return the set of all meanings of word `word`."""
         return {meaning
                 for word_, meaning in self._word_meaning_pairs
                 if word_ == word}
@@ -200,7 +208,7 @@ class Language(object):
                 weightsum += weight
 
     def all_reflexes(self, threshold=0):
-        """Sequence of all reflexes in the language
+        """Sequence of all reflexes in the language.
 
         For each cognate class (i.e. each word) that has any meaning
         with activation above `threshold`, give it and its most
@@ -219,14 +227,14 @@ class Language(object):
             yield (meaning, word, weight)
 
     def vocabulary(self):
-        """Sequence of all forms/meaning-pairs in the language
+        """Sequence of all forms/meaning-pairs in the language.
 
         Language.vocabulary is one possible value for the `method`
         argument of `Phylogeny.collect_wordlist`.
 
         """
         for (word, meaning), weight in self.flat_frequencies().items():
-            yield (word, meaning, weight)
+            yield (meaning, word, weight)
 
     def change(self,
                p_lose=0.5,
@@ -240,6 +248,13 @@ class Language(object):
             self.new_word()
 
     def clone(self):
+        """Copy the object and its vocabulary.
+
+        Generate a copy of this Language, with independent vocabulary,
+        so that the language and its clone can be evolved
+        differently.
+
+        """
         l = Language({})
         l._cum_concept_weights = self._cum_concept_weights[:]
         l._word_meaning_pairs = self._word_meaning_pairs[:]

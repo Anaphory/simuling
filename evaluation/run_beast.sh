@@ -1,15 +1,20 @@
 #!/bin/sh
 
+program=`which ${0}`
+directory=`dirname ${program}`
+beastlingini="${directory}/beastling.ini"
+subsamplepy="${directory}/subsample.py"
+consensuspy="${directory}/consensus.py"
+
 while [ "!" -z $1 ]
 do
-    echo $1
     root=`basename $1 .tsv`
-    mkdir $root
+    echo $root/$root.xml
+    python "${subsamplepy}" --vocabulary "$1" | beastling "${beastlingini}" -o $root/$root.xml
     (
-        echo "ID	Language_ID	Feature_ID	Form	Weight	Global_CogID	Value";
-        tail -n +2 $1
-    ) | sed -e 's/	/,/g'| beastling beastling.ini -o $root/$root.xml
-    cd $root
-    beast $root.xml
+        cd $root
+        beast $root.xml
+        python ${consensuspy} simulation.nex > $root/beast_$root.tre
+    )
     shift
 done

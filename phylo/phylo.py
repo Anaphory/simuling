@@ -1,5 +1,4 @@
-import random
-from .language import Language
+from .naminggame import NamingGameLanguage as Language
 
 
 class Phylogeny(object):

@@ -10,6 +10,8 @@ evolves according to a process inspired by Naming Games.
 
 
 import random
+import bisect
+import copy
 
 
 from .language import Language
@@ -71,7 +73,7 @@ class NamingGameLanguage(Language):
         for i in range(Language.max_word,
                        Language.max_word + n_words):
             weight = self.rng.randrange(initial_max_wt) + 1
-            self.words[self.random_concept()][i] = weight
+            self.words[self.random_concept('degree')][i] = weight
 
         Language.max_word += n_words
 
@@ -95,9 +97,23 @@ class NamingGameLanguage(Language):
     def new_word(self):
         raise NotImplementedError
 
-    def random_concept(self):
-        rc = self.related_concepts
-        return list(rc)[self.rng.randrange(len(rc))]
+    def random_concept(self, weight=None):
+        if weight is None or weight == 'weight':
+            def weight(meaning):
+                return sum(self.words.get(meaning, {}).values()) + 1
+        if weight == 'degree':
+            def weight(meaning):
+                return len(self.related_concepts[meaning])
+
+        weights = []
+        meanings = []
+        c = 0
+        for meaning in self.related_concepts:
+            c += weight(meaning)
+            weights.append(c)
+            meanings.append(meaning)
+        v = self.rng.random() * c
+        return meanings[bisect.bisect(weights, v)]
 
     def loss(self):
         """Remove weight 1 from a random word-meaning pair
@@ -108,9 +124,13 @@ class NamingGameLanguage(Language):
 
         """
         sum_reciprocal_weights = 0
+        zeros = []
         for meaning, words in self.words.items():
             for word, weight in words.items():
-                sum_reciprocal_weights += 1 / weight
+                try:
+                    sum_reciprocal_weights += 1 / weight
+                except ZeroDivisionError:
+                    zeros.append((meaning, word))
         v = self.rng.random() * sum_reciprocal_weights
         for meaning, words in self.words.items():
             for word, weight in words.items():
@@ -124,9 +144,11 @@ class NamingGameLanguage(Language):
             raise RuntimeError("Have the weights changed during iteration?")
         self.words[meaning][word] -= 1
         if self.words[meaning][word] <= 0:
+            zeros.append((meaning, word))
+        for meaning, word in zeros:
             del self.words[meaning][word]
-        if not self.words[meaning]:
-            del self.words[meaning]
+            if not self.words[meaning]:
+                del self.words[meaning]
 
     def naming_game(self):
         word_sets = {}
@@ -137,7 +159,7 @@ class NamingGameLanguage(Language):
                 # draws) ways to do this. They will require
                 # appropriate methods and data structures though.
                 meaning = self.random_concept()
-            words = self.words[meaning].copy()
+            words = copy.deepcopy(self.words[meaning])
             for similar_meaning in self.related_concepts[meaning]:
                 for word, weight in self.words[similar_meaning].items():
                     words.setdefault(word, 0)
@@ -176,6 +198,10 @@ class NamingGameLanguage(Language):
 
         if non_specific_word:
             self.words[non_specific_meaning][non_specific_word] -= 1
+            if self.words[meaning][word] <= 0:
+                del self.words[meaning][word]
+            if not self.words[meaning]:
+                del self.words[meaning]
         else:
             self.loss()
 
@@ -193,12 +219,9 @@ class NamingGameLanguage(Language):
         self.naming_game()
 
     def clone(self):
-        l = NamingGameLanguage(self.related_concepts)
-        # Probably use deepcopy instead
-        l.words = {meaning:
-                   {word: weight
-                    for word, weight in words.items()}
-                   for meaning, words in self.words.items()}
+        l = NamingGameLanguage({})
+        l.related_concepts = self.related_concepts
+        l.words = copy.deepcopy(self.words)
         return l
 
     def __repr__(self):

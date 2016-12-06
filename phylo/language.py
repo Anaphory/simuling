@@ -124,39 +124,78 @@ class Language(object):
                 for word_, meaning in self._word_meaning_pairs
                 if word_ == word}
 
-    def loss(self):
-        self._flat = None
-        i = self.random_edge(return_word_meaning_pair=False)
-        word, concept = self._word_meaning_pairs[i]
-        for j in range(i, len(self._cum_concept_weights)):
-            self._cum_concept_weights[j] -= 1
+    def clean(self, i):
+        """Remove zero weights.
+
+        Check whether the weight at index i is zero, and if so, remove
+        that entry.
+
+        """
         new_val = self._cum_concept_weights[i]
         if (new_val == 0 or
                 new_val == self._cum_concept_weights[i - 1]):
             del self._cum_concept_weights[i]
             del self._word_meaning_pairs[i]
 
-    def gain(self):
+    def loss(self, proportional=True):
+        """Remove weight from a word-meaning pair.
+
+        If proportional is True, remove weight 1 from a word-meaning
+        pair with probability proportional to the weight before the
+        loss step. Otherwise, remove weight 1 from a uniform random
+        word-meaning pair.
+
+        """
+        self._flat = None
+        if proportional:
+            i = self.random_edge(return_word_meaning_pair=False)
+        else:
+            i = self.rng.randrange(len(self._word_meaning_pairs))
+        word, concept = self._word_meaning_pairs[i]
+        for j in range(i, len(self._cum_concept_weights)):
+            self._cum_concept_weights[j] -= 1
+        self.clean(i)
+
+    def gain(self, reduce_other=False):
         self._flat = None
         """Add a meaning to a word
 
         A random word (with probability proportional to ‘use’) gains
         the meaning of one concept related to a meaning it already
-        has
+        has. If reduce_other is true, a random other word expressing
+        that meaning loses weight 1.
 
         """
         word, concept = self.random_edge()
         rc = self.related_concepts[concept]
         new_concept = list(rc)[self.rng.randrange(len(rc))]
+        other_index = len(self._cum_concept_weights)
+        if reduce_other:
+            other_words = self.words_for_concept(new_concept)
+            other_words -= {word}
+            if other_words:
+                other_word = list(other_words)[
+                    self.rng.randrange(len(other_words))]
+                other_index = self._word_meaning_pairs.index(
+                    (other_word, new_concept))
         try:
-            i = self._word_meaning_pairs.index((word, new_concept))
-            for j in range(i, len(self._cum_concept_weights)):
-                self._cum_concept_weights[j] += 1
+            new_index = self._word_meaning_pairs.index((word, new_concept))
+            if new_index < other_index:
+                for j in range(new_index, other_index):
+                    self._cum_concept_weights[j] += 1
+            else:
+                for j in range(other_index, new_index):
+                    self._cum_concept_weights[j] -= 1
         except ValueError:
+            for j in range(other_index, len(self._cum_concept_weights)):
+                self._cum_concept_weights[j] -= 1
             self._cum_concept_weights.append(
                 self._cum_concept_weights[-1] + 1)
             self._word_meaning_pairs.append((
                 word, new_concept))
+        if reduce_other and other_index != len(
+                self._cum_concept_weights):
+            self.clean(other_index)
 
     def new_word(self):
         self._flat = None
@@ -243,7 +282,7 @@ class Language(object):
         if self.rng.random() < p_lose:
             self.loss()
         if self.rng.random() < p_gain:
-            self.gain()
+            self.gain(reduce_other=True)
         if self.rng.random() < p_new:
             self.new_word()
 

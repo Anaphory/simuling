@@ -79,7 +79,7 @@ def cognate_presence_sampler(vocabulary, min_activation=1, **kwargs):
 samplers = {
     'swadesh': swadesh_sampler,
     'etymo': cognate_presence_sampler
-    }
+}
 
 
 if __name__ == '__main__':

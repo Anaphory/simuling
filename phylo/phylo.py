@@ -32,12 +32,14 @@ class Phylogeny(object):
                  p_new=0.1):
         for i, node in enumerate(self.tree.walk('preorder')):
             if node.ancestor is None:
-                self.tracer[node.name] = {
+                self.tracer[node] = {
                     'language': self.root,
                     'distance': 0}
+                print('... initializing node {0} (root)'.format(
+                    node.name))
             else:
                 new_language = self.tracer[
-                    node.ancestor.name]['language'].clone()
+                    node.ancestor]['language'].clone()
                 distance = int(
                     (node.length or 1) * self.scale)
                 if verbose:
@@ -46,7 +48,7 @@ class Phylogeny(object):
 
                 for _ in range(distance):
                     new_language.change(p_lose, p_gain, p_new)
-                self.tracer[node.name] = {
+                self.tracer[node] = {
                     'language': new_language,
                     'distance': distance}
 
@@ -82,7 +84,7 @@ class Phylogeny(object):
         i = 0
         for _, node in enumerate(self.tree.walk('preorder')):
             if not collect_tips_only or node.is_leaf:
-                language = self.tracer[node.name]['language']
+                language = self.tracer[node]['language']
                 for concept, word, weight in method(language):
                     i += 1
                     word_list.append((

@@ -4,7 +4,7 @@ import networkx
 
 import pytest
 
-from phylo.phylo import Language
+from phylo.language import Language
 
 
 @pytest.fixture
@@ -38,9 +38,9 @@ def specific_language():
 def test_clone():
     l = language()
     m = l.clone()
-    assert l._word_meaning_pairs == m._word_meaning_pairs
-    m.new_word()
-    assert l._word_meaning_pairs != m._word_meaning_pairs
+    assert l.flat_frequencies() == m.flat_frequencies()
+    m.loss()
+    assert l.flat_frequencies() != m.flat_frequencies()
 
 
 def test_add_link():
@@ -69,10 +69,9 @@ def test_gain_new_concept():
 
 def test_loss():
     l = language()
-    old_weights = l._cum_concept_weights[-1]
+    old_weights = sum(l.flat_frequencies().values())
     l.loss()
-    new_weights = l._cum_concept_weights[-1]
-    assert (old_weights) - 1 == (new_weights)
+    assert (old_weights) - 1 == sum(l.flat_frequencies().values())
 
 
 def test_words_for_concept():

@@ -55,6 +55,9 @@ group.add_argument(
     {tree} to get the corresponding tree file base name (without
     `.tsv`), and {i} for the number of the simulation (starting at `1`
     for the first simulation).""")
+group.add_argument(
+    "--sample-internal-nodes", action="store_true", default=False,
+    help="Sample word lists also from the tree's internal nodes")
 
 
 args = parser.parse_args()
@@ -90,7 +93,9 @@ for _, tree_file in enumerate(args.trees):
         # "basic" is the number of words we afterwards use to to infer
         # phylogeny with neighbor-joining
 
-        dataframe, columns = phy.collect_word_list(Language.vocabulary)
+        dataframe, columns = phy.collect_word_list(
+            Language.vocabulary,
+            collect_tips_only=not args.sample_internal_nodes)
         filename = args.wordlist.format(
             tree=tree_file.name[:-4]
             if tree_file.name.endswith(".tre")

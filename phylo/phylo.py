@@ -36,7 +36,7 @@ class Phylogeny(object):
                     'language': self.root,
                     'distance': 0}
                 print('... initializing node {0} (root)'.format(
-                        node.name))
+                    node.name))
             else:
                 new_language = self.tracer[
                     node.ancestor]['language'].clone()

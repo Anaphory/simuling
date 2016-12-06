@@ -110,7 +110,7 @@ class NamingGameLanguage(Language):
         sum_reciprocal_weights = 0
         for meaning, words in self.words.items():
             for word, weight in words.items():
-                sum_reciprocal_weights += 1/weight
+                sum_reciprocal_weights += 1 / weight
         v = self.rng.random() * sum_reciprocal_weights
         for meaning, words in self.words.items():
             for word, weight in words.items():
@@ -141,7 +141,7 @@ class NamingGameLanguage(Language):
             for similar_meaning in self.related_concepts[meaning]:
                 for word, weight in self.words[similar_meaning].items():
                     words.setdefault(word, 0)
-                    words[word] += 0.5*weight
+                    words[word] += 0.5 * weight
             word_sets[meaning] = words
 
         exclusively = {}

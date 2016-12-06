@@ -104,6 +104,9 @@ class NamingGameLanguage(Language):
         if weight == 'degree':
             def weight(meaning):
                 return len(self.related_concepts[meaning])
+        if weight == 'degree_squared':
+            def weight(meaning):
+                return len(self.related_concepts[meaning]) ** 2
 
         weights = []
         meanings = []
@@ -153,7 +156,7 @@ class NamingGameLanguage(Language):
     def naming_game(self):
         word_sets = {}
         for _ in range(2):
-            meaning = self.random_concept()
+            meaning = self.random_concept('degree_squared')
             while meaning in word_sets:
                 # There are safer (no infinite loops, fewer randomizer
                 # draws) ways to do this. They will require

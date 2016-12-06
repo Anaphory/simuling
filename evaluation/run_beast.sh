@@ -9,7 +9,9 @@ do
         echo "ID	Language_ID	Feature_ID	Form	Weight	Global_CogID	Value";
         tail -n +2 $1
     ) | sed -e 's/	/,/g'| beastling beastling.ini -o $root/$root.xml
-    cd $root
-    beast $root.xml
+    (
+        cd $root
+        beast $root.xml
+    )
     shift
 done

@@ -17,10 +17,21 @@ def naminggamelanguage():
 
 def test_naminggame():
     l = naminggamelanguage()
-    cum_weight = sum(w
-                     for words in l.words.values()
-                     for w in words.values())
+    cum_weight = sum(l.flat_frequencies().values())
     l.change()
-    assert cum_weight == sum(w
-                             for words in l.words.values()
-                             for w in words.values())
+    assert cum_weight == sum(l.flat_frequencies().values())
+
+
+def test_clone():
+    l = naminggamelanguage()
+    m = l.clone()
+    assert l.flat_frequencies() == m.flat_frequencies()
+    m.loss()
+    assert l.flat_frequencies() != m.flat_frequencies()
+
+
+def test_loss():
+    l = naminggamelanguage()
+    old_weights = sum(l.flat_frequencies().values())
+    l.loss()
+    assert (old_weights) - 1 == sum(l.flat_frequencies().values())

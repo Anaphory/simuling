@@ -183,7 +183,7 @@ class NamingGameLanguage(Language):
         return {
             (word, meaning): weight
             for meaning, words in self.words.items()
-            for word, weight in self.words.items()}
+            for word, weight in words.items()}
 
     def change(self,
                p_lose=None,
@@ -193,13 +193,12 @@ class NamingGameLanguage(Language):
         self.naming_game()
 
     def clone(self):
-        l = NamingGameLanguage()
+        l = NamingGameLanguage(self.related_concepts)
         # Probably use deepcopy instead
         l.words = {meaning:
                    {word: weight
                     for word, weight in words.items()}
                    for meaning, words in self.words.items()}
-        l.related_concepts = self.related_concepts
         return l
 
     def __repr__(self):

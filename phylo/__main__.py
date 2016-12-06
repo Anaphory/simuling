@@ -1,5 +1,14 @@
 #!/usr/bin/env python
 
+
+"""Run a language evolution model.
+
+This module implements the CLI interface for running a very simple
+forward-time phylogenetic simulation of cognate class evolution in a
+language family represented by a given tree.
+
+"""
+
 from collections import defaultdict
 import argparse
 import random

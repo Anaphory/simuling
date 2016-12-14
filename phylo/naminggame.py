@@ -140,7 +140,6 @@ class NamingGameLanguage(Language):
         return meanings[bisect.bisect(weights, v)]
 
     def loss(self):
-
         """Remove weight 1 from a random word-meaning pair
 
         Select a random word-meaning pair with probability
@@ -249,7 +248,6 @@ class NamingGameLanguage(Language):
                p_gain=0.3,
                p_lose=None,
                p_new=None):
-
         """Execute one change step.
 
         With probability p_gain, a rare meaning is lost and a frequent
@@ -267,7 +265,7 @@ class NamingGameLanguage(Language):
         """
 
         self.loss()
-        if self.rng.random()<p_gain:
+        if self.rng.random() < p_gain:
             self.gain()
         else:
             self.naming_game()

@@ -92,7 +92,28 @@ class NamingGameLanguage(Language):
         raise NotImplementedError
 
     def gain(self, reduce_other=False):
-        raise NotImplementedError
+        """Increase the weight of a word meaning a random concept
+
+        Draw a random meaning the usual way using random_concept and
+        increase the weight of that meaning on a random word, where
+        the word is drawn with probability proportional to the
+        existing weight.
+
+        """
+        meaning = self.random_concept()
+        words = self.words[meaning]
+        c_weights = []
+        cum = 0
+        c_words = []
+        for word, weight in words.items():
+            cum += weight
+            c_weights.append(cum)
+            c_words.append(word)
+        q = self.rng.random() * cum
+        if q == 0:
+            del self.words[meaning]
+            return self.gain()
+        words[c_words[bisect.bisect(c_weights, q)]] += 1
 
     def new_word(self):
         raise NotImplementedError
@@ -119,6 +140,7 @@ class NamingGameLanguage(Language):
         return meanings[bisect.bisect(weights, v)]
 
     def loss(self):
+
         """Remove weight 1 from a random word-meaning pair
 
         Select a random word-meaning pair with probability
@@ -154,6 +176,15 @@ class NamingGameLanguage(Language):
                 del self.words[meaning]
 
     def naming_game(self):
+        """Play a naming game between two random concepts
+
+        If the language has different words for the two concepts,
+        increase the weights of those words. Otherwise invent new
+        words.
+
+        This method increases the sum of word-meaning weights by 1.
+
+        """
         word_sets = {}
         for _ in range(2):
             meaning = self.random_concept('degree_squared')
@@ -215,11 +246,31 @@ class NamingGameLanguage(Language):
             for word, weight in words.items()}
 
     def change(self,
+               p_gain=0.3,
                p_lose=None,
-               p_gain=None,
                p_new=None):
+
+        """Execute one change step.
+
+        With probability p_gain, a rare meaning is lost and a frequent
+        meaning reinforced; with probability (1-p_gain), a rare
+        meaning is lost and a naming game played. In any case, the sum
+        of weights remains constant.
+
+        To be precise, with “a rare meaning is lost”, we mean the
+        loss() method is executed, with “a frequent meaning is
+        reinforced” we mean the gain() method is exectued, and with “a
+        naming game is played” we mean the naming_game() method is
+        executed. What those methods do can be found in their
+        individual documentation.
+
+        """
+
         self.loss()
-        self.naming_game()
+        if self.rng.random()<p_gain:
+            self.gain()
+        else:
+            self.naming_game()
 
     def clone(self):
         l = NamingGameLanguage({})

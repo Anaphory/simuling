@@ -90,6 +90,8 @@ if __name__ == '__main__':
                         help="CLDF word list of the complete lexicon")
     parser.add_argument("--output", "-o", type=argparse.FileType('w'),
                         default=sys.stdout)
+    parser.add_argument("--fasta", "-f", action="store_true", default=False,
+                        help="Output in FASTA format, instead of CLDF")
     parser.add_argument("--sampler", "-s", default="swadesh",
                         choices=list(samplers.keys()),
                         help="The sampling method to use")
@@ -120,6 +122,10 @@ in the etymological dictionary.""")
     args = parser.parse_args()
 
     data = csv.DictReader(args.vocabulary_file, dialect='excel-tab')
-    writer = csv.writer(args.output)
-    sampler = samplers[args.sampler]
-    writer.writerows(sampler(data, **vars(args)))
+    sampler = samplers[args.sampler](data, **vars(args))
+    if args.fasta:
+        ...
+    else:
+        writer = csv.writer(args.output)
+        sampler = samplers[args.sampler]
+        writer.writerows(sampler(data, **vars(args)))

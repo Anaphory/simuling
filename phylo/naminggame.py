@@ -73,7 +73,7 @@ class NamingGameLanguage(Language):
         for i in range(Language.max_word,
                        Language.max_word + n_words):
             weight = self.rng.randrange(initial_max_wt) + 1
-            self.words[self.random_concept('degree')][i] = weight
+            self.words[self.random_concept()][i] = weight
 
         Language.max_word += n_words
 
@@ -118,14 +118,20 @@ class NamingGameLanguage(Language):
     def new_word(self):
         raise NotImplementedError
 
-    def random_concept(self, weight=None):
-        if weight is None or weight == 'weight':
+    def random_concept(self, weight='degree_squared'):
+        """Return a random concept.
+
+        Calculate weights according to the `weight` function and draw
+        a random meaning with probability proportional to `weight`.
+
+        """
+        if weight == 'weight':
             def weight(meaning):
                 return sum(self.words.get(meaning, {}).values()) + 1
-        if weight == 'degree':
+        elif weight == 'degree':
             def weight(meaning):
                 return len(self.related_concepts[meaning])
-        if weight == 'degree_squared':
+        elif weight == 'degree_squared':
             def weight(meaning):
                 return len(self.related_concepts[meaning]) ** 2
 
@@ -140,7 +146,7 @@ class NamingGameLanguage(Language):
         return meanings[bisect.bisect(weights, v)]
 
     def loss(self):
-        """Remove weight 1 from a random word-meaning pair
+        """Remove weight 1 from a random word-meaning pair.
 
         Select a random word-meaning pair with probability
         proportional to 1/weight (i.e. rare words more often) and
@@ -186,7 +192,7 @@ class NamingGameLanguage(Language):
         """
         word_sets = {}
         for _ in range(2):
-            meaning = self.random_concept('degree_squared')
+            meaning = self.random_concept()
             while meaning in word_sets:
                 # There are safer (no infinite loops, fewer randomizer
                 # draws) ways to do this. They will require

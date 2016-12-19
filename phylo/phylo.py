@@ -1,8 +1,19 @@
+"""Framework for a phylogenetic semantic/lexical change simulation.
+
+Phylogeny – the core simulation class.
+
+"""
+
 from .naminggame import NamingGameLanguage as Language
 
 
 class Phylogeny(object):
-    """A phylogenetic linguistic simulation"""
+    """A phylogenetic linguistic simulation.
+
+    Create a simulation object on a given rooted tree with branch
+    lengths.
+
+    """
 
     def __init__(
             self,
@@ -12,6 +23,16 @@ class Phylogeny(object):
             basic=range(100),
             scale=1000,
             initial_max_wt=10):
+        """Create a phylogeny simulation object.
+
+        related_concepts: a networkx.Graph or a dictionary of lists,
+        describing which concepts can evolve into which other concepts.
+
+        tree: The phylogenetic tree along which to run the simulation.
+        
+        root: The phylo.Language to use at the root.
+
+        """
         self.related_concepts = related_concepts
         self.tree = tree
 
@@ -29,6 +50,12 @@ class Phylogeny(object):
                  p_lose=0.5,
                  p_gain=0.4,
                  p_new=0.1):
+        """Run a simulation down the tree.
+
+        Evolve languages down the branches of the tree, changing
+        proportional to the branch lengths.
+
+        """
         for i, node in enumerate(self.tree.walk('preorder')):
             if node.ancestor is None:
                 self.tracer[node] = {

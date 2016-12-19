@@ -29,7 +29,7 @@ class Phylogeny(object):
         describing which concepts can evolve into which other concepts.
 
         tree: The phylogenetic tree along which to run the simulation.
-        
+
         root: The phylo.Language to use at the root.
 
         """

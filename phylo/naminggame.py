@@ -92,7 +92,7 @@ class NamingGameLanguage(Language):
         raise NotImplementedError
 
     def gain(self, reduce_other=False):
-        """Increase the weight of a word meaning a random concept
+        """Increase the weight of a word meaning a random concept.
 
         Draw a random meaning the usual way using random_concept and
         increase the weight of that meaning on a random word, where
@@ -251,8 +251,8 @@ class NamingGameLanguage(Language):
             for word, weight in words.items()}
 
     def change(self,
+               p_loss=None,
                p_gain=0.3,
-               p_lose=None,
                p_new=None):
         """Execute one change step.
 
@@ -269,7 +269,6 @@ class NamingGameLanguage(Language):
         individual documentation.
 
         """
-
         self.loss()
         if self.rng.random() < p_gain:
             self.gain()

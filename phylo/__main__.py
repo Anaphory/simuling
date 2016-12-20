@@ -41,7 +41,7 @@ group.add_argument("trees", type=argparse.FileType("r"), nargs="+",
 group.add_argument("--scale", type=float, default=1,
                    help="""Scaling factor of the tree, or equivalently the number of change
                    events per unit of branchlength.""")
-group.add_argument('--p-lose', type=float, default=0.5,
+group.add_argument('--p-loss', type=float, default=0.5,
                    help="Probability, per time step, that a word becomes "
                    "less likely for a meaning")
 group.add_argument('--p-gain', type=float, default=0.4,
@@ -86,7 +86,7 @@ for _, tree_file in enumerate(args.trees):
             scale=args.scale)
 
         phy.simulate(
-            p_lose=args.p_lose,
+            p_loss=args.p_loss,
             p_gain=args.p_gain,
             p_new=args.p_new)
 

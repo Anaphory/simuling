@@ -276,10 +276,10 @@ class Language(object):
             yield (meaning, word, weight)
 
     def change(self,
-               p_lose=0.5,
+               p_loss=0.5,
                p_gain=0.4,
                p_new=0.1):
-        if self.rng.random() < p_lose:
+        if self.rng.random() < p_loss:
             self.loss()
         if self.rng.random() < p_gain:
             self.gain(reduce_other=True)

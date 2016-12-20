@@ -47,7 +47,7 @@ class Phylogeny(object):
 
     def simulate(self,
                  verbose=True,
-                 p_lose=0.5,
+                 p_loss=0.5,
                  p_gain=0.4,
                  p_new=0.1):
         """Run a simulation down the tree.
@@ -73,7 +73,7 @@ class Phylogeny(object):
                         node.name, distance))
 
                 for _ in range(distance):
-                    new_language.change(p_lose, p_gain, p_new)
+                    new_language.change(p_loss=p_loss, p_gain=p_gain, p_new=p_new)
                 self.tracer[node] = {
                     'language': new_language,
                     'distance': distance}

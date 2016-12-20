@@ -101,6 +101,8 @@ class NamingGameLanguage(Language):
 
         """
         meaning = self.random_concept()
+        while meaning not in self.words:
+            meaning = self.random_concept()
         words = self.words[meaning]
         c_weights = []
         cum = 0
@@ -110,7 +112,7 @@ class NamingGameLanguage(Language):
             c_weights.append(cum)
             c_words.append(word)
         q = self.rng.random() * cum
-        if q == 0:
+        if cum == 0:
             del self.words[meaning]
             return self.gain()
         words[c_words[bisect.bisect(c_weights, q)]] += 1

@@ -53,7 +53,7 @@ group.add_argument(
     '--wordlist', type=str, default="{tree}-{i}.tsv",
     help="""Filename to write the word lists to.  You can use the placeholders
     {tree} to get the corresponding tree file base name (without
-    `.tsv`), and {i} for the number of the simulation (starting at `1`
+    file ending), and {i} for the number of the simulation (starting at `1`
     for the first simulation).""")
 group.add_argument(
     "--sample-internal-nodes", action="store_true", default=False,
@@ -97,9 +97,7 @@ for _, tree_file in enumerate(args.trees):
             Language.vocabulary,
             collect_tips_only=not args.sample_internal_nodes)
         filename = args.wordlist.format(
-            tree=tree_file.name[:-4]
-            if tree_file.name.endswith(".tre")
-            else tree_file,
+            tree=(tree_file.name).rsplit(".", 1)[0],
             i=i)
         with open(filename, "w") as wordlist_file:
             writer = csv.writer(wordlist_file, 'excel-tab')

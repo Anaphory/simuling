@@ -6,7 +6,7 @@ import random
 import newick
 
 
-def create_random_tree(size, length=random.random()):
+def create_balanced_random_tree(taxa, branch_length=random.random()):
     """Generate a random tree.
 
     This builds a random tree with a given branch length
@@ -14,10 +14,10 @@ def create_random_tree(size, length=random.random()):
 
     """
     nodes = []
-    for taxon in range(size):
+    for taxon in taxa:
         nodes.append(newick.Node(
             name=taxon,
-            length=length(),
+            length=branch_length(),
             length_parser=float,
             length_formatter="{:f}".format))
 
@@ -27,15 +27,16 @@ def create_random_tree(size, length=random.random()):
         # Take the two lowest nodes
         node0 = nodes[0]
         node1 = nodes[1]
+        height = (heights[0] + heights[1]) / 2
         # Keep the rest
         nodes = nodes[2:]
         heights = heights[2:]
         # Stick a new node on top of those lowest nodes
-        new_branch_length = length()
-        height = (heights[0] + heights[1]) / 2 + new_branch_length
+        new_branch_length = branch_length()
+        height += new_branch_length
         tree = newick.Node(
-            length = new_branch_length,
-            length.parser=float,
+            length=new_branch_length,
+            length_parser=float,
             length_formatter="{:f}".format)
         tree.add_descendant(node0)
         tree.add_descendant(node1)
@@ -46,7 +47,7 @@ def create_random_tree(size, length=random.random()):
     return nodes[0]
 
 
-def random_tree(taxa, branch_length=lambda: random.random()):
+def create_random_tree(taxa, branch_length=lambda: random.random()):
     """Generate a random tree typology
 
     This is a re-implementation of the random tree generator from
@@ -91,14 +92,19 @@ if __name__ == "__main__":
                         type=argparse.FileType('w'),
                         help="Filename to write the tree to. "
                         "Use `--tree-file=-` to output to STDOUT.")
+    parser.add_argument(
+        "--balanced", dest="generator", action="store_const",
+        const=create_balanced_random_tree,
+        default=create_random_tree,
+        help="Create a tree with roughly balanced node heights")
 
     args = parser.parse_args()
 
     for i in range(args.t):
-        tree = create_random_tree(
-            args.taxa, branch_length=lambda:
-            random.random()*(args.max-args.min)+args.min)
+        tree = args.generator(
+            args.taxa, branch_length=lambda: (
+                random.random()*(args.max-args.min)+args.min))
 
         args.tree_file.write(
             tree.newick)
-        args.tree_file.write("\n")
+        args.tree_file.write(";\n")

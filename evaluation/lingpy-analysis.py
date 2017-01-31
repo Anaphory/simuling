@@ -24,7 +24,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--sublistname', default='Swadesh-1955-100')
     parser.add_argument(
-        '--removesynonyms', default=True, action='store_false')
+        '--removesynonyms', default=False, action='store_true')
     args = parser.parse_args()
 
     # get the swadesh list

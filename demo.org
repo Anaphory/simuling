@@ -154,7 +154,7 @@ to do so.
 For example, you could just call
 
 __ex__
-python -m phylo --semantic-network clics.gml random.trees
+python -m phylo --semantic-network clics.gml random_synchronous_tips.trees
 __end_ex__
 
 and some tsv files containing word lists will magically appear in your
@@ -197,7 +197,7 @@ pipe the previous result through and get the Robinson-Foulds (pairwise
 bipartition) distance by using
 
 __ex__
-python evaluation/nj.py random*.tsv | python evaluation/distance.py random.trees - 
+python evaluation/nj.py random_synchronous_tips*.tsv | python evaluation/distance.py random_synchronous_tips.trees - > distances
 __end_ex__
 
 

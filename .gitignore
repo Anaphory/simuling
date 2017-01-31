@@ -4,3 +4,7 @@ simuling.egg-info/
 # Simulation outputs
 *.tre
 *.tsv
+.*
+*.tree
+__pycache__
+*.pyc

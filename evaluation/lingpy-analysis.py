@@ -18,21 +18,24 @@ if __name__ == '__main__':
     parser.add_argument(
         '-s', '--sampling', default='etyma')
     parser.add_argument(
-        '--mode', default='swadesh')
+        '--mode', default='jaccard')
+    parser.add_argument(
+        '--sublist', action='store_true', default=False)
+    parser.add_argument(
+        '--sublistname', default='Swadesh-1955-100')
     args = parser.parse_args()
 
     # get the swadesh list
     cnc = Concepticon()
-    swadesh_ = cnc.conceptlists['Swadesh-1955-100'].concepts
+    swadesh_ = cnc.conceptlists[args.sublistname].concepts
     swadesh = {
-            swadesh_[idx].concepticon_gloss: swadesh_[idx].concepticon_id 
+            swadesh_[idx].concepticon_gloss: swadesh_[idx].concepticon_id
             for idx in swadesh_.keys()}
-    sublist = False
 
     wl = get_wordlist(
         args.infile, col='language_id',
         row='feature_id', delimiter='\t')
-    if sublist:
+    if args.sublist:
         D = {
                 0: [
                     h for h in sorted(

@@ -1,5 +1,3 @@
-#!/usr/bin/sh
-
 * Introduction
 
 Simuling contains several small tools. The core is a simulation of
@@ -164,11 +162,11 @@ simulation are as follows.
 There are extremely many ways to evaluate this. Let's start with
 something simple.
 
-*** NJ on (M, C)-pairs with Hamming distance, Euclidean distance
+*** NJ on (M, C)-pairs with Hamming distance, RF distance
 Use Neigbour Joining to construct trees based on the Hamming distance
 between strings denoting the presence/absence of (meaning, cognateset)
 pairs in each language. Calculate the distance to the original tree
-using the Euclidean distance.
+using the Robinson-Foulds distance.
 
 **** (M, C)-pairs
 The word list already contains the (M, C)-pairs, nothing to do here.
@@ -178,7 +176,11 @@ The word list already contains the (M, C)-pairs, nothing to do here.
 python evaluation/nj.py *.tsv
 ```
 
-**** Calculating Euclidean Distance
+**** Calculating RF Distance
+RF distance is the default for evaluation/distance, so you can just
+pipe the previous result through and get the Robinson-Foulds (pairwise
+bipartition) distance by using
+
 ```
 python evaluation/nj.py random*.tsv | python evaluation/distance.py random.trees - 
 ```

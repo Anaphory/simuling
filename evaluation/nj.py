@@ -68,7 +68,7 @@ if __name__ == "__main__":
         dest="method",
         action="store_const", const=DistanceTreeConstructor.upgma,
         help="Use UPGMA instead of NJ to construct the tree")
-        
+
     args = parser.parse_args()
 
     trees = []

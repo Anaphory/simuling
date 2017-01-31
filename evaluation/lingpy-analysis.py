@@ -23,6 +23,8 @@ if __name__ == '__main__':
         '--sublist', action='store_true', default=False)
     parser.add_argument(
         '--sublistname', default='Swadesh-1955-100')
+    parser.add_argument(
+        '--removesynonyms', default=True, action='store_false')
     args = parser.parse_args()
 
     # get the swadesh list
@@ -35,6 +37,20 @@ if __name__ == '__main__':
     wl = get_wordlist(
         args.infile, col='language_id',
         row='feature_id', delimiter='\t')
+    
+    blacklist = []
+    if args.removesynonyms:
+        blacklist = []
+        for taxon in wl.cols:
+            tmp = wl.get_dict(col=taxon)
+            for c, idxs in tmp.items():
+                weights = [int(wl[idx, 'weight']) for idx in idxs]
+                all_weights = sum(weights)
+                min_weight = all_weights * 0.25
+                for idx, weight in zip(idxs, weights):
+                    if weight < min_weight:
+                        blacklist += [idx]
+
     if args.sublist:
         D = {
                 0: [
@@ -42,16 +58,13 @@ if __name__ == '__main__':
                         wl.header, key=lambda x: wl.header[x])]
                 }
         for k, concept in iter_rows(wl, 'feature_id'):
-            if concept in swadesh:
+            if concept in swadesh and k not in blacklist:
                 D[k] = wl[k]
         wl = Wordlist(D, col='language_id', row='feature_id')
 
     ref = 'global_cogid'
     if args.sampling != 'etyma':
-        wl.add_entries(
-            'paps', 'value,feature_id',
-            lambda x, y: str(x[y[0]]) + '-' + str(x[y[1]]))
-        ref = 'paps'
+        ref = 'concept_cogid'
 
     wl.calculate(
         'tree', taxa='language_id', concepts='feature_id',

@@ -52,6 +52,10 @@ If you want to use a semantic network based on real-world lexification
 data, you can obtain a `clics` (nearly-) gml file from
 http://clics.lingpy.org/data/CLICS_gml.zip
 
+The meanings/`Feature_ID`s in the network will then be the labels of
+the graph (so you can use some other semantic network in gml format,
+if you want).
+
 Note that the gml file in there is not perfect: `_` are not allowed in
 property names and need to be removed, and the following patch removes
 duplicate labels/concepts.

@@ -1,3 +1,7 @@
+[ -z $BASH ] || shopt -s expand_aliases
+alias __end_ex__=": <<'__ex__'"
+__end_ex__
+
 * Introduction
 
 Simuling contains several small tools. The core is a simulation of
@@ -22,19 +26,23 @@ line by line from a file, it cannot deal with Nexus files.
 
 You can either get a Newick file from some other source – for example,
 glottolog:
-```
+
+__ex__
 curl http://glottolog.org/static/trees/tree-glottolog-newick.txt -o glottolog.trees
-```
+__end_ex__
+
 or create a random tree using the tools provided:
-```
+
+__ex__
 python maketrees/make_trees.py -t 5 --tree-file=random.trees
-```
+__end_ex__
 
 If you want to make sure all tips of your tree are on the same height,
 you should use the re-heighter for that.
-```
-python maketrees/reheight.py glottolog.trees -o glottolog_syn_tips.trees
-```
+
+__ex__
+python maketrees/reheight.py random.trees -o random_synchronous_tips.trees
+__end_ex__
 
 If you have `ete3` installed on your machine, you can use variants of
 the following to view the trees:
@@ -144,7 +152,10 @@ semantic evolution along its branches, you can use the `phylo` module
 to do so.
 
 For example, you could just call
-``` python -m phylo --semantic-network ~/Downloads/clics.gml random.trees ```
+
+__ex__
+python -m phylo --semantic-network clics.gml random.trees
+__end_ex__
 
 and some tsv files containing word lists will magically appear in your
 current directory. Some useful command line argument for varying the
@@ -176,15 +187,20 @@ using the Robinson-Foulds distance.
 The word list already contains the (M, C)-pairs, nothing to do here.
 
 **** Hamming distance Neighbour Joining
-```
+__ex__
 python evaluation/nj.py *.tsv
-```
+__end_ex__
 
 **** Calculating RF Distance
 RF distance is the default for evaluation/distance, so you can just
 pipe the previous result through and get the Robinson-Foulds (pairwise
 bipartition) distance by using
 
-```
+__ex__
 python evaluation/nj.py random*.tsv | python evaluation/distance.py random.trees - 
-```
+__end_ex__
+
+
+
+
+__ex__

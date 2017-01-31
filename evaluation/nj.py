@@ -16,12 +16,16 @@ from Bio.Phylo.TreeConstruction import DistanceTreeConstructor
 from Bio.Phylo.NewickIO import Writer
 
 
-def nj_wordlist(wordlist, column="Value"):
-    """Create a Neigbor Joining tree from a wordlist
+def nj_wordlist(
+        wordlist,
+        column="Value",
+        method=DistanceTreeConstructor.nj):
+    """Create a tree using Hamming distances.
 
-    From the CLDF Dataframe `wordlist`, create a tree using neighbor
-    joining based on the Hamming distance (size of the symmetric
-    difference) of presence/absence of the set of values in `column`.
+    From the CLDF Dataframe `wordlist`, create a tree using a distance
+    method (neighbor joining, the default, or UPGMA) based on the
+    Hamming distance (size of the symmetric difference) of
+    presence/absence of the set of values in `column`.
 
     """
     wordlist = pandas.read_csv(wordlist, sep="\t")
@@ -37,12 +41,14 @@ def nj_wordlist(wordlist, column="Value"):
         for i in range(len(cogids))])
 
     constructor = DistanceTreeConstructor()
-    tree = constructor.nj(dm)
+    tree = method(constructor, dm)
     return tree
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Apply distance-based tree building methods "
+        "to word list data")
     parser.add_argument(
         "wordlist", nargs="+",
         type=argparse.FileType('r'),
@@ -56,6 +62,13 @@ if __name__ == "__main__":
         "--value-column",
         default="Concept_CogID",
         help="The column to calculate the Hamming distances on")
+    parser.add_argument(
+        "--upgma",
+        default=DistanceTreeConstructor.nj,
+        dest="method",
+        action="store_const", const=DistanceTreeConstructor.upgma,
+        help="Use UPGMA instead of NJ to construct the tree")
+        
     args = parser.parse_args()
 
     trees = []

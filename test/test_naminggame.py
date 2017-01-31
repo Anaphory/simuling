@@ -8,7 +8,7 @@ from collections import defaultdict, Counter
 
 @pytest.fixture
 def naminggamelanguage():
-    n = NamingGameLanguage({1: [], 0: []})
+    n = NamingGameLanguage({1: [2], 0: [2], 2: [0, 1]})
     n.words = defaultdict(Counter,
                           {1: Counter({"one": 1, "at most one": 1}),
                            0: Counter({"zero": 1, "at most one": 1})})

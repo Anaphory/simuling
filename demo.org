@@ -1,0 +1,190 @@
+* Introduction
+
+Simuling contains several small tools. The core is a simulation of
+semantic change, using a bipartite model and a network of related
+concepts. It also provides other tools useful for simulation studies
+of language evolution inference, such as random tree generators,
+wordlist sub-samplers and tree inference wrappers.
+
+* Pipeline
+The pipeline contains four main steps: Creating trees, simulating
+language along the tree, applying reconstruction methods and comparing
+reconstructed and original trees.
+
+** Creating or preparing trees
+
+The simulation evolves a lexicon (with meanings) along a
+tree. Networks, to model contact, are not supported yet.
+
+This means that the first step is to get a tree in a format compatible
+with the evolution simulation. The simulation reads a Newick trees
+line by line from a file, it cannot deal with Nexus files.
+
+You can either get a Newick file from some other source – for example,
+glottolog:
+```
+curl http://glottolog.org/static/trees/tree-glottolog-newick.txt -o glottolog.trees
+```
+or create a random tree using the tools provided:
+```
+python maketrees/make_trees.py -t 5 --tree-file=random.trees
+```
+
+If you want to make sure all tips of your tree are on the same height,
+you should use the re-heighter for that.
+```
+python maketrees/reheight.py glottolog.trees -o glottolog_syn_tips.trees
+```
+
+If you have `ete3` installed on your machine, you can use variants of
+the following to view the trees:
+
+```
+import ete3
+with open("glottolog_syn_tips.trees") as trees:
+  for tree in trees:
+    ete3.Tree(tree, format=1, quoted_node_names=True).show()
+```
+
+** Excourse: CLICS
+
+If you want to use a semantic network based on real-world lexification
+data, you can obtain a `clics` (nearly-) gml file from
+http://clics.lingpy.org/data/CLICS_gml.zip
+
+The meanings/`Feature_ID`s in the network will then be the labels of
+the graph (so you can use some other semantic network in gml format,
+if you want).
+
+Note that the gml file in there is not perfect: `_` are not allowed in
+property names and need to be removed, and the following patch removes
+duplicate labels/concepts.
+
+```
+diff --git a/clics.gml b/home/gereon/Downloads/clics.gml
+index 649e61b..5747c6d 100644
+--- a/clics.gml
++++ b/home/gereon/Downloads/clics.gml
+@@ -2305,11 +2305,11 @@ graph [
+   ]
+   node [
+     id 256
+-    label "sow"
++    label "sow (plant)"
+     bodypart 0
+     swadesh100 0
+     frequency 238
+-    concept "sow"
++    concept "sow (plant)"
+     key "8.31"
+   ]
+   node [
+@@ -3439,11 +3439,11 @@ graph [
+   ]
+   node [
+     id 382
+-    label "mortar"
++    label "mortar binder"
+     bodypart 0
+     swadesh100 0
+     frequency 142
+-    concept "mortar"
++    concept "mortar binder"
+     key "7.63"
+   ]
+   node [
+@@ -9532,11 +9532,11 @@ graph [
+   ]
+   node [
+     id 1059
+-    label "knife"
++    label "knife 2"
+     bodypart 0
+     swadesh100 0
+     frequency 212
+-    concept "knife"
++    concept "knife 2"
+     key "9.23"
+   ]
+   node [
+@@ -10675,11 +10675,11 @@ graph [
+   ]
+   node [
+     id 1186
+-    label "fork"
++    label "pitchfork"
+     bodypart 0
+     swadesh100 0
+     frequency 189
+-    concept "fork"
++    concept "pitchfork"
+     key "8.26"
+   ]
+   node [
+@@ -11008,11 +11008,11 @@ graph [
+   ]
+   node [
+     id 1223
+-    label "sow"
++    label "sow (female pig)"
+     bodypart 0
+     swadesh100 0
+     frequency 195
+-    concept "sow"
++    concept "sow (female pig)"
+     key "3.34"
+   ]
+   node [
+```
+
+** Running simulations
+
+Once you have acquired trees from any source and you want to simulate
+semantic evolution along its branches, you can use the `phylo` module
+to do so.
+
+For example, you could just call
+``` python -m phylo --semantic-network ~/Downloads/clics.gml random.trees ```
+
+and some tsv files containing word lists will magically appear in your
+current directory. Some useful command line argument for varying the
+simulation are as follows.
+
+ - You can scale tree branch lengths by supplying `--scale SCALE`
+
+ - You can set the simulation parameter p_gain (the other two are not
+   used for the naming game, but were implemented for a more naive
+   simulation) using `--p-gain PROBABILITY`.
+
+ - You can supply multiple tree files, or the same file multiple
+   times, to batch-run simulations. This is particularly useful if you
+   have trees in separate files and want output word lists to be
+   easily identifiable.
+
+** Evaluating
+
+There are extremely many ways to evaluate this. Let's start with
+something simple.
+
+*** NJ on (M, C)-pairs with Hamming distance, RF distance
+Use Neigbour Joining to construct trees based on the Hamming distance
+between strings denoting the presence/absence of (meaning, cognateset)
+pairs in each language. Calculate the distance to the original tree
+using the Robinson-Foulds distance.
+
+**** (M, C)-pairs
+The word list already contains the (M, C)-pairs, nothing to do here.
+
+**** Hamming distance Neighbour Joining
+```
+python evaluation/nj.py *.tsv
+```
+
+**** Calculating RF Distance
+RF distance is the default for evaluation/distance, so you can just
+pipe the previous result through and get the Robinson-Foulds (pairwise
+bipartition) distance by using
+
+```
+python evaluation/nj.py random*.tsv | python evaluation/distance.py random.trees - 
+```

@@ -41,7 +41,7 @@ group.add_argument("trees", type=argparse.FileType("r"), nargs="+",
 group.add_argument("--scale", type=float, default=1,
                    help="""Scaling factor of the tree, or equivalently the number of change
                    events per unit of branchlength.""")
-group.add_argument('--p-lose', type=float, default=0.5,
+group.add_argument('--p-loss', type=float, default=0.5,
                    help="Probability, per time step, that a word becomes "
                    "less likely for a meaning")
 group.add_argument('--p-gain', type=float, default=0.4,
@@ -53,7 +53,7 @@ group.add_argument(
     '--wordlist', type=str, default="{tree}-{i}.tsv",
     help="""Filename to write the word lists to.  You can use the placeholders
     {tree} to get the corresponding tree file base name (without
-    `.tsv`), and {i} for the number of the simulation (starting at `1`
+    file ending), and {i} for the number of the simulation (starting at `1`
     for the first simulation).""")
 group.add_argument(
     "--sample-internal-nodes", action="store_true", default=False,
@@ -86,7 +86,7 @@ for _, tree_file in enumerate(args.trees):
             scale=args.scale)
 
         phy.simulate(
-            p_lose=args.p_lose,
+            p_loss=args.p_loss,
             p_gain=args.p_gain,
             p_new=args.p_new)
 
@@ -97,9 +97,7 @@ for _, tree_file in enumerate(args.trees):
             Language.vocabulary,
             collect_tips_only=not args.sample_internal_nodes)
         filename = args.wordlist.format(
-            tree=tree_file.name[:-4]
-            if tree_file.name.endswith(".tre")
-            else tree_file,
+            tree=(tree_file.name).rsplit(".", 1)[0],
             i=i)
         with open(filename, "w") as wordlist_file:
             writer = csv.writer(wordlist_file, 'excel-tab')

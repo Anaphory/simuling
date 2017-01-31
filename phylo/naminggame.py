@@ -10,6 +10,8 @@ evolves according to a process inspired by Naming Games.
 
 
 import random
+import bisect
+import copy
 
 
 from .language import Language
@@ -90,17 +92,63 @@ class NamingGameLanguage(Language):
         raise NotImplementedError
 
     def gain(self, reduce_other=False):
-        raise NotImplementedError
+        """Increase the weight of a word meaning a random concept.
+
+        Draw a random meaning the usual way using random_concept and
+        increase the weight of that meaning on a random word, where
+        the word is drawn with probability proportional to the
+        existing weight.
+
+        """
+        meaning = self.random_concept()
+        while meaning not in self.words:
+            meaning = self.random_concept()
+        words = self.words[meaning]
+        c_weights = []
+        cum = 0
+        c_words = []
+        for word, weight in words.items():
+            cum += weight
+            c_weights.append(cum)
+            c_words.append(word)
+        q = self.rng.random() * cum
+        if cum == 0:
+            del self.words[meaning]
+            return self.gain()
+        words[c_words[bisect.bisect(c_weights, q)]] += 1
 
     def new_word(self):
         raise NotImplementedError
 
-    def random_concept(self):
-        rc = self.related_concepts
-        return list(rc)[self.rng.randrange(len(rc))]
+    def random_concept(self, weight='degree_squared'):
+        """Return a random concept.
+
+        Calculate weights according to the `weight` function and draw
+        a random meaning with probability proportional to `weight`.
+
+        """
+        if weight == 'weight':
+            def weight(meaning):
+                return sum(self.words.get(meaning, {}).values()) + 1
+        elif weight == 'degree':
+            def weight(meaning):
+                return len(self.related_concepts[meaning])
+        elif weight == 'degree_squared':
+            def weight(meaning):
+                return len(self.related_concepts[meaning]) ** 2
+
+        weights = []
+        meanings = []
+        c = 0
+        for meaning in self.related_concepts:
+            c += weight(meaning)
+            weights.append(c)
+            meanings.append(meaning)
+        v = self.rng.random() * c
+        return meanings[bisect.bisect(weights, v)]
 
     def loss(self):
-        """Remove weight 1 from a random word-meaning pair
+        """Remove weight 1 from a random word-meaning pair.
 
         Select a random word-meaning pair with probability
         proportional to 1/weight (i.e. rare words more often) and
@@ -108,9 +156,13 @@ class NamingGameLanguage(Language):
 
         """
         sum_reciprocal_weights = 0
+        zeros = []
         for meaning, words in self.words.items():
             for word, weight in words.items():
-                sum_reciprocal_weights += 1 / weight
+                try:
+                    sum_reciprocal_weights += 1 / weight
+                except ZeroDivisionError:
+                    zeros.append((meaning, word))
         v = self.rng.random() * sum_reciprocal_weights
         for meaning, words in self.words.items():
             for word, weight in words.items():
@@ -124,11 +176,22 @@ class NamingGameLanguage(Language):
             raise RuntimeError("Have the weights changed during iteration?")
         self.words[meaning][word] -= 1
         if self.words[meaning][word] <= 0:
+            zeros.append((meaning, word))
+        for meaning, word in zeros:
             del self.words[meaning][word]
-        if not self.words[meaning]:
-            del self.words[meaning]
+            if not self.words[meaning]:
+                del self.words[meaning]
 
     def naming_game(self):
+        """Play a naming game between two random concepts
+
+        If the language has different words for the two concepts,
+        increase the weights of those words. Otherwise invent new
+        words.
+
+        This method increases the sum of word-meaning weights by 1.
+
+        """
         word_sets = {}
         for _ in range(2):
             meaning = self.random_concept()
@@ -137,7 +200,7 @@ class NamingGameLanguage(Language):
                 # draws) ways to do this. They will require
                 # appropriate methods and data structures though.
                 meaning = self.random_concept()
-            words = self.words[meaning].copy()
+            words = copy.deepcopy(self.words[meaning])
             for similar_meaning in self.related_concepts[meaning]:
                 for word, weight in self.words[similar_meaning].items():
                     words.setdefault(word, 0)
@@ -176,6 +239,10 @@ class NamingGameLanguage(Language):
 
         if non_specific_word:
             self.words[non_specific_meaning][non_specific_word] -= 1
+            if self.words[meaning][word] <= 0:
+                del self.words[meaning][word]
+            if not self.words[meaning]:
+                del self.words[meaning]
         else:
             self.loss()
 
@@ -186,19 +253,34 @@ class NamingGameLanguage(Language):
             for word, weight in words.items()}
 
     def change(self,
-               p_lose=None,
-               p_gain=None,
+               p_loss=None,
+               p_gain=0.3,
                p_new=None):
+        """Execute one change step.
+
+        With probability p_gain, a rare meaning is lost and a frequent
+        meaning reinforced; with probability (1-p_gain), a rare
+        meaning is lost and a naming game played. In any case, the sum
+        of weights remains constant.
+
+        To be precise, with “a rare meaning is lost”, we mean the
+        loss() method is executed, with “a frequent meaning is
+        reinforced” we mean the gain() method is exectued, and with “a
+        naming game is played” we mean the naming_game() method is
+        executed. What those methods do can be found in their
+        individual documentation.
+
+        """
         self.loss()
-        self.naming_game()
+        if self.rng.random() < p_gain:
+            self.gain()
+        else:
+            self.naming_game()
 
     def clone(self):
-        l = NamingGameLanguage(self.related_concepts)
-        # Probably use deepcopy instead
-        l.words = {meaning:
-                   {word: weight
-                    for word, weight in words.items()}
-                   for meaning, words in self.words.items()}
+        l = NamingGameLanguage({})
+        l.related_concepts = self.related_concepts
+        l.words = copy.deepcopy(self.words)
         return l
 
     def __repr__(self):

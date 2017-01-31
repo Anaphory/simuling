@@ -19,8 +19,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     wl = get_wordlist(
         args.infile, col='language_id',
-        row='feature_id', delimiter=',')
-    ref = 'value'
+        row='feature_id', delimiter='\t')
+    ref = 'concept_cogid'
     if args.sampling != 'etyma':
         wl.add_entries(
             'paps', 'value,feature_id',
@@ -29,5 +29,6 @@ if __name__ == '__main__':
 
     wl.calculate(
         'tree', taxa='language_id', concepts='feature_id',
-        method=args.method, ref=ref, distances=True)
+        tree_calc=args.method, ref=ref, distances=True)
+    print(wl.tree.asciiArt())
     print(wl.tree)

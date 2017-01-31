@@ -73,7 +73,9 @@ class Phylogeny(object):
                         node.name, distance))
 
                 for _ in range(distance):
-                    new_language.change(p_loss=p_loss, p_gain=p_gain, p_new=p_new)
+                    new_language.change(p_loss=p_loss,
+                                        p_gain=p_gain,
+                                        p_new=p_new)
                 self.tracer[node] = {
                     'language': new_language,
                     'distance': distance}

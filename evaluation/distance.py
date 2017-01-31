@@ -39,7 +39,7 @@ if __name__ == "__main__":
         default="rf",
         help="The function to use to calculate the distance between trees. "
         "One of " + ", ".join(distance_functions.keys()))
-        
+
     args = parser.parse_args()
 
     for t1, t2 in zip(args.original, args.reconstructed):

@@ -1,5 +1,6 @@
 from lingpy import *
 from lingpy.basic.wordlist import get_wordlist
+from pyconcepticon.api import Concepticon
 
 import argparse
 import sys
@@ -16,11 +17,33 @@ if __name__ == '__main__':
         '-m', '--method', default='neighbor')
     parser.add_argument(
         '-s', '--sampling', default='etyma')
+    parser.add_argument(
+        '--mode', default='swadesh')
     args = parser.parse_args()
+
+    # get the swadesh list
+    cnc = Concepticon()
+    swadesh_ = cnc.conceptlists['Swadesh-1955-100'].concepts
+    swadesh = {
+            swadesh_[idx].concepticon_gloss: swadesh_[idx].concepticon_id 
+            for idx in swadesh_.keys()}
+    sublist = False
+
     wl = get_wordlist(
         args.infile, col='language_id',
         row='feature_id', delimiter='\t')
-    ref = 'concept_cogid'
+    if sublist:
+        D = {
+                0: [
+                    h for h in sorted(
+                        wl.header, key=lambda x: wl.header[x])]
+                }
+        for k, concept in iter_rows(wl, 'feature_id'):
+            if concept in swadesh:
+                D[k] = wl[k]
+        wl = Wordlist(D, col='language_id', row='feature_id')
+
+    ref = 'global_cogid'
     if args.sampling != 'etyma':
         wl.add_entries(
             'paps', 'value,feature_id',
@@ -29,6 +52,5 @@ if __name__ == '__main__':
 
     wl.calculate(
         'tree', taxa='language_id', concepts='feature_id',
-        tree_calc=args.method, ref=ref, distances=True)
-    print(wl.tree.asciiArt())
+        tree_calc=args.method, ref=ref, distances=True, mode=args.mode)
     print(wl.tree)

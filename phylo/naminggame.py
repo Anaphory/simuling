@@ -31,7 +31,8 @@ class NamingGameLanguage(Language):
     def __init__(self,
                  related_concepts,
                  initial_max_wt=10,
-                 random=random.Random()):
+                 random=random.Random(),
+                 concept_weight='degree_squared'):
         """Create a random language.
 
         Given a dictionary mapping concepts to their
@@ -73,7 +74,9 @@ class NamingGameLanguage(Language):
         for i in range(Language.max_word,
                        Language.max_word + n_words):
             weight = self.rng.randrange(initial_max_wt) + 1
-            self.words[self.random_concept()][i] = weight
+            self.words[self.random_concept(lambda c: 1)][i] = weight
+
+        self.concept_weight = concept_weight
 
         Language.max_word += n_words
 
@@ -100,9 +103,9 @@ class NamingGameLanguage(Language):
         existing weight.
 
         """
-        meaning = self.random_concept()
+        meaning = self.random_concept(self.concept_weight)
         while meaning not in self.words:
-            meaning = self.random_concept()
+            meaning = self.random_concept(self.concept_weight)
         words = self.words[meaning]
         c_weights = []
         cum = 0
@@ -127,7 +130,7 @@ class NamingGameLanguage(Language):
         a random meaning with probability proportional to `weight`.
 
         """
-        if weight == 'weight':
+        if weight == 'preferential':
             def weight(meaning):
                 return sum(self.words.get(meaning, {}).values()) + 1
         elif weight == 'degree':
@@ -136,6 +139,9 @@ class NamingGameLanguage(Language):
         elif weight == 'degree_squared':
             def weight(meaning):
                 return len(self.related_concepts[meaning]) ** 2
+        elif weight == 'one':
+            def weight(meaning):
+                return 1
 
         weights = []
         meanings = []
@@ -194,12 +200,12 @@ class NamingGameLanguage(Language):
         """
         word_sets = {}
         for _ in range(2):
-            meaning = self.random_concept()
+            meaning = self.random_concept(self.concept_weight)
             while meaning in word_sets:
                 # There are safer (no infinite loops, fewer randomizer
                 # draws) ways to do this. They will require
                 # appropriate methods and data structures though.
-                meaning = self.random_concept()
+                meaning = self.random_concept(self.concept_weight)
             words = copy.deepcopy(self.words[meaning])
             for similar_meaning in self.related_concepts[meaning]:
                 for word, weight in self.words[similar_meaning].items():

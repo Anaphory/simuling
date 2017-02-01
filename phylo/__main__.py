@@ -9,6 +9,7 @@ language family represented by a given tree.
 
 """
 
+import sys
 from collections import defaultdict
 import argparse
 import random
@@ -35,12 +36,12 @@ group.add_argument("--semantic-network", type=argparse.FileType('r'),
                    "a colexification graph) in GLM format")
 group = parser.add_argument_group("Properties of the phylogenetic simulation")
 group.add_argument("trees", type=argparse.FileType("r"), nargs="+",
-                   help="""Files containing Newick trees (one tree per line) to be
-                   simulated. You can specify the same tree file
+                   help="""Files containing Newick trees (one tree per line)
+                   to be simulated. You can specify the same tree file
                    multiple times to obtain multiple simulations.""")
 group.add_argument("--scale", type=float, default=1,
-                   help="""Scaling factor of the tree, or equivalently the number of change
-                   events per unit of branchlength.""")
+                   help="Scaling factor of the tree, or equivalently the "
+                   "number of change events per unit of branchlength.")
 group.add_argument('--p-loss', type=float, default=0.5,
                    help="Probability, per time step, that a word becomes "
                    "less likely for a meaning")
@@ -49,6 +50,14 @@ group.add_argument('--p-gain', type=float, default=0.4,
                    "related meaning")
 group.add_argument('--p-new', type=float, default=0.1,
                    help="Probability, per time step, that a new word arises")
+group.add_argument('--quiet', action='store_true',
+                   default=False,
+                   help="Output progress")
+group.add_argument(
+    "--concept-weight",
+    default="degree_squared",
+    choices=["one", "degree", "degree_squared", "preferential"],
+    help="Use this weight function for choosing random concepts.")
 group.add_argument(
     '--wordlist', type=str, default="{tree}-{i}.tsv",
     help="""Filename to write the word lists to.  You can use the placeholders
@@ -83,12 +92,14 @@ for _, tree_file in enumerate(args.trees):
             related_concepts,
             basic=[],
             tree=tree,
+            concept_weight=args.concept_weight,
             scale=args.scale)
 
         phy.simulate(
             p_loss=args.p_loss,
             p_gain=args.p_gain,
-            p_new=args.p_new)
+            p_new=args.p_new,
+            verbose=0 if args.quiet else 1)
 
         # "basic" is the number of words we afterwards use to to infer
         # phylogeny with neighbor-joining
@@ -96,10 +107,13 @@ for _, tree_file in enumerate(args.trees):
         dataframe, columns = phy.collect_word_list(
             Language.vocabulary,
             collect_tips_only=not args.sample_internal_nodes)
-        filename = args.wordlist.format(
-            tree=(tree_file.name).rsplit(".", 1)[0],
-            i=i)
-        with open(filename, "w") as wordlist_file:
-            writer = csv.writer(wordlist_file, 'excel-tab')
-            writer.writerow(columns)
-            writer.writerows(dataframe)
+        if args.wordlist == "-":
+            wordlist_file = sys.stdout
+        else:
+            filename = args.wordlist.format(
+                tree=(tree_file.name).rsplit(".", 1)[0],
+                i=i)
+            wordlist_file = open(filename, "w")
+        writer = csv.writer(wordlist_file, 'excel-tab')
+        writer.writerow(columns)
+        writer.writerows(dataframe)

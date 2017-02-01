@@ -46,7 +46,7 @@ class Phylogeny(object):
         self.tracer = {}
 
     def simulate(self,
-                 verbose=True,
+                 verbose=1,
                  p_loss=0.5,
                  p_gain=0.4,
                  p_new=0.1):
@@ -61,14 +61,15 @@ class Phylogeny(object):
                 self.tracer[node] = {
                     'language': self.root,
                     'distance': 0}
-                print('... initializing node {0} (root)'.format(
-                    node.name))
+                if verbose >= 1:
+                    print('... initializing node {0} (root)'.format(
+                        node.name))
             else:
                 new_language = self.tracer[
                     node.ancestor]['language'].clone()
                 distance = int(
                     (node.length or 1) * self.scale)
-                if verbose:
+                if verbose >= 1:
                     print('... analyzing node {0} ({1})'.format(
                         node.name, distance))
 

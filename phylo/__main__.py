@@ -92,13 +92,11 @@ for _, tree_file in enumerate(args.trees):
             related_concepts,
             basic=[],
             tree=tree,
-            concept_weight=args.concept_weight,
             scale=args.scale)
 
         phy.simulate(
-            p_loss=args.p_loss,
+            concept_weight=args.concept_weight,
             p_gain=args.p_gain,
-            p_new=args.p_new,
             verbose=0 if args.quiet else 1)
 
         # "basic" is the number of words we afterwards use to to infer

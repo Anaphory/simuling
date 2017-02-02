@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-"""Language model based on a naming game
+"""Language model based on a naming game.
 
 This module supplies the functionality of a language model that
 evolves according to a process inspired by Naming Games.
@@ -31,8 +31,7 @@ class NamingGameLanguage(Language):
     def __init__(self,
                  related_concepts,
                  initial_max_wt=10,
-                 random=random.Random(),
-                 concept_weight='degree_squared'):
+                 random=random.Random()):
         """Create a random language.
 
         Given a dictionary mapping concepts to their
@@ -57,7 +56,6 @@ class NamingGameLanguage(Language):
                 generator to use. Defaults to `numpy.random`.
 
         """
-
         self.rng = random
 
         # The weighted word-concept map is represented by two lists
@@ -74,25 +72,36 @@ class NamingGameLanguage(Language):
         for i in range(Language.max_word,
                        Language.max_word + n_words):
             weight = self.rng.randrange(initial_max_wt) + 1
-            self.words[self.random_concept(lambda c: 1)][i] = weight
-
-        self.concept_weight = concept_weight
+            self.words[self.random_concept('one')][i] = weight
 
         Language.max_word += n_words
 
     def random_edge(self, return_word_meaning_pair=True):
+        """Select a random edge proportional to weight.
+
+        NOT IMPLEMENTED.
+
+        """
         raise NotImplementedError
 
     def words_for_concept(self, concept):
+        """Return the set of all words for concept `concept`."""
         return set(self.words[concept])
 
     def concepts_for_word(self, word):
+        """Return the set of all concepts expressed by `word`."""
         return set(
             meaning for meaning, words in self.words.items()
             if word in words)
 
     def clean(self, i):
-        raise NotImplementedError
+        """Reset cached values.
+
+        Does nothing, NamingGameLanguage does not contain cached
+        values.
+
+        """
+        pass
 
     def gain(self, reduce_other=False):
         """Increase the weight of a word meaning a random concept.
@@ -120,9 +129,6 @@ class NamingGameLanguage(Language):
             return self.gain()
         words[c_words[bisect.bisect(c_weights, q)]] += 1
 
-    def new_word(self):
-        raise NotImplementedError
-
     def random_concept(self, weight='degree_squared'):
         """Return a random concept.
 
@@ -132,20 +138,25 @@ class NamingGameLanguage(Language):
         """
         if weight == 'preferential':
             def weight(meaning):
+                """Preferential attachment for weights."""
                 return sum(self.words.get(meaning, {}).values()) + 1
         elif weight == 'degree':
             def weight(meaning):
+                """Draw random concept proportional to degree."""
                 return len(self.related_concepts[meaning])
         elif weight == 'degree_squared':
             def weight(meaning):
+                """Draw random concept proportional to degree squared."""
                 return len(self.related_concepts[meaning]) ** 2
         elif weight == 'one':
             def weight(meaning):
+                """Draw random concept uniformly."""
                 return 1
 
         weights = []
         meanings = []
         c = 0
+        print(weight.__doc__)
         for meaning in self.related_concepts:
             c += weight(meaning)
             weights.append(c)
@@ -188,8 +199,8 @@ class NamingGameLanguage(Language):
             if not self.words[meaning]:
                 del self.words[meaning]
 
-    def naming_game(self):
-        """Play a naming game between two random concepts
+    def naming_game(self, concept_weight):
+        """Play a naming game between two random concepts.
 
         If the language has different words for the two concepts,
         increase the weights of those words. Otherwise invent new
@@ -200,12 +211,12 @@ class NamingGameLanguage(Language):
         """
         word_sets = {}
         for _ in range(2):
-            meaning = self.random_concept(self.concept_weight)
+            meaning = self.random_concept(concept_weight)
             while meaning in word_sets:
                 # There are safer (no infinite loops, fewer randomizer
                 # draws) ways to do this. They will require
                 # appropriate methods and data structures though.
-                meaning = self.random_concept(self.concept_weight)
+                meaning = self.random_concept(concept_weight)
             words = copy.deepcopy(self.words[meaning])
             for similar_meaning in self.related_concepts[meaning]:
                 for word, weight in self.words[similar_meaning].items():
@@ -253,15 +264,15 @@ class NamingGameLanguage(Language):
             self.loss()
 
     def flat_frequencies(self):
+        """Give the weights of all (word, meaning) pairs."""
         return {
             (word, meaning): weight
             for meaning, words in self.words.items()
             for word, weight in words.items()}
 
     def change(self,
-               p_loss=None,
                p_gain=0.3,
-               p_new=None):
+               concept_weight='degree_squared'):
         """Execute one change step.
 
         With probability p_gain, a rare meaning is lost and a frequent
@@ -281,14 +292,16 @@ class NamingGameLanguage(Language):
         if self.rng.random() < p_gain:
             self.gain()
         else:
-            self.naming_game()
+            self.naming_game(concept_weight)
 
     def clone(self):
+        """Return a copy of this object."""
         l = NamingGameLanguage({})
         l.related_concepts = self.related_concepts
         l.words = copy.deepcopy(self.words)
         return l
 
     def __repr__(self):
+        """Representation."""
         return "<NamingGameLanguage\n{:}>".format(
             self.flat_frequencies())

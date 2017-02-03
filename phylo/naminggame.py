@@ -184,19 +184,19 @@ class NamingGameLanguage(Language):
         reduce its weight by 1.
 
         """
-        sum_reciprocal_weights = 0
+        sum_weights = 0
         zeros = []
         for meaning, words in self.words.items():
             for word, weight in words.items():
                 if weight > 0:
-                    sum_reciprocal_weights += 1 / weight
+                    sum_weights += weight
                 else:
                     zeros.append((meaning, word))
-        v = self.rng.random() * sum_reciprocal_weights
+        v = self.rng.random() * sum_weights
         for meaning, words in self.words.items():
             for word, weight in words.items():
                 if weight > 0:
-                    v -= 1 / weight
+                    v -= weight
                 if v < 0:
                     break
             else:

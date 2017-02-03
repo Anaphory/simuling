@@ -46,10 +46,8 @@ class Phylogeny(object):
         self.tracer = {}
 
     def simulate(self,
-                 verbose=True,
-                 p_loss=0.5,
-                 p_gain=0.4,
-                 p_new=0.1):
+                 verbose=1,
+                 **simargs):
         """Run a simulation down the tree.
 
         Evolve languages down the branches of the tree, changing
@@ -61,21 +59,20 @@ class Phylogeny(object):
                 self.tracer[node] = {
                     'language': self.root,
                     'distance': 0}
-                print('... initializing node {0} (root)'.format(
-                    node.name))
+                if verbose >= 1:
+                    print('... initializing node {0} (root)'.format(
+                        node.name))
             else:
                 new_language = self.tracer[
                     node.ancestor]['language'].clone()
                 distance = int(
                     (node.length or 1) * self.scale)
-                if verbose:
+                if verbose >= 1:
                     print('... analyzing node {0} ({1})'.format(
                         node.name, distance))
 
                 for _ in range(distance):
-                    new_language.change(p_loss=p_loss,
-                                        p_gain=p_gain,
-                                        p_new=p_new)
+                    new_language.change(**simargs)
                 self.tracer[node] = {
                     'language': new_language,
                     'distance': distance}

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 
 def basic_vocabulary_sampler(strings):

@@ -13,9 +13,36 @@ import random
 import bisect
 import copy
 
-
 from .language import Language
 from collections import defaultdict, Counter
+
+
+def preferential(meaning, language):
+    """Preferential attachment for weights."""
+    return sum(language.words.get(meaning, {}).values()) + 1
+
+
+def degree(meaning, language):
+    """Draw random concept proportional to degree."""
+    return len(language.related_concepts[meaning])
+
+
+def degree_squared(meaning, language):
+    """Draw random concept proportional to degree squared."""
+    return len(language.related_concepts[meaning]) ** 2
+
+
+def one(*args, **kwargs):
+    """Return 1."""
+    return 1
+
+
+concept_weights = {
+    'preferential': preferential,
+    'degree': degree,
+    'degree_squared': degree_squared,
+    'one': one,
+    }
 
 
 class NamingGameLanguage(Language):
@@ -72,7 +99,9 @@ class NamingGameLanguage(Language):
         for i in range(Language.max_word,
                        Language.max_word + n_words):
             weight = self.rng.randrange(initial_max_wt) + 1
-            self.words[self.random_concept('one')][i] = weight
+            meaning = self.random_concept(one)
+            self.words[meaning]["{:}{:}".format(
+                meaning, i)] = weight
 
         Language.max_word += n_words
 
@@ -103,7 +132,7 @@ class NamingGameLanguage(Language):
         """
         pass
 
-    def gain(self, reduce_other=False):
+    def gain(self, concept_weight, reduce_other=False):
         """Increase the weight of a word meaning a random concept.
 
         Draw a random meaning the usual way using random_concept and
@@ -112,9 +141,9 @@ class NamingGameLanguage(Language):
         existing weight.
 
         """
-        meaning = self.random_concept(self.concept_weight)
+        meaning = self.random_concept(concept_weight)
         while meaning not in self.words:
-            meaning = self.random_concept(self.concept_weight)
+            meaning = self.random_concept(concept_weight)
         words = self.words[meaning]
         c_weights = []
         cum = 0
@@ -129,36 +158,19 @@ class NamingGameLanguage(Language):
             return self.gain()
         words[c_words[bisect.bisect(c_weights, q)]] += 1
 
-    def random_concept(self, weight='degree_squared'):
+    def random_concept(self, weight=degree_squared):
         """Return a random concept.
 
         Calculate weights according to the `weight` function and draw
         a random meaning with probability proportional to `weight`.
 
         """
-        if weight == 'preferential':
-            def weight(meaning):
-                """Preferential attachment for weights."""
-                return sum(self.words.get(meaning, {}).values()) + 1
-        elif weight == 'degree':
-            def weight(meaning):
-                """Draw random concept proportional to degree."""
-                return len(self.related_concepts[meaning])
-        elif weight == 'degree_squared':
-            def weight(meaning):
-                """Draw random concept proportional to degree squared."""
-                return len(self.related_concepts[meaning]) ** 2
-        elif weight == 'one':
-            def weight(meaning):
-                """Draw random concept uniformly."""
-                return 1
-
+        weight = concept_weights.get(weight, weight)
         weights = []
         meanings = []
         c = 0
-        print(weight.__doc__)
         for meaning in self.related_concepts:
-            c += weight(meaning)
+            c += weight(meaning, self)
             weights.append(c)
             meanings.append(meaning)
         v = self.rng.random() * c
@@ -209,6 +221,7 @@ class NamingGameLanguage(Language):
         This method increases the sum of word-meaning weights by 1.
 
         """
+        neighbor_factor = 0.1
         word_sets = {}
         for _ in range(2):
             meaning = self.random_concept(concept_weight)
@@ -221,7 +234,7 @@ class NamingGameLanguage(Language):
             for similar_meaning in self.related_concepts[meaning]:
                 for word, weight in self.words[similar_meaning].items():
                     words.setdefault(word, 0)
-                    words[word] += 0.5 * weight
+                    words[word] += neighbor_factor * weight
             word_sets[meaning] = words
 
         exclusively = {}
@@ -272,7 +285,7 @@ class NamingGameLanguage(Language):
 
     def change(self,
                p_gain=0.3,
-               concept_weight='degree_squared'):
+               concept_weight=degree_squared):
         """Execute one change step.
 
         With probability p_gain, a rare meaning is lost and a frequent
@@ -290,7 +303,7 @@ class NamingGameLanguage(Language):
         """
         self.loss()
         if self.rng.random() < p_gain:
-            self.gain()
+            self.gain(concept_weight)
         else:
             self.naming_game(concept_weight)
 

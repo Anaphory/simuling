@@ -155,7 +155,7 @@ class NamingGameLanguage(Language):
         q = self.rng.random() * cum
         if cum == 0:
             del self.words[meaning]
-            return self.gain()
+            return self.gain(concept_weight)
         words[c_words[bisect.bisect(c_weights, q)]] += 1
 
     def random_concept(self, weight=degree_squared):
@@ -188,14 +188,15 @@ class NamingGameLanguage(Language):
         zeros = []
         for meaning, words in self.words.items():
             for word, weight in words.items():
-                try:
+                if weight > 0:
                     sum_reciprocal_weights += 1 / weight
-                except ZeroDivisionError:
+                else:
                     zeros.append((meaning, word))
         v = self.rng.random() * sum_reciprocal_weights
         for meaning, words in self.words.items():
             for word, weight in words.items():
-                v -= 1 / weight
+                if weight > 0:
+                    v -= 1 / weight
                 if v < 0:
                     break
             else:

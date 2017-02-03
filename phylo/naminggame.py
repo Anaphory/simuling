@@ -183,7 +183,7 @@ class NamingGameLanguage(Language):
         v = self.rng.random() * sum_reciprocal_weights
         for meaning, words in self.words.items():
             for word, weight in words.items():
-                v -= weight
+                v -= 1 / weight
                 if v < 0:
                     break
             else:

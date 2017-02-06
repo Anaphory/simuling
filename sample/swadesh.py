@@ -1,4 +1,13 @@
-from lingpy import *
+#!/usr/bin/env python
+
+"""Subsample a wordlist according to existing sampling methods.
+
+Provide a CLI to sub-sample word lists according to the lists
+Concepticon is based on.
+
+"""
+
+from lingpy import Wordlist, iter_rows
 from lingpy.basic.wordlist import get_wordlist
 from pyconcepticon.api import Concepticon
 
@@ -6,7 +15,6 @@ import argparse
 import sys
 
 if __name__ == '__main__':
-    from sys import argv
     parser = argparse.ArgumentParser(
         "calculate phylogenetic trees with simple distance methods")
     parser.add_argument(
@@ -37,7 +45,7 @@ if __name__ == '__main__':
     wl = get_wordlist(
         args.infile, col='language_id',
         row='feature_id', delimiter='\t')
-    
+
     blacklist = []
     if args.removesynonyms:
         blacklist = []

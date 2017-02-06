@@ -44,7 +44,7 @@ def test_loss():
 
 
 def test_loss_distribution():
-    """Test whether .loss() is 1/weight distributed."""
+    """Test whether .loss() is distributed proportional to weight."""
     l = NamingGameLanguage({1: []})
     samples = 10000
     words = 10
@@ -64,9 +64,10 @@ def test_loss_distribution():
         else:
             raise AssertionError("No word reduced weight")
 
-    # Check that loss is 1/weight distributed
+    # Check that loss is distributed proportional to weight
     print(lost)
-    lost = [lost[i] * i for i in range(1, words)]
-    lost1 = sum(lost)/(words - 1)
-    for i in range(1, words-1):
+    lost = [lost[i] / i
+            for i in range(1, words)]
+    lost1 = sum(lost) / (words - 1)
+    for i in range(1, words - 1):
         assert lost1 * acc >= lost[i] >= lost1 / acc

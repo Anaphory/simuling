@@ -265,7 +265,8 @@ class NamingGameLanguage(Language):
                 word, weight = exclusively[meaning]
                 self.words[meaning][word] += 1
             else:
-                self.words[meaning][Language.max_word] = 1
+                self.words[meaning]["{:}{:}".format(
+                    meaning, Language.max_word)] = 1
                 Language.max_word += 1
 
         if non_specific_word:

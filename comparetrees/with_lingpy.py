@@ -1,28 +1,22 @@
 #!/usr/bin/env python
 
-"""Calculate dendropy-provided tree distances.
+"""Calculate lingpy-provided tree distances.
 
 Calculate tree distance measures between one or several original and
 reconstructed trees using tree comparison methods provided by
-dendropy.
+Lingpy.
 
 """
 
 import sys
 import argparse
-import dendropy
-
-from dendropy.calculate import treecompare
+import lingpy.basic.tree
 
 distance_functions = {
-    "euclidean": treecompare.euclidean_distance,
-    "bipartition": lambda t1, t2: sum(
-        treecompare.false_positives_and_negatives(t1, t2)),
-    "wrf": treecompare.weighted_robinson_foulds_distance,
-    "weighted_robinson_foulds": treecompare.weighted_robinson_foulds_distance,
-    "rf": treecompare.unweighted_robinson_foulds_distance,
-    "unweighted_robinson_foulds":
-        treecompare.unweighted_robinson_foulds_distance,
+    "grf": lambda t1, t2: t1.get_distance(t2, distance='grf'),
+    "rf": lambda t1, t2: t1.get_distance(t2, distance='rf'),
+    "branch": lambda t1, t2: t1.get_distance(t2, distance='branch'),
+    "symmetric": lambda t1, t2: t1.get_distance(t2, distance='symmetric'),
 }
 
 
@@ -44,25 +38,21 @@ if __name__ == "__main__":
     parser.add_argument(
         "--distance",
         choices=distance_functions.keys(),
-        default="rf",
+        default="grf",
         help="The function to use to calculate the distance between trees. "
         "One of " + ", ".join(distance_functions.keys()))
 
     args = parser.parse_args()
 
     for c, (t1, t2) in enumerate(zip(args.original, args.reconstructed)):
-        tns = dendropy.TaxonNamespace()
-        tree1 = dendropy.Tree.get_from_string(
-            t1, schema="newick", taxon_namespace=tns)
-        tree2 = dendropy.Tree.get_from_string(
-            t2, schema="newick", taxon_namespace=tns)
+        tree1 = lingpy.basic.tree.Tree(t1)
+        tree2 = lingpy.basic.tree.Tree(t2)
         print(distance_functions[args.distance](tree1, tree2),
               file=args.output)
     if c == 0:
         # If there was only one original tree, compare it with _each_
         # reconstructed tree.
         for t2 in args.reconstructed:
-            tree2 = dendropy.Tree.get_from_string(
-                t2, schema="newick", taxon_namespace=tns)
+            tree2 = lingpy.basic.tree.Tree(t2)
             print(distance_functions[args.distance](tree1, tree2),
                   file=args.output)

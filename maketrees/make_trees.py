@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+"""Generate random trees according to some specification."""
+
+import sys
 import argparse
 import bisect
 import random
@@ -48,7 +51,7 @@ def create_balanced_random_tree(taxa, branch_length=random.random()):
 
 
 def create_random_tree(taxa, branch_length=lambda: random.random()):
-    """Generate a random tree typology
+    """Generate a random tree typology.
 
     This is a re-implementation of the random tree generator from
     lingpy.
@@ -75,11 +78,10 @@ def create_random_tree(taxa, branch_length=lambda: random.random()):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="""Generate random trees
-    according to some specification""")
+    parser = argparse.ArgumentParser(description=__doc__)
 
     parser.add_argument(
-        '-t', type=int, default=100,
+        '-t', type=int, default=1,
         help="Number of trees to generate")
     parser.add_argument("--taxa", "--languages", "-l", type=str,
                         nargs="+", default=list("ABCDEFGHIJKLMN"),
@@ -88,10 +90,9 @@ if __name__ == "__main__":
                         help="Minimum number of change events along a branch")
     parser.add_argument('--min', type=int, default=900,
                         help="Maximum number of change events along a branch")
-    parser.add_argument("--tree-file", default="simulation.tre",
+    parser.add_argument("--output", "-o", default=sys.stdout,
                         type=argparse.FileType('w'),
-                        help="Filename to write the tree to. "
-                        "Use `--tree-file=-` to output to STDOUT.")
+                        help="Filename to write the tree to.")
     parser.add_argument(
         "--balanced", dest="generator", action="store_const",
         const=create_balanced_random_tree,
@@ -105,6 +106,6 @@ if __name__ == "__main__":
             args.taxa, branch_length=lambda: (
                 random.random()*(args.max-args.min)+args.min))
 
-        args.tree_file.write(
+        args.output.write(
             tree.newick)
-        args.tree_file.write(";\n")
+        args.output.write(";\n")

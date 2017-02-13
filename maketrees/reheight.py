@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 
+"""Reheight a tree.
+
+Make sure every node has a well-defined height above the leaves by
+adjusting branch lengths.
+
+"""
+
 import argparse
 import sys
 
@@ -30,12 +37,13 @@ def normalize_tree(root, mean=lambda x: sum(x)/len(x)):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("trees", type=argparse.FileType('r'))
-    parser.add_argument("--output", "-o",
-                        type=argparse.FileType('w'),
-                        default=sys.stdout,
-                        help="Output filename")
+    parser = argparse.ArgumentParser(__doc__.split("\n")[0])
+    parser.add_argument(
+        "trees", type=argparse.FileType('r'),
+        default=sys.stdin, nargs="?")
+    parser.add_argument(
+        "--output", "-o", type=argparse.FileType('w'),
+        default=sys.stdout, help="Output filename")
     parser.add_argument(
         "--mean", action="store_const", dest="acc",
         const=lambda x: sum(x)/len(x), default=lambda x: sum(x)/len(x),

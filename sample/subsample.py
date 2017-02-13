@@ -14,7 +14,11 @@ import argparse
 import csv
 
 
-def swadesh_sampler(vocabulary, n_items=200, max_synonyms=1, **kwargs):
+from pyconcepticon.api import Concepticon
+
+
+def swadesh_sampler(vocabulary, n_items=200, max_synonyms=1,
+                    cross_semantic_cognates=False, **kwargs):
     """Build a Swadesh-like word list from a vocabulary.
 
     Extract the within-concept cognate classes representing the most
@@ -25,11 +29,18 @@ def swadesh_sampler(vocabulary, n_items=200, max_synonyms=1, **kwargs):
     basic_concepts = collections.Counter()
     words_for_concept = {}
     languages = set()
+    if not cross_semantic_cognates:
+        set_mapper = {}
     for i, line in enumerate(vocabulary):
         concept = line["Feature_ID"]
         language = line["Language_ID"]
         weight = float(line["Weight"])
         concept_set = line["Concept_CogID"]
+
+        if not cross_semantic_cognates:
+            concept_set = set_mapper.setdefault(
+                (concept, concept_set),
+                len(set_mapper))
 
         languages.add(language)
         basic_concepts[concept] += weight
@@ -47,6 +58,51 @@ def swadesh_sampler(vocabulary, n_items=200, max_synonyms=1, **kwargs):
             else:
                 for cognate_set, weight in items.most_common(max_synonyms):
                     yield (language, concept, cognate_set)
+
+
+def conceptlist_sampler_factory(conceptlist, name):
+    """Create a Swadesh-like sampler for a given concept list."""
+    def conceptlist_sampler(vocabulary, cross_semantic_cognates=False,
+                            max_synonyms=1, **kwargs):
+        """Build a word list from a vocabulary.
+
+        Extract the within-concept cognate classes representing the
+        most dominant `max_synonyms` words for the concepts of the
+        list {:s}.
+
+        """
+        words_for_concept = {concept.concepticon_gloss: {}
+                             for concept in conceptlist.concepts.values()}
+
+        if not cross_semantic_cognates:
+            set_mapper = {}
+        for i, line in enumerate(vocabulary):
+            concept = line["Feature_ID"].upper()
+            if concept not in words_for_concept:
+                continue
+
+            language = line["Language_ID"]
+            weight = float(line["Weight"])
+            concept_set = line["Concept_CogID"]
+
+            if not cross_semantic_cognates:
+                concept_set = set_mapper.setdefault(
+                    (concept, concept_set),
+                    len(set_mapper))
+
+            synonyms = words_for_concept[concept].setdefault(
+                language, collections.Counter())
+            synonyms[concept_set] += weight
+
+        # Output
+        yield ("Language_ID", "Feature_ID", "Value")
+        for concept, words in words_for_concept.items():
+            for language, items in words.items():
+                for cognate_set, weight in items.most_common(max_synonyms):
+                    yield (language, concept, cognate_set)
+    conceptlist_sampler.__doc__ = conceptlist_sampler.__doc__.format(
+        name)
+    return conceptlist_sampler
 
 
 def cognate_presence_sampler(vocabulary, min_activation=1, **kwargs):
@@ -80,6 +136,9 @@ samplers = {
     'swadesh': swadesh_sampler,
     'etymo': cognate_presence_sampler
 }
+cn = Concepticon()
+for name, conceptlist in cn.conceptlists.items():
+    samplers[name] = conceptlist_sampler_factory(conceptlist, name)
 
 
 if __name__ == '__main__':
@@ -101,6 +160,12 @@ if __name__ == '__main__':
         dest="sampler",
         help="""Sample a Swadesh word list of cognate classes in meaning
         slots. Equivalent to --sampler=swadesh""")
+    group.add_argument(
+        "--cross-semantic-cognates",
+        action='store_true',
+        default=False,
+        help="Keep cross-semantic cognate classes."
+        " Do not split cognate classes to imply concepts.")
     group.add_argument(
         "--n-items", type=int, default=200,
         help="Number of items in the word list")
@@ -125,6 +190,7 @@ in the etymological dictionary.""")
     sampler = samplers[args.sampler](data, **vars(args))
     if args.fasta:
         ...
+        raise NotImplementedError("FASTA output is not available")
     else:
         writer = csv.writer(args.output)
         sampler = samplers[args.sampler]

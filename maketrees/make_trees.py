@@ -9,7 +9,7 @@ import random
 import newick
 
 
-def create_balanced_random_tree(taxa, branch_length=random.random()):
+def create_balanced_random_tree(taxa, branch_length=random.random):
     """Generate a random tree.
 
     This builds a random tree with a given branch length
@@ -50,7 +50,7 @@ def create_balanced_random_tree(taxa, branch_length=random.random()):
     return nodes[0]
 
 
-def create_random_tree(taxa, branch_length=lambda: random.random()):
+def create_random_tree(taxa, branch_length=random.random):
     """Generate a random tree typology.
 
     This is a re-implementation of the random tree generator from
@@ -93,6 +93,8 @@ if __name__ == "__main__":
     parser.add_argument("--output", "-o", default=sys.stdout,
                         type=argparse.FileType('w'),
                         help="Filename to write the tree to.")
+    parser.add_argument("--seed", "-s",
+                        help="Random number generator seed.")
     parser.add_argument(
         "--balanced", dest="generator", action="store_const",
         const=create_balanced_random_tree,
@@ -100,6 +102,9 @@ if __name__ == "__main__":
         help="Create a tree with roughly balanced node heights")
 
     args = parser.parse_args()
+
+    if args.seed:
+        random.seed(args.seed)
 
     for i in range(args.t):
         tree = args.generator(

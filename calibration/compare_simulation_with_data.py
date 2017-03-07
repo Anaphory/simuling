@@ -70,12 +70,12 @@ def pairwise_shared_vocabulary(data, verbose=True):
         yield (language1, language2), score/len(features_present_in_one)
 
 
-def estimate_beta_distribution(datasets):
-    """Fit beta distribution parameters from a sequence of wordlists.
+def estimate_normal_distribution(datasets):
+    """Fit normal distribution parameters from a sequence of wordlists.
 
     Given a sequence of word lists, presumably from simulation,
     calculate the pairwise shared vocabulary proportion for each word
-    list and estimate the parameters of the Beta distribution that
+    list and estimate the parameters of the Normal distribution that
     would best explain those proportions.
 
     """
@@ -85,28 +85,28 @@ def estimate_beta_distribution(datasets):
             proportions.setdefault(pair, []).append(value)
     for pair in proportions:
         try:
-            a, b, _, _ = scipy.stats.beta.fit(proportions[pair],
-                                              floc=0, fscale=1)
+            parameters = scipy.stats.norm.fit(proportions[pair])
         except scipy.stats._continuous_distns.FitSolverError:
             print(proportions[pair])
             raise
-        proportions[pair] = (a, b)
+        print(pair, parameters)
+        proportions[pair] = parameters
     return proportions
 
 
-def beta_likelihood(data, betas):
-    """Calculate the likelihood of data from Beta distributions.
+def normal_likelihood(data, normals):
+    """Calculate the likelihood of data from Normal distributions.
 
     Calculate the logarithm of the likelihood of the pairwise shared
     vocabulary proportions in the word list `data` when assuming all
-    of them are independently Beta distributed with α and β as given
-    in `betas`.
+    of them are independently Normal distributed with α and β as given
+    in `normals`.
 
     """
     loglk = 0
     for pair, value in pairwise_shared_vocabulary(data):
-        alpha, beta = betas[pair]
-        loglk += scipy.stats.beta.logpdf(value, alpha, beta)
+        parameters = normals[pair]
+        loglk += scipy.stats.norm.logpdf(value, *parameters)
     return loglk
 
 
@@ -124,10 +124,10 @@ def main(args=sys.argv):
         help="Wordlist given by the phylo simulation")
     args = parser.parse_args(args)
 
-    betas = estimate_beta_distribution(map(read_cldf,
+    normals = estimate_normal_distribution(map(read_cldf,
                                            args.simulationdata))
-    loglk = beta_likelihood(read_lingpy(args.realdata),
-                            betas)
+    loglk = normal_likelihood(read_lingpy(args.realdata),
+                              normals)
     print(loglk)
 
 

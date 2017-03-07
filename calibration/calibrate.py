@@ -17,7 +17,7 @@ import newick
 import networkx
 from phylo.simulate import simulate, write_to_file
 from compare_simulation_with_data import (
-    read_cldf, read_lingpy, estimate_beta_distribution, beta_likelihood)
+    read_cldf, read_lingpy, estimate_normal_distribution, normal_likelihood)
 
 
 with open("clics.gml") as nw:
@@ -36,16 +36,16 @@ def simulate_and_write(tree, scale=1, n_sim=3):
 
 
 def run_sims_and_calc_lk(tree, data, scale=1, n_sim=3):
-    """Run simulations and calculate their Beta likelihood.
+    """Run simulations and calculate their Normal likelihood.
 
     Run `n` simulations and calculate the likelihood of `realdata`
-    under a Beta distribution assumption of pairwise shared vocabulary
+    under a Normal distribution assumption of pairwise shared vocabulary
     proportions give the results of the simulations.
 
     """
-    betas = estimate_beta_distribution(
+    normals = estimate_normal_distribution(
         simulate_and_write(tree, scale=scale, n_sim=n_sim))
-    return beta_likelihood(data, betas)
+    return normal_likelihood(data, normals)
 
 
 def main(args):

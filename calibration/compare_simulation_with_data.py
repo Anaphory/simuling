@@ -16,16 +16,26 @@ import sys
 import argparse
 
 
-def read_cldf(file):
+def read_cldf(file, features=None):
     """Read a CLDF TSV file.
 
     Read a tsv file as output by the simulation and rename the columns
     such that the cognate IDs become `value`.
 
+    Use features=None for all features, or supply a sequence of feature
+    IDs to filter.
+
     """
     data = pandas.read_csv(file, sep="\t", index_col="ID")
     data.columns = ["Language_ID", "Feature_ID", "Form", "Weight", "Value",
                     "Concept_CogID"]
+    if features is None:
+        pass
+    else:
+        include = (data["Feature_ID"] == object())
+        for feature in features:
+            include |= data["Feature_ID"] == feature
+        data = data[include]
     return data
 
 

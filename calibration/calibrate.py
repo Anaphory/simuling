@@ -15,6 +15,9 @@ import tempfile
 
 import newick
 import networkx
+
+from pyconcepticon.api import Concepticon
+
 from phylo.simulate import simulate, write_to_file
 from compare_simulation_with_data import (
     read_cldf, read_lingpy, estimate_normal_distribution, normal_likelihood)
@@ -24,7 +27,7 @@ with open("clics.gml") as nw:
     related_concepts = networkx.parse_gml(nw)
 
 
-def simulate_and_write(tree, scale=1, n_sim=3):
+def simulate_and_write(tree, features, scale=1, n_sim=3):
     """Simulate evolution on tree and write results to file."""
     for i in range(n_sim):
         columns, dataframe = simulate(tree, related_concepts,
@@ -32,10 +35,10 @@ def simulate_and_write(tree, scale=1, n_sim=3):
         filename = "simulation_{:}_{:}.tsv".format(scale, i)
         with open(filename, "w") as f:
             write_to_file(columns, dataframe, f)
-        yield read_cldf(filename)
+        yield read_cldf(filename, features=features)
 
 
-def run_sims_and_calc_lk(tree, data, scale=1, n_sim=3):
+def run_sims_and_calc_lk(tree, data, features, scale=1, n_sim=3):
     """Run simulations and calculate their Normal likelihood.
 
     Run `n` simulations and calculate the likelihood of `realdata`
@@ -44,7 +47,7 @@ def run_sims_and_calc_lk(tree, data, scale=1, n_sim=3):
 
     """
     normals = estimate_normal_distribution(
-        simulate_and_write(tree, scale=scale, n_sim=n_sim))
+        simulate_and_write(tree, features=features, scale=scale, n_sim=n_sim))
     return normal_likelihood(data, normals)
 
 
@@ -78,6 +81,11 @@ def main(args):
         "--dir", "--directory",
         default=tempfile.mkdtemp(prefix="calibrate"),
         help="Write simulation results to this directory")
+    parser.add_argument(
+        "--features",
+        default="Swadesh-1964-215",
+        help="""The list of concepts to down-sample to. Either the ID of a list in
+        concepticon, or a comma-separated list of glosses.""")
     args = parser.parse_args(args)
 
     os.chdir(args.dir)
@@ -88,24 +96,36 @@ def main(args):
     tree = newick.load(args.realtree)[0]
     data = read_lingpy(args.realdata)
 
+    if args.features != '*':
+        try:
+            features = [
+                c.concepticon_gloss.lower()
+                for c in Concepticon().conceptlists[
+                    args.features].concepts.values()]
+        except KeyError:
+            features = args.features.split(",")
+    else:
+        features = None
+
     def simulate_scale(scale):
         return run_sims_and_calc_lk(
             scale=scale,
             n_sim=args.sims,
             tree=tree,
-            data=data)
+            data=data,
+            features=features)
 
     lks[lower] = simulate_scale(lower)
     lks[upper] = simulate_scale(upper)
-    while upper/lower > 1.001:
-        i = (lower**2 * upper) ** (1/3)
+    while upper / lower > 1.001:
+        i = (lower**2 * upper) ** (1 / 3)
         lks[i] = simulate_scale(i)
         with open("lks", "a") as w:
             print("{:13.2f} {:13.2f}".format(i, lks[i]))
         if lks[i] < lks[lower] and lks[i] < lks[upper]:
             break
 
-        j = (lower * upper**2) ** (1/3)
+        j = (lower * upper**2) ** (1 / 3)
         lks[j] = simulate_scale(j)
         with open("lks", "a") as w:
             print("{:13.2f} {:13.2f}".format(j, lks[j]), file=w)
@@ -129,3 +149,6 @@ def main(args):
 
 if __name__ == '__main__':
     main(sys.argv[1:])
+
+
+

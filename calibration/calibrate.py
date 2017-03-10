@@ -17,7 +17,6 @@ import newick
 import networkx
 
 from pyconcepticon.api import Concepticon
-
 from phylo.simulate import simulate, write_to_file
 from compare_simulation_with_data import (
     read_cldf, read_lingpy, estimate_normal_distribution, normal_likelihood)

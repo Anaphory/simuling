@@ -39,7 +39,7 @@ def read_cldf(file, features=None):
     return data
 
 
-def read_lingpy(file):
+def read_lingpy(file, features=None):
     """Read a file in LingPy conventions.
 
     WARNING: Currently only works for beida-1964.tsv, because it
@@ -48,6 +48,13 @@ def read_lingpy(file):
     """
     data = pandas.read_csv(file, sep="\t", index_col="ID")
     data.columns = ["Language_ID", "Feature_ID", "Form", "Hanzi", "Value"]
+    if features is None:
+        pass
+    else:
+        include = (data["Feature_ID"] == object())
+        for feature in features:
+            include |= data["Feature_ID"] == feature
+        data = data[include]
     return data
 
 

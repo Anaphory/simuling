@@ -40,17 +40,17 @@ def main(args=sys.argv):
         help="""Files containing Newick trees (one tree per line) to be
         simulated. You can specify the same tree file multiple times
         to obtain multiple simulations.""")
-    group.add_argument("--scale", type=float, default=1,
+    group.add_argument("--scale", type=float, default=2.39,
                        help="Scaling factor of the tree, or equivalently the "
                        "number of change events per unit of branchlength.")
-    group.add_argument('--p-loss', type=float, default=0.5,
+    group.add_argument('--p-loss', type=float, default=0.0,
                        help="Probability, per time step, that a word becomes "
                        "less likely for a meaning")
-    group.add_argument('--p-gain', type=float, default=0.4,
+    group.add_argument('--p-gain', type=float, default=0.0,
                        help="Probability, per time step, that a word gains a "
                        "related meaning")
     group.add_argument(
-        '--p-new', type=float, default=0.1,
+        '--p-new', type=float, default=0.0,
         help="Probability, per time step, that a new word arises")
     group.add_argument('--quiet', action='store_true',
                        default=False,

@@ -74,6 +74,10 @@ def main(args=sys.argv):
 
     if args.semantic_network:
         related_concepts = networkx.parse_gml(args.semantic_network)
+        for node1, edges in related_concepts.edge.items():
+            for node2, properties in edges.items():
+                if properties.get("weight", 2) <= 1:
+                    related_concepts.remove_edge(node1, node2)
     else:
         concept2field = defaultdict(set)
         for c in range(args.concepts):

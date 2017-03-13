@@ -75,7 +75,7 @@ def main(args=sys.argv):
     if args.semantic_network:
         related_concepts = networkx.parse_gml(args.semantic_network)
         for node1, edges in related_concepts.edge.items():
-            for node2, properties in edges.items():
+            for node2, properties in list(edges.items()):
                 if properties.get("weight", 2) <= 1:
                     related_concepts.remove_edge(node1, node2)
     else:

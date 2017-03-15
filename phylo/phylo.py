@@ -22,7 +22,8 @@ class Phylogeny(object):
             root=None,
             basic=range(100),
             scale=1000,
-            initial_max_wt=10):
+            initial_max_wt=10,
+            neighbor_factor=0.1):
         """Create a phylogeny simulation object.
 
         related_concepts: a networkx.Graph or a dictionary of lists,
@@ -38,7 +39,8 @@ class Phylogeny(object):
 
         if root is None:
             self.root = Language(
-                self.related_concepts, initial_max_wt)
+                self.related_concepts, initial_max_wt,
+                neighbor_factor=neighbor_factor)
         else:
             self.root = root
         self.scale = scale

@@ -13,13 +13,14 @@ from .phylo import Phylogeny
 def simulate(
         tree, related_concepts,
         concept_weight="degree_squared", scale=1, p_gain=0,
-        verbose=False, tips_only=True):
+        verbose=False, tips_only=True, neighbor_factor=0.1):
     """Run a phylogeny simulation with the given parameters."""
     phy = Phylogeny(
         related_concepts,
         basic=[],
         tree=tree,
-        scale=scale)
+        scale=scale,
+        neighbor_factor=neighbor_factor)
 
     phy.simulate(
         concept_weight=concept_weight,

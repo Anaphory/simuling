@@ -43,6 +43,8 @@ def main(args=sys.argv):
     group.add_argument("--scale", type=float, default=2.39,
                        help="Scaling factor of the tree, or equivalently the "
                        "number of change events per unit of branchlength.")
+    group.add_argument("--neighbor-factor", type=float, default=0.1,
+                       help="How the score for implicit polysemy.")
     group.add_argument('--p-loss', type=float, default=0.0,
                        help="Probability, per time step, that a word becomes "
                        "less likely for a meaning")
@@ -95,6 +97,7 @@ def main(args=sys.argv):
                 tree, related_concepts,
                 concept_weight=args.concept_weight,
                 scale=args.scale,
+                neighbor_factor=args.neighbor_factor,
                 p_gain=args.p_gain,
                 verbose=0 if args.quiet else 1,
                 tips_only=not args.sample_internal_nodes)
@@ -105,7 +108,7 @@ def main(args=sys.argv):
                     tree=(tree_file.name).rsplit(".", 1)[0],
                     i=i)
                 wordlist_file = open(filename, "w")
-            write_to_file(columns, dataframe, file=wordlist_file)
+            write_to_file(dataframe, columns, file=wordlist_file)
 
 
 if __name__ == "__main__":

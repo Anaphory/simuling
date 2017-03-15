@@ -58,6 +58,7 @@ class NamingGameLanguage(Language):
     def __init__(self,
                  related_concepts,
                  initial_max_wt=10,
+                 neighbor_factor=0.1,
                  random=random.Random()):
         """Create a random language.
 
@@ -93,6 +94,8 @@ class NamingGameLanguage(Language):
         # calculating it anew every draw step.
 
         self.related_concepts = related_concepts
+
+        self.neighbor_factor = neighbor_factor
 
         self.words = defaultdict(Counter)
         n_words = len(related_concepts)
@@ -222,7 +225,7 @@ class NamingGameLanguage(Language):
         This method increases the sum of word-meaning weights by 1.
 
         """
-        neighbor_factor = 0.1
+        neighbor_factor = self.neighbor_factor
         word_sets = {}
         for _ in range(2):
             meaning = self.random_concept(concept_weight)

@@ -83,8 +83,8 @@ def pairwise_shared_vocabulary(data, verbose=True):
             else:
                 score += 1 / len(cognateset1 | cognateset2)
         if verbose:
-            print(language1, language2, score/len(features_present_in_one))
-        yield (language1, language2), score/len(features_present_in_one)
+            print(language1, language2, score / len(features_present_in_one))
+        yield (language1, language2), score / len(features_present_in_one)
 
 
 def estimate_normal_distribution(datasets):
@@ -142,7 +142,7 @@ def main(args=sys.argv):
     args = parser.parse_args(args)
 
     normals = estimate_normal_distribution(map(read_cldf,
-                                           args.simulationdata))
+                                               args.simulationdata))
     loglk = normal_likelihood(read_lingpy(args.realdata),
                               normals)
     print(loglk)

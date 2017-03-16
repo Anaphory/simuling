@@ -42,7 +42,7 @@ concept_weights = {
     'degree': degree,
     'degree_squared': degree_squared,
     'one': one,
-    }
+}
 
 
 class NamingGameLanguage(Language):

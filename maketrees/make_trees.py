@@ -109,7 +109,7 @@ if __name__ == "__main__":
     for i in range(args.t):
         tree = args.generator(
             args.taxa, branch_length=lambda: (
-                random.random()*(args.max-args.min)+args.min))
+                random.random() * (args.max - args.min) + args.min))
 
         args.output.write(
             tree.newick)

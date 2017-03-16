@@ -42,7 +42,7 @@ concept_weights = {
     'degree': degree,
     'degree_squared': degree_squared,
     'one': one,
-    }
+}
 
 
 class NamingGameLanguage(Language):
@@ -57,7 +57,8 @@ class NamingGameLanguage(Language):
 
     def __init__(self,
                  related_concepts,
-                 initial_max_wt=10,
+                 initial_weight,
+                 neighbor_factor=0.1,
                  random=random.Random()):
         """Create a random language.
 
@@ -76,8 +77,12 @@ class NamingGameLanguage(Language):
             related_concepts (`dict`): Maps concepts to semantically
                 related concepts.
 
-            initial_max_wt (`int`, optional): The maximum weight of a
-                concept-word connection weight. Defaults to 10.
+            initial_weight (`→int`): A random number generator for the
+                initial weights.
+
+            neighbor_factor (`float`): The coefficient for words
+                meaning a similar concept contributing to their
+                neighbour's weight.
 
             random (`RandomState`, optional): The random number
                 generator to use. Defaults to `numpy.random`.
@@ -94,11 +99,13 @@ class NamingGameLanguage(Language):
 
         self.related_concepts = related_concepts
 
+        self.neighbor_factor = neighbor_factor
+
         self.words = defaultdict(Counter)
         n_words = len(related_concepts)
         for i in range(Language.max_word,
                        Language.max_word + n_words):
-            weight = self.rng.randrange(initial_max_wt) + 1
+            weight = initial_weight()
             meaning = self.random_concept(one)
             self.words[meaning]["{:}{:}".format(
                 meaning, i)] = weight
@@ -222,7 +229,7 @@ class NamingGameLanguage(Language):
         This method increases the sum of word-meaning weights by 1.
 
         """
-        neighbor_factor = 0.1
+        neighbor_factor = self.neighbor_factor
         word_sets = {}
         for _ in range(2):
             meaning = self.random_concept(concept_weight)

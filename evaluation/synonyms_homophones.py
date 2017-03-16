@@ -18,9 +18,9 @@ def synonymity(data):
     syn = 0
     m = 0
     for meaning, words in data.groupby("Feature_ID"):
-        syn += words["Weight"].sum()**2/(words["Weight"]**2).sum()
+        syn += words["Weight"].sum()**2 / (words["Weight"]**2).sum()
         m += 1
-    return syn/m
+    return syn / m
 
 
 def vocabulary_size(data):
@@ -38,9 +38,9 @@ def semantic_width(data):
     width = 0
     m = 0
     for form, meanings in data.groupby("Global_CogID"):
-        width += meanings["Weight"].sum()**2/(meanings["Weight"]**2).sum()
+        width += meanings["Weight"].sum()**2 / (meanings["Weight"]**2).sum()
         m += 1
-    return width/m
+    return width / m
 
 
 if __name__ == "__main__":

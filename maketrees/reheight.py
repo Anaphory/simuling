@@ -13,7 +13,7 @@ import sys
 import newick
 
 
-def normalize_tree(root, mean=lambda x: sum(x)/len(x)):
+def normalize_tree(root, mean=lambda x: sum(x) / len(x)):
     """Ensure all leaves of the tree have equal depth.
 
     To get that, recursively average lengths.
@@ -28,10 +28,10 @@ def normalize_tree(root, mean=lambda x: sum(x)/len(x)):
     if heights:
         height = mean(heights)
         for node, ht in zip(subtrees, heights):
-            if ht-node.length > height:
-                height = ht-node.length
+            if ht - node.length > height:
+                height = ht - node.length
         for node, ht in zip(subtrees, heights):
-            node.length += height-ht
+            node.length += height - ht
         return root.length + height, root
     return root.length, root
 
@@ -46,11 +46,11 @@ if __name__ == "__main__":
         default=sys.stdout, help="Output filename")
     parser.add_argument(
         "--mean", action="store_const", dest="acc",
-        const=lambda x: sum(x)/len(x), default=lambda x: sum(x)/len(x),
+        const=lambda x: sum(x) / len(x), default=lambda x: sum(x) / len(x),
         help="Use arithmetic mean to calculate new branch height")
     parser.add_argument(
         "--rms", action="store_const", dest="acc",
-        const=lambda x: (sum(map(lambda xi: xi*xi, x))/len(x))**0.5,
+        const=lambda x: (sum(map(lambda xi: xi * xi, x)) / len(x))**0.5,
         help="Use root mean square to calculate new branch height")
     parser.add_argument(
         "--max", action="store_const", dest="acc",

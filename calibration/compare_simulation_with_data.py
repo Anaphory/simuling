@@ -78,8 +78,8 @@ def pairwise_shared_vocabulary(data, verbose=True):
             cognateset2 = set(vocabulary2["Value"][
                 vocabulary2["Feature_ID"] == feature])
             if cognateset1 & cognateset2:
-                score += (len(cognateset1 & cognateset2)
-                          / len(cognateset1 | cognateset2))
+                score += (len(cognateset1 & cognateset2) /
+                          len(cognateset1 | cognateset2))
             else:
                 score += 1 / len(cognateset1 | cognateset2)
         if verbose:

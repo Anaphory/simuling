@@ -31,7 +31,8 @@ def main(args=sys.argv):
                        help="Number of semantic fields the concepts show")
     group.add_argument(
         "--semantic-network", type=argparse.FileType('r'),
-        default=open("clics.gml"), # FIXME: This needs to become a path relative to __file__
+        # FIXME: This needs to become a path relative to __file__
+        default=open("clics.gml"),
         help="File containing the semantic network to be used (eg. "
         "a colexification graph) in GLM format")
     group.add_argument(

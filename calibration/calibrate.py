@@ -84,7 +84,8 @@ def main(args):
 
     parser.add_argument(
         "--semantic-network",
-        default=open("clics.gml"), # FIXME: This needs to become a path relative to __file__
+        # FIXME: This needs to become a path relative to __file__
+        default=open("clics.gml"),
         type=argparse.FileType("r"),
         help="""File containing the semantic network to be used (eg. a
         colexification graph) in GLM format""")

@@ -31,8 +31,15 @@ def main(args=sys.argv):
                        help="Number of semantic fields the concepts show")
     group.add_argument(
         "--semantic-network", type=argparse.FileType('r'),
+        default=open("clics.gml"), # FIXME: This needs to become a path relative to __file__
         help="File containing the semantic network to be used (eg. "
         "a colexification graph) in GLM format")
+    group.add_argument(
+        "--min-connection",
+        type=float,
+        default=0,
+        help="""The minimum 'weight' for a semantic network edge to be considered
+        in the simulation""")
     group = parser.add_argument_group(
         "Properties of the phylogenetic simulation")
     group.add_argument(
@@ -78,7 +85,7 @@ def main(args=sys.argv):
         related_concepts = networkx.parse_gml(args.semantic_network)
         for node1, edges in related_concepts.edge.items():
             for node2, properties in list(edges.items()):
-                if properties.get("weight", 2) <= 1:
+                if properties.get("weight", 1) < args.min_connection:
                     related_concepts.remove_edge(node1, node2)
     else:
         concept2field = defaultdict(set)

@@ -22,14 +22,6 @@ from compare_simulation_with_data import (
     read_cldf, read_lingpy, estimate_normal_distribution, normal_likelihood)
 
 
-with open("clics.gml") as nw:
-    related_concepts = networkx.parse_gml(nw)
-for node1, edges in related_concepts.edge.items():
-    for node2, properties in list(edges.items()):
-        if properties.get("weight", 2) <= 1:
-            related_concepts.remove_edge(node1, node2)
-
-
 def simulate_and_write(tree, features, scale=1, n_sim=3):
     """Simulate evolution on tree and write results to file."""
     for i in range(n_sim):
@@ -89,7 +81,27 @@ def main(args):
         default="Swadesh-1964-215",
         help="""The list of concepts to down-sample to. Either the ID of a list in
         concepticon, or a comma-separated list of glosses.""")
+
+    parser.add_argument(
+        "--semantic-network",
+        default=open("clics.gml"), # FIXME: This needs to become a path relative to __file__
+        type=argparse.FileType("r"),
+        help="""File containing the semantic network to be used (eg. a
+        colexification graph) in GLM format""")
+    parser.add_argument(
+        "--min-connection",
+        type=float,
+        default=0,
+        help="""The minimum 'weight' for a semantic network edge to be considered
+        in the simulation""")
+
     args = parser.parse_args(args)
+
+    related_concepts = networkx.parse_gml(args.semantic_network)
+    for node1, edges in related_concepts.edge.items():
+        for node2, properties in list(edges.items()):
+            if properties.get("weight", 1) < args.min_connection:
+                related_concepts.remove_edge(node1, node2)
 
     os.chdir(args.dir)
     lks = {}

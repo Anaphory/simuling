@@ -22,7 +22,7 @@ from compare_simulation_with_data import (
     read_cldf, read_lingpy, estimate_normal_distribution, normal_likelihood)
 
 
-def simulate_and_write(tree, features, scale=1, n_sim=3):
+def simulate_and_write(tree, features, related_concepts, scale=1, n_sim=3):
     """Simulate evolution on tree and write results to file."""
     for i in range(n_sim):
         columns, dataframe = simulate(tree, related_concepts,
@@ -33,7 +33,7 @@ def simulate_and_write(tree, features, scale=1, n_sim=3):
         yield read_cldf(filename, features=features)
 
 
-def run_sims_and_calc_lk(tree, data, features, scale=1, n_sim=3):
+def run_sims_and_calc_lk(tree, data, features, related_concepts, scale=1, n_sim=3):
     """Run simulations and calculate their Normal likelihood.
 
     Run `n` simulations and calculate the likelihood of `realdata`
@@ -42,7 +42,7 @@ def run_sims_and_calc_lk(tree, data, features, scale=1, n_sim=3):
 
     """
     normals = estimate_normal_distribution(
-        simulate_and_write(tree, features=features, scale=scale, n_sim=n_sim))
+        simulate_and_write(tree, features=features, related_concepts=related_concepts, scale=scale, n_sim=n_sim))
     return normal_likelihood(data, normals)
 
 
@@ -127,6 +127,7 @@ def main(args):
         return run_sims_and_calc_lk(
             scale=scale,
             n_sim=args.sims,
+            related_concepts=related_concepts,
             tree=tree,
             data=data,
             features=features)

@@ -91,6 +91,7 @@ def main(args=sys.argv):
     plot_vocabularies(
         read_lingpy(args.realdata),
         *map(read_cldf, args.simulationdata))
+    plt.savefig("real_vs_simulated.png")
     plt.show()
 
 

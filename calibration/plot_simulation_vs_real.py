@@ -64,14 +64,23 @@ def compatible_pairwise_shared_vocabulary(data, order):
 def plot_vocabularies(real, *simulated):
     x, names = ordered_pairwise_shared_vocabulary(real)
     print("filename", *["'{:}-{:}'".format(n1, n2) for n1, n2 in names],
-          sep=",")
-    print(real.name, *x, sep=",")
+          sep="\t")
+    print("real", *x, sep="\t")
     plt.plot(x, x, "--", c="0.5")
-    for data in simulated:
+    for d, data in enumerate(simulated):
         y = list(compatible_pairwise_shared_vocabulary(
             data, names))
-        print(data.name, *y, sep=",")
+        print(d, *y, sep="\t")
         plt.plot(x, y)
+
+    ax = plt.gca()
+    ax.set_xticks(x)
+    ax.set_xticklabels(names)
+    for tick in ax.xaxis.get_major_ticks():
+        tick.label.set_fontsize(6)
+        # specify integer or one of preset strings, e.g.
+        # tick.label.set_fontsize('x-small')
+        tick.label.set_rotation('vertical')
 
 
 def main(args=sys.argv):
@@ -86,12 +95,16 @@ def main(args=sys.argv):
         nargs="+",
         type=argparse.FileType("r"),
         help="Wordlist given by the phylo simulation")
+    parser.add_argument(
+        "--figure-file",
+        help="File to write the figure to")
     args = parser.parse_args(args)
 
     plot_vocabularies(
         read_lingpy(args.realdata),
         *map(read_cldf, args.simulationdata))
-    plt.savefig("real_vs_simulated.png")
+    if args.figure_file:
+        plt.savefig(args.figure_file)
     plt.show()
 
 

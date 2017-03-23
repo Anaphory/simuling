@@ -317,6 +317,7 @@ class NamingGameLanguage(Language):
         l = NamingGameLanguage({})
         l.related_concepts = self.related_concepts
         l.words = copy.deepcopy(self.words)
+        l.neighbor_factor = self.neighbor_factor
         return l
 
     def __repr__(self):

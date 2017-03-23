@@ -124,7 +124,7 @@ def estimate_normal_distribution(datasets):
     return proportions
 
 
-def normal_likelihood(data, normals):
+def normal_likelihood(data, normals, ignore=[]):
     """Calculate the likelihood of data from Normal distributions.
 
     Calculate the logarithm of the likelihood of the pairwise shared
@@ -135,6 +135,8 @@ def normal_likelihood(data, normals):
     """
     loglk = 0
     for pair, value in pairwise_shared_vocabulary(data):
+        if pair in ignore:
+            continue
         parameters = normals[pair]
         loglk += scipy.stats.norm.logpdf(value, *parameters)
     return loglk

@@ -19,10 +19,10 @@ class Phylogeny(object):
             self,
             related_concepts,
             tree,
+            initial_weight,
             root=None,
             basic=range(100),
             scale=1000,
-            initial_max_wt=10,
             neighbor_factor=0.1):
         """Create a phylogeny simulation object.
 
@@ -39,8 +39,9 @@ class Phylogeny(object):
 
         if root is None:
             self.root = Language(
-                self.related_concepts, initial_max_wt,
+                self.related_concepts,
                 neighbor_factor=neighbor_factor)
+            self.root.generate_words(initial_weight)
         else:
             self.root = root
         self.scale = scale

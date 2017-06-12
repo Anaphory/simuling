@@ -10,6 +10,6 @@ concepts. It also provides other tools useful for simulation studies
 of language evolution inference, such as random tree generators,
 wordlist sub-samplers and tree inference wrappers.
 
-For details, read (or execute as `sh` script) [demo.org](blob/master/demo.org)
+For details, read (or execute as `sh` script) [demo.org](demo.org)
 
 

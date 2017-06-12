@@ -33,10 +33,13 @@ class Language(object):
     rng = random.Random()
     """Random number generator to use."""
 
+    _flat = None
+    """Flat frequencies cache."""
+
     def __init__(self,
                  related_concepts,
-                 initial_max_wt=10,
-                 random=random.Random()):
+                 random=random.Random(),
+                 generate_words=True):
         """Create a random language.
 
         Given a dictionary mapping concepts to their
@@ -74,18 +77,22 @@ class Language(object):
 
         self._cum_concept_weights = []
         self._word_meaning_pairs = []
-        cum_weight = 0
+        if generate_words:
+            self.generate_words(lambda: self.rng.randrange(1, 10))
 
-        n_words = len(related_concepts)
+    def generate_words(self, initial_weight):
+        """Naive initialization of the language."""
+        cum_weight = 0
+        n_words = len(self.related_concepts)
         for i in range(Language.max_word,
                        Language.max_word + n_words):
             # Draw a random weight according to `initial_max_wt`. (And
             # immediately add it to the cumulative weight.)
-            cum_weight += self.rng.randrange(initial_max_wt) + 1
+            cum_weight += initial_weight()
             self._cum_concept_weights.append(cum_weight)
             self._word_meaning_pairs.append((
                 i,
-                self.rng.choice([x for x in related_concepts])))
+                self.rng.choice([x for x in self.related_concepts])))
 
         assert len(self._cum_concept_weights) == len(self._word_meaning_pairs)
         # None of the words in this language should be cognate with
@@ -157,8 +164,7 @@ class Language(object):
         self.clean(i)
 
     def gain(self, reduce_other=False):
-        self._flat = None
-        """Add a meaning to a word
+        """Add a meaning to a word.
 
         A random word (with probability proportional to ‘use’) gains
         the meaning of one concept related to a meaning it already
@@ -166,6 +172,7 @@ class Language(object):
         that meaning loses weight 1.
 
         """
+        self._flat = None
         word, concept = self.random_edge()
         rc = self.related_concepts[concept]
         new_concept = list(rc)[self.rng.randrange(len(rc))]
@@ -198,8 +205,8 @@ class Language(object):
             self.clean(other_index)
 
     def new_word(self):
+        """A random concept gains an entirely new word."""
         self._flat = None
-        """A random concept gains an entirely new word"""
         rc = self.related_concepts
         new_concept = list(rc)[self.rng.randrange(len(rc))]
         self._cum_concept_weights.append(
@@ -210,6 +217,7 @@ class Language(object):
         Language.max_word += 1
 
     def flat_frequencies(self):
+        """Return (cached) flat frequencies."""
         if not self._flat:
             self._flat = {
                 (word, meaning): (frequency - prev_frequency)
@@ -220,6 +228,13 @@ class Language(object):
         return self._flat
 
     def basic_vocabulary(self, basic, threshold=3):
+        """Return a word list of basic vocabulary.
+
+        Given a sequence of concepts in `basic`, return a generator
+        sampling the top `threshold` (concept, word, weight) tuples
+        for each concept in `basic`
+
+        """
         weights = self.flat_frequencies()
         for concept in basic:
             best_words_for = []
@@ -279,6 +294,7 @@ class Language(object):
                p_loss=0.5,
                p_gain=0.4,
                p_new=0.1):
+        """Modify weights according to one time step."""
         if self.rng.random() < p_loss:
             self.loss()
         if self.rng.random() < p_gain:
@@ -294,12 +310,13 @@ class Language(object):
         differently.
 
         """
-        l = Language({})
+        l = Language({}, generate_words=False)
         l._cum_concept_weights = self._cum_concept_weights[:]
         l._word_meaning_pairs = self._word_meaning_pairs[:]
         l.related_concepts = self.related_concepts
         return l
 
     def __repr__(self):
+        """Object Representation."""
         return "<Language\n{:}>".format(
             self.flat_frequencies())

@@ -33,10 +33,13 @@ class Language(object):
     rng = random.Random()
     """Random number generator to use."""
 
+    _flat = None
+    """Flat frequencies cache."""
+
     def __init__(self,
                  related_concepts,
-                 initial_weight,
-                 random=random.Random()):
+                 random=random.Random(),
+                 generate_words=True):
         """Create a random language.
 
         Given a dictionary mapping concepts to their
@@ -74,9 +77,13 @@ class Language(object):
 
         self._cum_concept_weights = []
         self._word_meaning_pairs = []
-        cum_weight = 0
+        if generate_words:
+            self.generate_words(lambda: self.rng.randrange(1, 10))
 
-        n_words = len(related_concepts)
+    def generate_words(self, initial_weight):
+        """Naive initialization of the language."""
+        cum_weight = 0
+        n_words = len(self.related_concepts)
         for i in range(Language.max_word,
                        Language.max_word + n_words):
             # Draw a random weight according to `initial_max_wt`. (And
@@ -85,7 +92,7 @@ class Language(object):
             self._cum_concept_weights.append(cum_weight)
             self._word_meaning_pairs.append((
                 i,
-                self.rng.choice([x for x in related_concepts])))
+                self.rng.choice([x for x in self.related_concepts])))
 
         assert len(self._cum_concept_weights) == len(self._word_meaning_pairs)
         # None of the words in this language should be cognate with
@@ -303,7 +310,7 @@ class Language(object):
         differently.
 
         """
-        l = Language({})
+        l = Language({}, generate_words=False)
         l._cum_concept_weights = self._cum_concept_weights[:]
         l._word_meaning_pairs = self._word_meaning_pairs[:]
         l.related_concepts = self.related_concepts

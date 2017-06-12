@@ -39,8 +39,9 @@ class Phylogeny(object):
 
         if root is None:
             self.root = Language(
-                self.related_concepts, initial_weight,
+                self.related_concepts,
                 neighbor_factor=neighbor_factor)
+            self.root.generate_words(initial_weight)
         else:
             self.root = root
         self.scale = scale

@@ -57,9 +57,9 @@ class NamingGameLanguage(Language):
 
     def __init__(self,
                  related_concepts,
-                 initial_weight,
                  neighbor_factor=0.1,
-                 random=random.Random()):
+                 random=random.Random(),
+                 generate_words=True):
         """Create a random language.
 
         Given a dictionary mapping concepts to their
@@ -98,11 +98,14 @@ class NamingGameLanguage(Language):
         # calculating it anew every draw step.
 
         self.related_concepts = related_concepts
-
         self.neighbor_factor = neighbor_factor
-
         self.words = defaultdict(Counter)
-        n_words = len(related_concepts)
+        if generate_words:
+            self.generate_words(lambda: self.rng.randrange(1, 10))
+
+    def generate_words(self, initial_weight):
+        """Naive initialization of the language."""
+        n_words = len(self.related_concepts)
         for i in range(Language.max_word,
                        Language.max_word + n_words):
             weight = initial_weight()
@@ -318,7 +321,7 @@ class NamingGameLanguage(Language):
 
     def clone(self):
         """Return a copy of this object."""
-        l = NamingGameLanguage({})
+        l = NamingGameLanguage({}, generate_words=False)
         l.related_concepts = self.related_concepts
         l.words = copy.deepcopy(self.words)
         l.neighbor_factor = self.neighbor_factor

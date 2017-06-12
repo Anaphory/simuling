@@ -16,7 +16,7 @@ def simulate(
         verbose=False, tips_only=True, neighbor_factor=0.1):
     """Run a phylogeny simulation with the given parameters."""
     phy = Phylogeny(
-        related_concepts,
+        related_concepts=related_concepts,
         initial_weight=initial_weight,
         basic=[],
         tree=tree,

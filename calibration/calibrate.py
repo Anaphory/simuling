@@ -22,7 +22,7 @@ from compare_simulation_with_data import (
     read_cldf, read_lingpy, estimate_normal_distribution, normal_likelihood)
 
 
-def simulate_and_write(tree, features, scale=1, n_sim=3):
+def simulate_and_write(tree, features, related_concepts, scale=1, n_sim=3):
     """Simulate evolution on tree and write results to file."""
     for i in range(n_sim):
         columns, dataframe = simulate(tree, related_concepts,
@@ -33,7 +33,8 @@ def simulate_and_write(tree, features, scale=1, n_sim=3):
         yield read_cldf(filename, features=features)
 
 
-def run_sims_and_calc_lk(tree, data, features, scale=1, n_sim=3):
+def run_sims_and_calc_lk(tree, data, features, related_concepts,
+                         scale=1, n_sim=3, ignore=[]):
     """Run simulations and calculate their Normal likelihood.
 
     Run `n` simulations and calculate the likelihood of `realdata`
@@ -41,9 +42,10 @@ def run_sims_and_calc_lk(tree, data, features, scale=1, n_sim=3):
     proportions give the results of the simulations.
 
     """
-    normals = estimate_normal_distribution(
-        simulate_and_write(tree, features=features, scale=scale, n_sim=n_sim))
-    return normal_likelihood(data, normals)
+    normals = estimate_normal_distribution(simulate_and_write(
+        tree, features=features, related_concepts=related_concepts,
+        scale=scale, n_sim=n_sim))
+    return normal_likelihood(data, normals, ignore=ignore)
 
 
 def main(args):
@@ -95,6 +97,13 @@ def main(args):
         default=0,
         help="""The minimum 'weight' for a semantic network edge to be considered
         in the simulation""")
+    parser.add_argument(
+        "--ignore",
+        action="append",
+        default=[],
+        help="""Ignore these pairs of languages.
+        Pairs are separated by colons (":").
+        For example --ignore Chaozou:Xiamen""")
 
     args = parser.parse_args(args)
 
@@ -123,13 +132,20 @@ def main(args):
     else:
         features = None
 
+    ignore = []
+    if args.ignore:
+        for i in args.ignore:
+            ignore.append(i.split(":"))
+
     def simulate_scale(scale):
         return run_sims_and_calc_lk(
             scale=scale,
             n_sim=args.sims,
+            related_concepts=related_concepts,
             tree=tree,
             data=data,
-            features=features)
+            features=features,
+            ignore=ignore)
 
     lks[lower] = simulate_scale(lower)
     lks[upper] = simulate_scale(upper)

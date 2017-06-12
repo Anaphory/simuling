@@ -58,6 +58,31 @@ def read_lingpy(file, features=None):
     return data
 
 
+def shared_vocabulary(vocab1, vocab2):
+    """Calculate the proportion of shared items between two wordlists.
+
+    For the pair of languages which are sampled in `vocab1` and
+    `vocab2`, calculate how many cognate-meaning pairs they
+    share. Multiple cognates in one meaning slot are counted as
+    |C∪D|/|C∩D|, or 1/|C∪D| if one of the meanings is unattested.
+
+    """
+    features_present_in_one = set(
+        vocab1["Feature_ID"]) | set(vocab2["Feature_ID"])
+    score = 0
+    for feature in features_present_in_one:
+        cognateset1 = set(vocab1["Value"][
+            vocab1["Feature_ID"] == feature])
+        cognateset2 = set(vocab2["Value"][
+            vocab2["Feature_ID"] == feature])
+        if cognateset1 & cognateset2:
+            score += (len(cognateset1 & cognateset2) /
+                      len(cognateset1 | cognateset2))
+        else:
+            score += 1 / len(cognateset1 | cognateset2)
+    return score / len(features_present_in_one)
+
+
 def pairwise_shared_vocabulary(data, verbose=True):
     """Calculate the proportion of shared vocabulary from the data.
 
@@ -69,22 +94,10 @@ def pairwise_shared_vocabulary(data, verbose=True):
     """
     for (language1, vocabulary1), (language2, vocabulary2) \
             in itertools.combinations(data.groupby("Language_ID"), 2):
-        features_present_in_one = set(
-            vocabulary1["Feature_ID"]) | set(vocabulary2["Feature_ID"])
-        score = 0
-        for feature in features_present_in_one:
-            cognateset1 = set(vocabulary1["Value"][
-                vocabulary1["Feature_ID"] == feature])
-            cognateset2 = set(vocabulary2["Value"][
-                vocabulary2["Feature_ID"] == feature])
-            if cognateset1 & cognateset2:
-                score += (len(cognateset1 & cognateset2) /
-                          len(cognateset1 | cognateset2))
-            else:
-                score += 1 / len(cognateset1 | cognateset2)
+        score = shared_vocabulary(vocabulary1, vocabulary2)
         if verbose:
-            print(language1, language2, score / len(features_present_in_one))
-        yield (language1, language2), score / len(features_present_in_one)
+            print(language1, language2, score)
+        yield (language1, language2), score
 
 
 def estimate_normal_distribution(datasets):
@@ -111,7 +124,7 @@ def estimate_normal_distribution(datasets):
     return proportions
 
 
-def normal_likelihood(data, normals):
+def normal_likelihood(data, normals, ignore=[]):
     """Calculate the likelihood of data from Normal distributions.
 
     Calculate the logarithm of the likelihood of the pairwise shared
@@ -122,6 +135,8 @@ def normal_likelihood(data, normals):
     """
     loglk = 0
     for pair, value in pairwise_shared_vocabulary(data):
+        if pair in ignore:
+            continue
         parameters = normals[pair]
         loglk += scipy.stats.norm.logpdf(value, *parameters)
     return loglk

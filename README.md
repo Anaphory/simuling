@@ -1,6 +1,6 @@
 ## simuling
 
-[![Build Status](https://travis-ci.org/Anaphory/simuling.svg?branch=master)](https://travis-ci.org/Anaphory/simuling)
+[![Build Status](https://travis-ci.org/simuling/simuling.svg?branch=master)](https://travis-ci.org/simuling/simuling)
 
 Tools for simulating linguistic evolution
 

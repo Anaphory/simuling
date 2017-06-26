@@ -145,6 +145,9 @@ index 649e61b..5747c6d 100644
    node [
 ```
 
+The version of `CLICS` shipped with `simuling` has had these changes
+applied already.
+
 ** Running simulations
 
 Once you have acquired trees from any source and you want to simulate

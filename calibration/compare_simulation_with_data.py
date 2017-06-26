@@ -26,9 +26,21 @@ def read_cldf(file, features=None):
     IDs to filter.
 
     """
-    data = pandas.read_csv(file, sep="\t", index_col="ID")
-    data.columns = ["Language_ID", "Feature_ID", "Form", "Weight", "Value",
-                    "Concept_CogID"]
+    sep = "\t"
+    if hasattr(file, 'name') and file.name.endswith("csv"):
+        sep = ","
+    if hasattr(file, 'endswith') and file.endswith("csv"):
+        sep = ","
+    if hasattr(file, 'seek'):
+        ...
+
+    data = pandas.read_csv(file, sep=sep, index_col="ID")
+    if "Parameter_ID" in data.columns:
+        if "Feature_ID" in data.columns:
+            raise ValueError(
+                "Two feature id columns: Parameter_ID and Feature_ID!")
+        data.columns = ["Feature_ID" if c == "Parameter_ID" else c
+                        for c in data.columns]
     if features is None:
         pass
     else:

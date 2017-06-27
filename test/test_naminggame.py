@@ -4,7 +4,7 @@
 
 import pytest
 
-from phylo.naminggame import NamingGameLanguage
+from simuling.phylo.naminggame import NamingGameLanguage
 from collections import defaultdict, Counter
 
 

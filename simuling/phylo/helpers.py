@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
+"""Various helper functions."""
+
 
 def iterate_wordlist_rows(wordlist, *columns):
+    """Iterate over the rows in the Lingpy wordlist."""
     if not columns:
         columns = range(len(wordlist._header))
     else:
@@ -13,7 +16,7 @@ def iterate_wordlist_rows(wordlist, *columns):
 
 
 def semantic_width(wordlist, cognate_column="cogid", concept_column="concept"):
-    """Calculate how many concepts a cognate class encompasses, on average
+    """Calculate how many concepts a cognate class encompasses, on average.
 
     Parameters
     ----------
@@ -33,7 +36,6 @@ def semantic_width(wordlist, cognate_column="cogid", concept_column="concept"):
         The average cross-linguistic semantic width of a concept.
 
     """
-
     concepts_per_cognate = {}
     for concept, cogids in iterate_wordlist_rows(
             wordlist, concept_column, cognate_column):

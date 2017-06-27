@@ -1,7 +1,15 @@
 #!/usr/bin/env python
 
+"""Core functions for the command line interface."""
+
 
 def basic_vocabulary_sampler(strings):
+    """Factory for creating vocabulary samplers.
+
+    For concept entries given by integer ID or name, create a basic
+    vocabulary sampler function sampling these concepts.
+
+    """
     concepts = []
     for entry in strings:
         try:

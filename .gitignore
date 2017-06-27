@@ -9,4 +9,4 @@ simuling.egg-info/
 __pycache__
 *.pyc
 
-calibration/beijingdaxue1964.csv
+simuling/calibration/beijingdaxue1964.csv

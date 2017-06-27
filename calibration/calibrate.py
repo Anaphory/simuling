@@ -35,7 +35,7 @@ def simulate_and_write(tree, features, related_concepts, scale=1, n_sim=3):
         yield read_cldf(filename, features=features)
 
 
-def run_sims_and_calc_lk(tree, data, features, related_concepts,
+def run_sims_and_calc_lk(tree, realdata, features, related_concepts,
                          scale=1, n_sim=3, ignore=[]):
     """Run simulations and calculate their Normal likelihood.
 
@@ -47,7 +47,7 @@ def run_sims_and_calc_lk(tree, data, features, related_concepts,
     normals = estimate_normal_distribution(simulate_and_write(
         tree, features=features, related_concepts=related_concepts,
         scale=scale, n_sim=n_sim))
-    return normal_likelihood(data, normals, ignore=ignore)
+    return normal_likelihood(realdata, normals, ignore=ignore)
 
 
 def main(args):
@@ -150,7 +150,7 @@ def main(args):
             n_sim=args.sims,
             related_concepts=related_concepts,
             tree=tree,
-            data=data,
+            realdata=data,
             features=features,
             ignore=ignore)
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Plot simulation results vs. real-world data
+"""Plot simulation results vs. real-world data.
 
 Plot the simulated shared vocabulary proportions between languages on
 a tree on top of the real proportions.
@@ -16,7 +16,7 @@ import argparse
 
 import compare_simulation_with_data
 from compare_simulation_with_data import pairwise_shared_vocabulary
-from compare_simulation_with_data import read_cldf, read_lingpy
+from compare_simulation_with_data import read_cldf
 
 
 def ordered_pairwise_shared_vocabulary(data):
@@ -62,8 +62,9 @@ def compatible_pairwise_shared_vocabulary(data, order):
 
 
 def plot_vocabularies(real, *simulated):
+    """Plot the simulated data against reference language distances."""
     x, names = ordered_pairwise_shared_vocabulary(real)
-    print("filename", *["'{:}-{:}'".format(n1, n2) for n1, n2 in names],
+    print("point", *["'{:}-{:}'".format(n1, n2) for n1, n2 in names],
           sep="\t")
     print("real", *x, sep="\t")
     plt.plot(x, x, "--", c="0.5")
@@ -101,7 +102,7 @@ def main(args=sys.argv):
     args = parser.parse_args(args)
 
     plot_vocabularies(
-        read_lingpy(args.realdata),
+        read_cldf(args.realdata),
         *map(read_cldf, args.simulationdata))
     if args.figure_file:
         plt.savefig(args.figure_file)

@@ -16,16 +16,18 @@ import tempfile
 import newick
 import networkx
 
+import phylo
 from pyconcepticon.api import Concepticon
 from phylo.simulate import simulate, write_to_file
 from compare_simulation_with_data import (
-    read_cldf, read_lingpy, estimate_normal_distribution, normal_likelihood)
+    read_cldf, estimate_normal_distribution, normal_likelihood)
 
 
 def simulate_and_write(tree, features, related_concepts, scale=1, n_sim=3):
     """Simulate evolution on tree and write results to file."""
     for i in range(n_sim):
         columns, dataframe = simulate(tree, related_concepts,
+                                      initial_weight=lambda: 10,
                                       scale=scale, verbose=True)
         filename = "simulation_{:}_{:}.tsv".format(scale, i)
         with open(filename, "w") as f:
@@ -33,7 +35,7 @@ def simulate_and_write(tree, features, related_concepts, scale=1, n_sim=3):
         yield read_cldf(filename, features=features)
 
 
-def run_sims_and_calc_lk(tree, data, features, related_concepts,
+def run_sims_and_calc_lk(tree, realdata, features, related_concepts,
                          scale=1, n_sim=3, ignore=[]):
     """Run simulations and calculate their Normal likelihood.
 
@@ -45,29 +47,33 @@ def run_sims_and_calc_lk(tree, data, features, related_concepts,
     normals = estimate_normal_distribution(simulate_and_write(
         tree, features=features, related_concepts=related_concepts,
         scale=scale, n_sim=n_sim))
-    return normal_likelihood(data, normals, ignore=ignore)
+    return normal_likelihood(realdata, normals, ignore=ignore)
 
 
 def main(args):
     """Run the CLI."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "realdata",
+        "--realdata",
+        default=open(os.path.join(os.path.dirname(__file__),
+                                  "beijingdaxue1964.csv")),
         type=argparse.FileType("r"),
         help="Word list from real life")
     parser.add_argument(
-        "realtree",
+        "--tree",
+        default=open(os.path.join(os.path.dirname(__file__),
+                                  "dated.tre")),
         type=argparse.FileType("r"),
         help="The reconstructed, dated tree (Newick) that underlies the data")
     parser.add_argument(
         "--minscale",
         type=float,
-        default=0.1,
+        default=0.2,
         help="The minimum scale to use")
     parser.add_argument(
         "--maxscale",
         type=float,
-        default=100000,
+        default=15,
         help="The maximum scale to use")
     parser.add_argument(
         "--sims",
@@ -87,7 +93,8 @@ def main(args):
     parser.add_argument(
         "--semantic-network",
         # FIXME: This needs to become a path relative to __file__
-        default=open("clics.gml"),
+        default=open(os.path.join(os.path.dirname(phylo.__file__),
+                                  "clics.gml")),
         type=argparse.FileType("r"),
         help="""File containing the semantic network to be used (eg. a
         colexification graph) in GLM format""")
@@ -118,8 +125,8 @@ def main(args):
     lower = args.minscale
     upper = args.maxscale
 
-    tree = newick.load(args.realtree)[0]
-    data = read_lingpy(args.realdata)
+    tree = newick.load(args.tree)[0]
+    data = read_cldf(args.realdata)
 
     if args.features != '*':
         try:
@@ -143,7 +150,7 @@ def main(args):
             n_sim=args.sims,
             related_concepts=related_concepts,
             tree=tree,
-            data=data,
+            realdata=data,
             features=features,
             ignore=ignore)
 

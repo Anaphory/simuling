@@ -106,7 +106,7 @@ class Phylogeny(object):
                 return Language.basic_vocabulary(language, self.basic)
 
         columns = ("ID", "Language_ID", "Feature_ID", "Value",
-                   "Weight", "Global_CogID", "Concept_CogID")
+                   "Weight", "Cognate_Set", "Concept_CogID")
         word_list = []
         concept_cogid_pairs = {}
 

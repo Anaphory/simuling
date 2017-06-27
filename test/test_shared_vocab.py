@@ -59,3 +59,20 @@ def test_pairwise_shared_vocabulary_synonyms():
     for (language1, language2), score in compare.pairwise_shared_vocabulary(
             vocabulary):
         assert score == 0.5
+
+
+def test_pairwise_shared_vocabulary_ident_synonyms():
+    """Check that ambiguous vocabulary matches work as expected."""
+    v1 = wordlist()
+    v1synonyms = v1.copy()
+    v1synonyms["Value"] = -1
+    v1 = v1.append(v1synonyms)
+
+    v2 = v1.copy()
+    v2["Language_ID"] = -1
+
+    vocabulary = v1.append(v2)
+
+    for (language1, language2), score in compare.pairwise_shared_vocabulary(
+            vocabulary):
+        assert score == 1.0

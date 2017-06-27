@@ -48,6 +48,7 @@ def read_cldf(file, features=None):
         for feature in features:
             include |= data["Feature_ID"] == feature
         data = data[include]
+    data = data[~pandas.isnull(data["Feature_ID"])]
     return data
 
 

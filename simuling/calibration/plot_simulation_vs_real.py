@@ -61,27 +61,14 @@ def compatible_pairwise_shared_vocabulary(data, order):
         yield score
 
 
-def plot_vocabularies(real, *simulated):
+def plot_vocabulary(x, names, simulated, axis=None):
     """Plot the simulated data against reference language distances."""
-    x, names = ordered_pairwise_shared_vocabulary(real)
-    print("point", *["'{:}-{:}'".format(n1, n2) for n1, n2 in names],
-          sep="\t")
-    print("real", *x, sep="\t")
-    plt.plot(x, x, "--", c="0.5")
-    for d, data in enumerate(simulated):
-        y = list(compatible_pairwise_shared_vocabulary(
-            data, names))
-        print(d, *y, sep="\t")
-        plt.plot(x, y)
+    if axis is None:
+        axis = plt.gca()
 
-    ax = plt.gca()
-    ax.set_xticks(x)
-    ax.set_xticklabels(names)
-    for tick in ax.xaxis.get_major_ticks():
-        tick.label.set_fontsize(6)
-        # specify integer or one of preset strings, e.g.
-        # tick.label.set_fontsize('x-small')
-        tick.label.set_rotation('vertical')
+    y = list(compatible_pairwise_shared_vocabulary(simulated, names))
+    axis.plot(x, y)
+    return y
 
 
 def main(args=sys.argv):
@@ -101,12 +88,29 @@ def main(args=sys.argv):
         help="File to write the figure to")
     args = parser.parse_args(args)
 
-    plot_vocabularies(
-        read_cldf(args.realdata),
-        *map(read_cldf, args.simulationdata))
+    x, names = ordered_pairwise_shared_vocabulary(read_cldf(args.realdata))
+    print("point", *["'{:}-{:}'".format(n1, n2) for n1, n2 in names],
+          sep="\t")
+    print("real", *x, sep="\t")
+    plt.plot(x, x, "--", c="0.5")
+
+    ax = plt.gca()
+    ax.set_xticks(x)
+    ax.set_xticklabels(names)
+
+    for sim in args.simulationdata:
+        y = plot_vocabulary(x, names, read_cldf(sim))
+        print(sim.name, *y, sep="\t")
+
     if args.figure_file:
         plt.savefig(args.figure_file)
     plt.show()
+
+    for tick in ax.xaxis.get_major_ticks():
+        tick.label.set_fontsize(6)
+        # specify integer or one of preset strings, e.g.
+        # tick.label.set_fontsize('x-small')
+        tick.label.set_rotation('vertical')
 
 
 if __name__ == "__main__":

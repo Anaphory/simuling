@@ -20,7 +20,8 @@ import simuling.phylo as phylo
 from pyconcepticon.api import Concepticon
 from simuling.phylo.simulate import simulate, write_to_file
 from .compare_simulation_with_data import (
-    read_cldf, estimate_normal_distribution, normal_likelihood)
+    read_cldf, estimate_normal_distribution, normal_likelihood,
+    pairwise_shared_vocabulary)
 
 
 def simulate_and_write(tree, features, related_concepts, scale=1, n_sim=3):
@@ -36,7 +37,7 @@ def simulate_and_write(tree, features, related_concepts, scale=1, n_sim=3):
 
 
 def run_sims_and_calc_lk(tree, realdata, features, related_concepts,
-                         scale=1, n_sim=3, ignore=[]):
+                         scale=1, n_sim=3, ignore=[], normal=False):
     """Run simulations and calculate their Normal likelihood.
 
     Run `n` simulations and calculate the likelihood of `realdata`
@@ -44,10 +45,25 @@ def run_sims_and_calc_lk(tree, realdata, features, related_concepts,
     proportions give the results of the simulations.
 
     """
-    normals = estimate_normal_distribution(simulate_and_write(
-        tree, features=features, related_concepts=related_concepts,
-        scale=scale, n_sim=n_sim))
-    return normal_likelihood(realdata, normals, ignore=ignore)
+    if normal:
+        normals = estimate_normal_distribution(simulate_and_write(
+            tree, features=features, related_concepts=related_concepts,
+            scale=scale, n_sim=n_sim))
+        return normal_likelihood(realdata, normals,
+                                 ignore=ignore)
+    else:
+        neg_squared_error = 0
+        for simulation in simulate_and_write(tree, features=features,
+                                             related_concepts=related_concepts,
+                                             scale=scale, n_sim=n_sim):
+            for (l1, l2), score in (
+                    pairwise_shared_vocabulary(simulation, False)):
+                if l1 > l2:
+                    l1, l2 = l2, l1
+                error = (realdata[l1, l2] - score) ** 2
+                print(l1, l2, score, error)
+                neg_squared_error -= error
+        return neg_squared_error/n_sim
 
 
 def main(args):
@@ -144,13 +160,16 @@ def main(args):
         for i in args.ignore:
             ignore.append(i.split(":"))
 
+    realdata = {pair: score
+                for pair, score in pairwise_shared_vocabulary(data)}
+
     def simulate_scale(scale):
         return run_sims_and_calc_lk(
             scale=scale,
             n_sim=args.sims,
             related_concepts=related_concepts,
             tree=tree,
-            realdata=data,
+            realdata=realdata,
             features=features,
             ignore=ignore)
 

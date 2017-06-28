@@ -1,20 +1,35 @@
 #!/usr/bin/env python
 
+"""Command line tool for a complete tree→word lists→trees toolchain.
+
+Create simulated word lists from a tree, and then try to reconstruct
+trees from the word list using various available methods.
+
+"""
+
 import itertools
 import argparse
 import lingpy
 
 
 def reconstruct_random(wordlist):
+    """Pseudo-Reconstruction by just drawing a random tree.
+
+    This is useful for comparison, because this is the dumbest
+    'reconstruction' method possible.
+
+    """
     return lingpy.basic.tree.Tree(lingpy.basic.tree.random_tree(wl.taxa))
 
 
 def reconstruct_neighbor(wordlist):
+    """Construct a tree using neighbor-joining."""
     wordlist.calculate('tree', ref='cogid', tree_calc='neighbor')
     return wordlist.tree
 
 
 def reconstruct_upgma(wordlist):
+    """Construct a tree using UPGMA clustering."""
     wordlist.calculate('tree', ref='cogid')
     return lingpy.upgma(wordlist.distances, wordlist.taxa)
 

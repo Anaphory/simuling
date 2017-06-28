@@ -6,7 +6,7 @@ import pytest
 
 import io
 
-import phylo.__main__ as run
+import simuling.phylo.__main__ as run
 
 
 def test_empty_argparser():

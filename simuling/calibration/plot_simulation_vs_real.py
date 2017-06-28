@@ -93,7 +93,7 @@ def main(args=sys.argv):
         help="Word list from real life")
     parser.add_argument(
         "simulationdata",
-        nargs="+",
+        nargs="*",
         type=argparse.FileType("r"),
         help="Wordlist given by the phylo simulation")
     parser.add_argument(

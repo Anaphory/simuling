@@ -16,10 +16,10 @@ import tempfile
 import newick
 import networkx
 
-import phylo
+import simuling.phylo as phylo
 from pyconcepticon.api import Concepticon
-from phylo.simulate import simulate, write_to_file
-from compare_simulation_with_data import (
+from simuling.phylo.simulate import simulate, write_to_file
+from .compare_simulation_with_data import (
     read_cldf, estimate_normal_distribution, normal_likelihood)
 
 

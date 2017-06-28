@@ -9,7 +9,7 @@ simulation.
 
 import newick
 
-import phylo.simulate as simulate
+import simuling.phylo.simulate as simulate
 
 
 def test_simulate():

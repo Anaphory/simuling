@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+"""Install the simuling package."""
+
 from setuptools import setup
 
 setup(
@@ -9,7 +11,7 @@ setup(
     author="Gereon Kaiping",
     author_email="g.a.kaiping@hum.leidenuniv.nl",
     url="http://github.com/Anaphory/simuling",
-    packages=["simuling", "phylo"],
+    packages=["simuling"],
     entry_points={
         'console_scripts': ['phylo=phylo.__main__'],
     },
@@ -17,6 +19,7 @@ setup(
         "networkx",
         "lingpy",
         "numpy",
+        "pandas",
         "pytest",
         "pytest-cov",
         "pytest-pep8",

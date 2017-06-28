@@ -10,7 +10,6 @@ word list with the simulation results.
 
 import pandas
 import itertools
-import scipy.stats
 
 import sys
 import argparse
@@ -122,6 +121,8 @@ def estimate_normal_distribution(datasets):
     would best explain those proportions.
 
     """
+    import scipy.stats
+
     proportions = {}
     for data in datasets:
         for pair, value in pairwise_shared_vocabulary(data):
@@ -146,6 +147,8 @@ def normal_likelihood(data, normals, ignore=[]):
     in `normals`.
 
     """
+    import scipy.stats
+
     loglk = 0
     for pair, value in pairwise_shared_vocabulary(data):
         if pair in ignore:

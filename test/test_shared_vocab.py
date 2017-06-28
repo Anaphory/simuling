@@ -16,7 +16,7 @@ def wordlist():
     return pandas.DataFrame(
         {"Language_ID": [0]*length,
          "Feature_ID": range(length),
-         "Value": range(length)})
+         "Cognate_Set": range(length)})
 
 
 def test_pairwise_shared_vocabulary_equal():
@@ -38,7 +38,7 @@ def test_pairwise_shared_vocabulary_half():
         return
     v2["Language_ID"] = -1
     for i, row in v2.iterrows():
-        v2.set_value(i, "Value", -1)
+        v2.set_value(i, "Cognate_Set", -1)
     vocabulary = v1.append(v2)
     for (language1, language2), score in compare.pairwise_shared_vocabulary(
             vocabulary):
@@ -52,7 +52,7 @@ def test_pairwise_shared_vocabulary_synonyms():
     v2 = v1.copy()
     v2["Language_ID"] = -1
     v2synonyms = v2.copy()
-    v2synonyms["Value"] = -1
+    v2synonyms["Cognate_Set"] = -1
 
     vocabulary = v1.append(v2).append(v2synonyms)
 
@@ -65,7 +65,7 @@ def test_pairwise_shared_vocabulary_ident_synonyms():
     """Check that ambiguous vocabulary matches work as expected."""
     v1 = wordlist()
     v1synonyms = v1.copy()
-    v1synonyms["Value"] = -1
+    v1synonyms["Cognate_Set"] = -1
     v1 = v1.append(v1synonyms)
 
     v2 = v1.copy()

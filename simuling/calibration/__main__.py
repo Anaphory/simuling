@@ -189,8 +189,6 @@ def main(args):
             return args.neighbor_factor * x['weight']
 
     def simulate_scale(scale):
-        import pdb
-        pdb.set_trace()
         return run_sims_and_calc_lk(
             scale=scale,
             n_sim=args.sims,

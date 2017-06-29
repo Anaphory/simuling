@@ -98,10 +98,6 @@ def run_simulation_with_arguments(args):
     """
     if args.semantic_network:
         related_concepts = networkx.parse_gml(args.semantic_network)
-        for node1, edges in related_concepts.edge.items():
-            for node2, properties in list(edges.items()):
-                if properties.get("weight", 1) < args.min_connection:
-                    related_concepts.remove_edge(node1, node2)
     else:
         concept2field = defaultdict(set)
         for c in range(args.concepts):
@@ -109,7 +105,15 @@ def run_simulation_with_arguments(args):
         related_concepts = {}
         for field in concept2field.values():
             for concept in field:
-                related_concepts[concept] = field - {concept}
+                related_concepts[concept] = {other: 1
+                                             for other in field
+                                             if other != concept}
+
+    def scaled_weight_threshold(x):
+        if x['weight'] < args.min_connection:
+            return 0
+        else:
+            return args.neighbor_factor * x['weight']
 
     i = 0
     for _, tree_file in enumerate(args.trees):
@@ -121,7 +125,7 @@ def run_simulation_with_arguments(args):
                     args.init_max_edge_weight) + 1,
                 concept_weight=args.concept_weight,
                 scale=args.scale,
-                neighbor_factor=args.neighbor_factor,
+                related_concepts_edge_weight=scaled_weight_threshold,
                 p_gain=args.p_gain,
                 verbose=0 if args.quiet else 1,
                 tips_only=not args.sample_internal_nodes)

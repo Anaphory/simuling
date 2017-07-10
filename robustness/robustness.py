@@ -23,26 +23,15 @@ def factory(n):
 
     """
     def scaled_weight_threshold(x):
-        if x['weight'] < 2:
+        if x['FamilyWeight'] < 2:
             return 0
         else:
-            return n * x['weight']
+            return n * x['FamilyWeight']
     return scaled_weight_threshold
 
 
-long_tree = newick.Node("1", "1")
-tip = long_tree
-for i in range(24):
-    old_tip = tip
-    tip = newick.Node(
-        str(2 ** (i+1)),
-        str(2**i))
-    old_tip.add_descendant(tip)
-
-print(long_tree.newick)
-
 clics = open(os.path.join(
-    os.path.dirname(phylo.__file__), "clics.gml"))
+    os.path.dirname(phylo.__file__), "network-3-families.gml"))
 clics_concepts = networkx.parse_gml(clics)
 
 initial_weights = {
@@ -58,11 +47,20 @@ initial_weights = {
     "geom": lambda: random.geometric(1/5.5),
     "poisson": lambda: random.poisson(5.5),
     "pareto": lambda: int(random.pareto(0.4)),
-    "fpareto": lambda: int(random.pareto(5.5))
+    "fpareto": lambda: int(random.pareto(2) * 5.6 + 0.5)
     }
 
 for run in range(16):
-    print(run)
+    long_tree = newick.Node("1", "1")
+    tip = long_tree
+    for i in range(20 + run):
+        old_tip = tip
+        tip = newick.Node(
+            str(2 ** (i+1)),
+            str(2**i))
+        old_tip.add_descendant(tip)
+
+    print(long_tree.newick)
 
     dataframe, columns = simulate(
         long_tree,

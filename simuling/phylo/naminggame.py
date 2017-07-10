@@ -246,8 +246,13 @@ class NamingGameLanguage(Language):
                 # appropriate methods and data structures though.
                 meaning = self.random_concept(concept_weight)
             words = copy.deepcopy(self.words[meaning])
-            for similar_meaning, edge in self.related_concepts[
-                    meaning].items():
+            for similar_meaning in self.related_concepts[
+                    meaning]:
+                try:
+                    edge = self.related_concepts[meaning].get(
+                        similar_meaning, 1)
+                except AttributeError:
+                    edge = 1
                 for word, word_weight in self.words[similar_meaning].items():
                     words.setdefault(word, 0)
                     words[word] += self.get_weight(edge) * word_weight

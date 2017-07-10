@@ -33,9 +33,14 @@ def argparser(args=sys.argv):
     group.add_argument(
         "--semantic-network", type=argparse.FileType('r'),
         # FIXME: This needs to become a path relative to __file__
-        default=open(os.path.join(os.path.dirname(__file__), "clics.gml")),
+        default=open(os.path.join(os.path.dirname(__file__),
+                                  "network-3-families.gml")),
         help="File containing the semantic network to be used (eg. "
         "a colexification graph) in GLM format")
+    group.add_argument(
+        "--weight-name",
+        default="FamilyWeight",
+        help="Name of the weight attribute in the GML file")
     group.add_argument(
         "--min-connection",
         type=float,
@@ -110,10 +115,10 @@ def run_simulation_with_arguments(args):
                                              if other != concept}
 
     def scaled_weight_threshold(x):
-        if x['weight'] < args.min_connection:
+        if x[args.weight_name] < args.min_connection:
             return 0
         else:
-            return args.neighbor_factor * x['weight']
+            return args.neighbor_factor * x[args.weight_name]
 
     i = 0
     for _, tree_file in enumerate(args.trees):

@@ -119,10 +119,14 @@ def main(args):
         "--semantic-network",
         # FIXME: This needs to become a path relative to __file__
         default=open(os.path.join(os.path.dirname(phylo.__file__),
-                                  "clics.gml")),
+                                  "network-3-families.gml")),
         type=argparse.FileType("r"),
         help="""File containing the semantic network to be used (eg. a
         colexification graph) in GLM format""")
+    parser.add_argument(
+        "--weight-name",
+        default="FamilyWeight",
+        help="Name of the weight attribute in the GML file")
     parser.add_argument(
         "--initial-weight",
         default=6,
@@ -165,8 +169,10 @@ def main(args):
 
     if args.features != '*':
         try:
+            import pdb
+            pdb.set_trace()
             features = [
-                c.concepticon_gloss.lower()
+                int(c.concepticon_id)
                 for c in Concepticon().conceptlists[
                     args.features].concepts.values()]
         except KeyError:
@@ -183,10 +189,10 @@ def main(args):
                 for pair, score in pairwise_shared_vocabulary(data)}
 
     def scaled_weight_threshold(x):
-        if x['weight'] < args.min_connection:
+        if x[args.weight_name] < args.min_connection:
             return 0
         else:
-            return args.neighbor_factor * x['weight']
+            return args.neighbor_factor * x[args.weight_name]
 
     def simulate_scale(scale):
         return run_sims_and_calc_lk(

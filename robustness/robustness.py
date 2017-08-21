@@ -12,6 +12,7 @@ import newick
 import networkx
 
 import simuling.phylo as phylo
+from simuling.phylo.naminggame import concept_weights
 from simuling.phylo.simulate import simulate, write_to_file
 
 
@@ -42,12 +43,17 @@ initial_weights = {
     "30": lambda: 30,
     "60": lambda: 60,
     "100": lambda: 100,
+    "400": lambda: 400,
     "d10": lambda: random.randint(1, 11),
     "d60": lambda: random.randint(1, 61),
-    "geom": lambda: random.geometric(1/5.5),
-    "poisson": lambda: random.poisson(5.5),
-    "pareto": lambda: int(random.pareto(0.4)),
-    "fpareto": lambda: int(random.pareto(2) * 5.6 + 0.5)
+    "d199": lambda: random.randint(1, 200),
+    "geom5": lambda: random.geometric(1/5.5),
+    "geom100": lambda: random.geometric(1/100),
+    "poisson5": lambda: random.poisson(5.5),
+    "poisson100": lambda: random.poisson(100),
+    # "pareto": lambda: int(random.pareto(0.4)),
+    "fpareto5": lambda: int(random.pareto(2) * 5.6 + 0.5),
+    "fpareto100": lambda: int(random.pareto(2) * 100 + 0.5)
     }
 
 for run in range(16):
@@ -65,15 +71,17 @@ for run in range(16):
     dataframe, columns = simulate(
         long_tree,
         clics_concepts,
-        initial_weight=lambda: random.randint(1, 11),
+        initial_weight=lambda: random.randint(1, 200),
         concept_weight='degree_squared',
         scale=1,
         related_concepts_edge_weight=factory(0.004),
         p_gain=0,
         verbose=0,
         tips_only=False)
-    write_to_file(dataframe, columns,
-                  file=open("trivial_long_branch_{:d}.tsv".format(run), 'w'))
+    write_to_file(
+        dataframe, columns,
+        file=open("trivial_long_branch_0{:d}_id199.tsv".format(run),
+                  'w'))
 
     for name, distribution in initial_weights.items():
         print(name)
@@ -98,14 +106,33 @@ for run in range(16):
         dataframe, columns = simulate(
             long_tree,
             clics_concepts,
-            initial_weight=lambda: random.randint(1, 11),
+            initial_weight=lambda: random.randint(1, 200),
             concept_weight='degree_squared',
             scale=1,
             related_concepts_edge_weight=factory(neighbor_factor/25),
             p_gain=0,
             verbose=0,
             tips_only=False)
-        write_to_file(dataframe, columns,
-                      file=open("trivial_long_branch_{:d}_n{:f}.tsv".format(
-                          run, neighbor_factor/25),
-                                'w'))
+        write_to_file(
+            dataframe, columns,
+            file=open("trivial_long_branch_{:d}_id199_n{:f}.tsv".format(
+                run, neighbor_factor/25),
+                      'w'))
+
+    for name, c_weight in concept_weights.items():
+        print(name)
+        dataframe, columns = simulate(
+            long_tree,
+            clics_concepts,
+            initial_weight=lambda: random.randint(1, 200),
+            concept_weight=c_weight,
+            scale=1,
+            related_concepts_edge_weight=factory(0.004),
+            p_gain=0,
+            verbose=0,
+            tips_only=False)
+        write_to_file(
+            dataframe, columns,
+            file=open("trivial_long_branch_{:d}_id199_c{:s}.tsv".format(
+                run, name),
+                      'w'))

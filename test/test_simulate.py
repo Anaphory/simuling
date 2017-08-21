@@ -20,7 +20,7 @@ def test_simulate():
         initial_weight=lambda: 10,
         concept_weight='one',
         scale=2,
-        neighbor_factor=0.1,
+        related_concepts_edge_weight=lambda x: 0.1,
         p_gain=0.1,
         verbose=0,
         tips_only=True)

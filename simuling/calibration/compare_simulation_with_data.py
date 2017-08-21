@@ -150,7 +150,7 @@ def normal_likelihood(data, normals, ignore=[]):
     import scipy.stats
 
     loglk = 0
-    for pair, value in pairwise_shared_vocabulary(data):
+    for pair, value in data.items():
         if pair in ignore:
             continue
         parameters = normals[pair]

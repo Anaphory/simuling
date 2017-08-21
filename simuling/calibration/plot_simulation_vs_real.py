@@ -11,12 +11,13 @@ import bisect
 
 import matplotlib.pyplot as plt
 
+import os
 import sys
 import argparse
 
-import compare_simulation_with_data
-from compare_simulation_with_data import pairwise_shared_vocabulary
-from compare_simulation_with_data import read_cldf
+from . import compare_simulation_with_data
+from .compare_simulation_with_data import (
+    read_cldf, pairwise_shared_vocabulary)
 
 
 def ordered_pairwise_shared_vocabulary(data):
@@ -61,27 +62,14 @@ def compatible_pairwise_shared_vocabulary(data, order):
         yield score
 
 
-def plot_vocabularies(real, *simulated):
+def plot_vocabulary(x, names, simulated, axis=None):
     """Plot the simulated data against reference language distances."""
-    x, names = ordered_pairwise_shared_vocabulary(real)
-    print("point", *["'{:}-{:}'".format(n1, n2) for n1, n2 in names],
-          sep="\t")
-    print("real", *x, sep="\t")
-    plt.plot(x, x, "--", c="0.5")
-    for d, data in enumerate(simulated):
-        y = list(compatible_pairwise_shared_vocabulary(
-            data, names))
-        print(d, *y, sep="\t")
-        plt.plot(x, y)
+    if axis is None:
+        axis = plt.gca()
 
-    ax = plt.gca()
-    ax.set_xticks(x)
-    ax.set_xticklabels(names)
-    for tick in ax.xaxis.get_major_ticks():
-        tick.label.set_fontsize(6)
-        # specify integer or one of preset strings, e.g.
-        # tick.label.set_fontsize('x-small')
-        tick.label.set_rotation('vertical')
+    y = list(compatible_pairwise_shared_vocabulary(simulated, names))
+    axis.plot(x, y)
+    return y
 
 
 def main(args=sys.argv):
@@ -99,14 +87,52 @@ def main(args=sys.argv):
     parser.add_argument(
         "--figure-file",
         help="File to write the figure to")
+    parser.add_argument(
+        "--error-figure-file",
+        help="File to write the error plot to")
     args = parser.parse_args(args)
 
-    plot_vocabularies(
-        read_cldf(args.realdata),
-        *map(read_cldf, args.simulationdata))
+    x, names = ordered_pairwise_shared_vocabulary(read_cldf(args.realdata))
+    print("point", "error", *["'{:}-{:}'".format(n1, n2) for n1, n2 in names],
+          sep="\t")
+    print("real", "0", *x, sep="\t")
+    plt.plot(x, x, "--", c="0.5")
+
+    ax = plt.gca()
+    ax.set_xticks(x)
+    ax.set_xticklabels(names)
+
+    parameters = []
+    errors = []
+    for sim in args.simulationdata:
+        y = plot_vocabulary(x, names, read_cldf(sim))
+        error = (sum([(xi-yi)**2 for xi, yi in zip(x, y)])/len(x))**0.5
+        try:
+            p = float(os.path.basename(sim.name).split("_")[1])
+        except (AttributeError, TypeError):
+            p = float("nan")
+        parameters.append(p)
+        errors.append(error)
+        print(sim.name, p, error, *y, sep="\t")
+
+    for tick in ax.xaxis.get_major_ticks():
+        tick.label.set_fontsize(6)
+        # specify integer or one of preset strings, e.g.
+        # tick.label.set_fontsize('x-small')
+        tick.label.set_rotation('vertical')
+
     if args.figure_file:
         plt.savefig(args.figure_file)
-    plt.show()
+    else:
+        plt.show()
+
+    plt.figure()
+
+    plt.scatter(parameters, errors)
+    if args.figure_file:
+        plt.savefig(args.error_figure_file)
+    else:
+        plt.show()
 
 
 if __name__ == "__main__":

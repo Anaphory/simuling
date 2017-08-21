@@ -25,7 +25,7 @@ from .compare_simulation_with_data import (
 
 
 def simulate_and_write(tree, features, related_concepts, scale=1,
-                       n_sim=3, initial_weight=6,
+                       n_sim=3, initial_weight=100,
                        related_concepts_edge_weight=lambda x: x):
     """Simulate evolution on tree and write results to file."""
     for i in range(n_sim):
@@ -169,8 +169,6 @@ def main(args):
 
     if args.features != '*':
         try:
-            import pdb
-            pdb.set_trace()
             features = [
                 int(c.concepticon_id)
                 for c in Concepticon().conceptlists[

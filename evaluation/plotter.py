@@ -223,7 +223,7 @@ def image_name(key):
     return "_".join([i.lower() for i in key.split()])
 
 
-def load(key, path="../evenmorerobustness"):
+def load(key, path="../robustness"):
     """Load all files according to given key from directory path."""
     n = {}
     p = {}

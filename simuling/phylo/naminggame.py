@@ -32,6 +32,11 @@ def degree_squared(meaning, language):
     return len(language.related_concepts[meaning]) ** 2
 
 
+def exp_degree(meaning, language):
+    """Draw random concept proportional to degree squared."""
+    return 1 << len(language.related_concepts[meaning])
+
+
 def one(*args, **kwargs):
     """Return 1."""
     return 1
@@ -46,6 +51,7 @@ concept_weights = {
     'preferential': preferential,
     'degree': degree,
     'degree_squared': degree_squared,
+    'exp_degree': exp_degree,
     'one': one,
 }
 

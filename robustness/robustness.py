@@ -2,10 +2,11 @@
 
 """Generate the data to assess simulation robustness.
 
-Run the simulation on a long branch with parameter variation.
+Run the simulation on a long branch{:x} with parameter variation.
 """
 
 import os
+import numpy
 import numpy.random as random
 
 import newick
@@ -13,7 +14,7 @@ import networkx
 
 import simuling.phylo as phylo
 from simuling.phylo.naminggame import concept_weights
-from simuling.phylo.simulate import simulate, write_to_file
+from simuling.phylo.simulate import simulate as simulate, write_to_file
 
 
 def factory(n):
@@ -31,6 +32,8 @@ def factory(n):
     return scaled_weight_threshold
 
 
+id = random.randint(0x10000)
+
 clics = open(os.path.join(
     os.path.dirname(phylo.__file__), "network-3-families.gml"))
 clics_concepts = networkx.parse_gml(clics)
@@ -43,20 +46,22 @@ initial_weights = {
     "30": lambda: 30,
     "60": lambda: 60,
     "100": lambda: 100,
+    "200": lambda: 200,
     "400": lambda: 400,
-    "d10": lambda: random.randint(1, 11),
-    "d60": lambda: random.randint(1, 61),
-    "d199": lambda: random.randint(1, 200),
-    "geom5": lambda: random.geometric(1/5.5),
-    "geom100": lambda: random.geometric(1/100),
-    "poisson5": lambda: random.poisson(5.5),
-    "poisson100": lambda: random.poisson(100),
+    "800": lambda: 800,
+    # "d10": lambda: random.randint(1, 11),
+    # "d60": lambda: random.randint(1, 61),
+    # "d199": lambda: random.randint(1, 200),
+    # "geom5": lambda: random.geometric(1/5.5),
+    # "geom100": lambda: random.geometric(1/100),
+    # "poisson5": lambda: random.poisson(5.5),
+    # "poisson100": lambda: random.poisson(100),
     # "pareto": lambda: int(random.pareto(0.4)),
-    "fpareto5": lambda: int(random.pareto(2) * 5.6 + 0.5),
-    "fpareto100": lambda: int(random.pareto(2) * 100 + 0.5)
+    # "fpareto5": lambda: int(random.pareto(2) * 5.6 + 0.5),
+    # "fpareto100": lambda: int(random.pareto(2) * 100 + 0.5)
     }
 
-for run in range(16):
+for run in [2, 6, 9, 3, 4, 5, 7, 8]:
     long_tree = newick.Node("1", "1")
     tip = long_tree
     for i in range(20 + run):
@@ -68,71 +73,84 @@ for run in range(16):
 
     print(long_tree.newick)
 
-    dataframe, columns = simulate(
-        long_tree,
-        clics_concepts,
-        initial_weight=lambda: random.randint(1, 200),
-        concept_weight='degree_squared',
-        scale=1,
-        related_concepts_edge_weight=factory(0.004),
-        p_gain=0,
-        verbose=0,
-        tips_only=False)
-    write_to_file(
-        dataframe, columns,
-        file=open("trivial_long_branch_0{:d}_id199.tsv".format(run),
-                  'w'))
-
-    for name, distribution in initial_weights.items():
-        print(name)
+    print("Generic")
+    try:
         dataframe, columns = simulate(
             long_tree,
             clics_concepts,
-            initial_weight=distribution,
+            initial_weight=initial_weights["100"],
             concept_weight='degree_squared',
             scale=1,
             related_concepts_edge_weight=factory(0.004),
             p_gain=0,
             verbose=0,
             tips_only=False)
-        write_to_file(dataframe, columns,
-                      file=open(
-                          "trivial_long_branch_{:d}_i{:}.tsv".format(
-                              run, name), 'w'))
-
-    for neighbor_factor in [
-            0., 0.01, 0.02, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1., 1.2]:
-        print(neighbor_factor/25)
-        dataframe, columns = simulate(
-            long_tree,
-            clics_concepts,
-            initial_weight=lambda: random.randint(1, 200),
-            concept_weight='degree_squared',
-            scale=1,
-            related_concepts_edge_weight=factory(neighbor_factor/25),
-            p_gain=0,
-            verbose=0,
-            tips_only=False)
         write_to_file(
             dataframe, columns,
-            file=open("trivial_long_branch_{:d}_id199_n{:f}.tsv".format(
-                run, neighbor_factor/25),
+            file=open("trivial_long_branch{:x}_0{:d}_i100.tsv".format(id, run),
                       'w'))
+    except KeyboardInterrupt:
+        pass
+
+    for name, distribution in initial_weights.items():
+        print("X_I:", name)
+        try:
+            dataframe, columns = simulate(
+                long_tree,
+                clics_concepts,
+                initial_weight=distribution,
+                concept_weight='degree_squared',
+                scale=1,
+                related_concepts_edge_weight=factory(0.004),
+                p_gain=0,
+                verbose=0,
+                tips_only=False)
+            write_to_file(dataframe, columns,
+                          file=open(
+                              "trivial_long_branch{:x}_{:d}_i{:}.tsv".format(
+                                  id, run, name), 'w'))
+        except KeyboardInterrupt:
+            pass
+
+    for neighbor_factor in numpy.array([
+            0., 0.01, 0.02, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1., 1.2])/25:
+        print("n:", neighbor_factor)
+        try:
+            dataframe, columns = simulate(
+                long_tree,
+                clics_concepts,
+                initial_weight=lambda: random.randint(1, 200),
+                concept_weight='degree_squared',
+                scale=1,
+                related_concepts_edge_weight=factory(neighbor_factor),
+                p_gain=0,
+                verbose=0,
+                tips_only=False)
+            write_to_file(
+                dataframe, columns,
+                file=open(
+                    "trivial_long_branch{:x}_{:d}_id199_n{:f}.tsv".format(
+                        id, run, neighbor_factor), 'w'))
+        except KeyboardInterrupt:
+            pass
 
     for name, c_weight in concept_weights.items():
         print(name)
-        dataframe, columns = simulate(
-            long_tree,
-            clics_concepts,
-            initial_weight=lambda: random.randint(1, 200),
-            concept_weight=c_weight,
-            scale=1,
-            related_concepts_edge_weight=factory(0.004),
-            p_gain=0,
-            verbose=0,
-            tips_only=False)
-        write_to_file(
-            dataframe, columns,
-            file=open("trivial_long_branch_{:d}_id199_c{:s}.tsv".format(
-                run, name),
-                      'w'))
+        try:
+            dataframe, columns = simulate(
+                long_tree,
+                clics_concepts,
+                initial_weight=lambda: random.randint(1, 200),
+                concept_weight=c_weight,
+                scale=1,
+                related_concepts_edge_weight=factory(0.004),
+                p_gain=0,
+                verbose=0,
+                tips_only=False)
+            write_to_file(
+                dataframe, columns,
+                file=open(
+                    "trivial_long_branch{:x}_{:d}_id199_c{:s}.tsv".format(
+                        id, run, name), 'w'))
+        except KeyboardInterrupt:
+            pass

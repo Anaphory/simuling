@@ -335,15 +335,41 @@ class NamingGameLanguage(Language):
         else:
             self.naming_game(concept_weight)
 
+        self.statistics()
+
     def clone(self):
         """Return a copy of this object."""
-        l = NamingGameLanguage({}, generate_words=False,
-                               related_concepts_edge_weight=self.get_weight)
-        l.related_concepts = self.related_concepts
-        l.words = copy.deepcopy(self.words)
-        return l
+        lang = NamingGameLanguage(
+            {}, generate_words=False,
+            related_concepts_edge_weight=self.get_weight)
+        lang.related_concepts = self.related_concepts
+        lang.words = copy.deepcopy(self.words)
+        return lang
 
     def __repr__(self):
         """Representation."""
         return "<NamingGameLanguage\n{:}>".format(
             self.flat_frequencies())
+
+    def statistics(self):
+        try:
+            step = self.step
+            logfile = self.logfile
+            np = self.np
+        except AttributeError:
+            step = self.step = 0
+            import numpy
+            import sys
+            np = self.np = numpy
+            logfile = self.logfile = sys.stdout
+        self.step += 1
+        if step % 1000 != 0:
+            return
+        s = []
+        words = set()
+        for m, ws in self.words.items():
+            s += list(ws.values())
+            words |= set(ws)
+        print(step, len(words),
+              np.mean(s), np.median(s),
+              sep="\t", file=logfile)

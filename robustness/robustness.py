@@ -8,6 +8,9 @@ Run the simulation on a long branch{:x} with parameter variation.
 import os
 import numpy
 import numpy.random as random
+import itertools
+
+import argparse
 
 import newick
 import networkx
@@ -61,7 +64,30 @@ initial_weights = {
     # "fpareto100": lambda: int(random.pareto(2) * 100 + 0.5)
     }
 
-for run in [2, 6, 9, 3, 4, 5, 7, 8]:
+parser = argparse.ArgumentParser(
+    description="Run long simulations on branch lengths")
+parser.add_argument("--stop", action="store_true", default=False,
+                    help="Stop simulating after the supplied steps")
+parser.add_argument("loglength", nargs=argparse.REMAINDER, type=int,
+                    help="Branch lengths to simulate: i → 2^(20+i)")
+args = parser.parse_args()
+start = max(args.loglength, default=0) + 1
+
+
+def simulate_g(*args, **kwargs):
+    return simulate(*args, **kwargs)
+
+
+def simulate_w(*args, **kwargs):
+    return simulate(*args, **kwargs)
+
+
+def simulate_e(*args, **kwargs):
+    return simulate(*args, **kwargs)
+
+
+for run in itertools.chain(args.loglength,
+                           [] if args.stop else itertools.count(start=start)):
     long_tree = newick.Node("1", "1")
     tip = long_tree
     for i in range(20 + run):
@@ -75,7 +101,7 @@ for run in [2, 6, 9, 3, 4, 5, 7, 8]:
 
     print("Generic")
     try:
-        dataframe, columns = simulate(
+        dataframe, columns = simulate_g(
             long_tree,
             clics_concepts,
             initial_weight=initial_weights["100"],
@@ -136,8 +162,12 @@ for run in [2, 6, 9, 3, 4, 5, 7, 8]:
 
     for name, c_weight in concept_weights.items():
         print(name)
+        if name == "exp_degree":
+            simulate_ = simulate_e
+        else:
+            simulate_ = simulate_w
         try:
-            dataframe, columns = simulate(
+            dataframe, columns = simulate_(
                 long_tree,
                 clics_concepts,
                 initial_weight=lambda: random.randint(1, 200),

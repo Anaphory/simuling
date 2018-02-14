@@ -161,6 +161,8 @@ for run in itertools.chain(args.loglength,
             pass
 
     for name, c_weight in concept_weights.items():
+        if name == "exp_degree" and run > -8:
+            continue
         print(name)
         if name == "exp_degree":
             simulate_ = simulate_e

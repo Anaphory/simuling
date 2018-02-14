@@ -23,6 +23,7 @@ class Phylogeny(object):
             root=None,
             basic=range(100),
             related_concepts_edge_weight=lambda x: x,
+            losswt=lambda x: x,
             scale=1000):
         """Create a phylogeny simulation object.
 

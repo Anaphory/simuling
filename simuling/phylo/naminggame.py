@@ -70,6 +70,7 @@ class NamingGameLanguage(Language):
                  related_concepts,
                  related_concepts_edge_weight=identity,
                  random=random.Random(),
+                 losswt=lambda x: x,
                  generate_words=True):
         """Create a random language.
 
@@ -113,6 +114,7 @@ class NamingGameLanguage(Language):
         self.words = defaultdict(Counter)
         if generate_words:
             self.generate_words(lambda: self.rng.randrange(1, 10))
+        self.losswt = losswt
 
     def generate_words(self, initial_weight):
         """Naive initialization of the language."""
@@ -210,14 +212,14 @@ class NamingGameLanguage(Language):
         for meaning, words in self.words.items():
             for word, weight in words.items():
                 if weight > 0:
-                    sum_weights += weight
+                    sum_weights += self.losswt(weight)
                 else:
                     zeros.append((meaning, word))
         v = self.rng.random() * sum_weights
         for meaning, words in self.words.items():
             for word, weight in words.items():
                 if weight > 0:
-                    v -= weight
+                    v -= self.losswt(weight)
                 if v < 0:
                     break
             else:

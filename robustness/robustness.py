@@ -101,7 +101,7 @@ for run in itertools.chain(args.loglength,
 
     print("Generic")
     try:
-        dataframe, columns = simulate_g(
+        columns, dataframe = simulate_g(
             long_tree,
             clics_concepts,
             initial_weight=initial_weights["100"],
@@ -112,16 +112,43 @@ for run in itertools.chain(args.loglength,
             verbose=0,
             tips_only=False)
         write_to_file(
-            dataframe, columns,
-            file=open("trivial_long_branch{:x}_0{:d}_i100.tsv".format(id, run),
-                      'w'))
+            columns, dataframe,
+            file=open(
+                "trivial_long_branch{:x}_r{:d}_i100_w2_n0.004.csv".format(
+                    id + 1, run), 'w'))
     except KeyboardInterrupt:
         pass
+
+    for losswt in [
+            lambda x: x,
+            lambda x: 1,
+            lambda x: 1/x]:
+        print("losswt(2):", losswt(2))
+        try:
+            columns, dataframe = simulate(
+                long_tree,
+                clics_concepts,
+                initial_weight=lambda: random.randint(1, 200),
+                concept_weight='degree_squared',
+                scale=1,
+                related_concepts_edge_weight=factory(0.004),
+                p_gain=0,
+                losswt=losswt,
+                verbose=0,
+                tips_only=False)
+            write_to_file(
+                columns, dataframe,
+                file=open(
+                    "trivial_long_branch{:x}_r{:d}_id199_w{:f}_n0.004.csv"
+                    "".format(
+                        id, run, losswt(2)), 'w'))
+        except KeyboardInterrupt:
+            pass
 
     for name, distribution in initial_weights.items():
         print("X_I:", name)
         try:
-            dataframe, columns = simulate(
+            columns, dataframe = simulate(
                 long_tree,
                 clics_concepts,
                 initial_weight=distribution,
@@ -131,10 +158,11 @@ for run in itertools.chain(args.loglength,
                 p_gain=0,
                 verbose=0,
                 tips_only=False)
-            write_to_file(dataframe, columns,
-                          file=open(
-                              "trivial_long_branch{:x}_{:d}_i{:}.tsv".format(
-                                  id, run, name), 'w'))
+            write_to_file(
+                columns, dataframe,
+                file=open(
+                    "trivial_long_branch{:x}_r{:d}_i{:}_w2_n0.004.csv".format(
+                        id, run, name), 'w'))
         except KeyboardInterrupt:
             pass
 
@@ -142,7 +170,7 @@ for run in itertools.chain(args.loglength,
             0., 0.01, 0.02, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1., 1.2])/25:
         print("n:", neighbor_factor)
         try:
-            dataframe, columns = simulate(
+            columns, dataframe = simulate(
                 long_tree,
                 clics_concepts,
                 initial_weight=lambda: random.randint(1, 200),
@@ -153,9 +181,9 @@ for run in itertools.chain(args.loglength,
                 verbose=0,
                 tips_only=False)
             write_to_file(
-                dataframe, columns,
+                columns, dataframe,
                 file=open(
-                    "trivial_long_branch{:x}_{:d}_id199_n{:f}.tsv".format(
+                    "trivial_long_branch{:x}_r{:d}_id199_w2_n{:f}.csv".format(
                         id, run, neighbor_factor), 'w'))
         except KeyboardInterrupt:
             pass
@@ -167,7 +195,7 @@ for run in itertools.chain(args.loglength,
         else:
             simulate_ = simulate_w
         try:
-            dataframe, columns = simulate_(
+            columns, dataframe = simulate_(
                 long_tree,
                 clics_concepts,
                 initial_weight=lambda: random.randint(1, 200),
@@ -178,9 +206,10 @@ for run in itertools.chain(args.loglength,
                 verbose=0,
                 tips_only=False)
             write_to_file(
-                dataframe, columns,
+                columns, dataframe,
                 file=open(
-                    "trivial_long_branch{:x}_{:d}_id199_c{:s}.tsv".format(
+                    "trivial_long_branch{:x}_r{:d}_id199_c{:s}_w2_n0.004.csv"
+                    "".format(
                         id, run, name), 'w'))
         except KeyboardInterrupt:
             pass

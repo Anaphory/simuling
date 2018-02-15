@@ -312,7 +312,8 @@ class Language(object):
 
         """
         lang = copy.copy(self)
-        lang.words = copy.deepcopy(self.words)
+        lang._cum_concept_weights = copy.copy(self._cum_concept_weights)
+        lang._word_meaning_pairs = copy.copy(self._word_meaning_pairs)
         return lang
 
     def __repr__(self):

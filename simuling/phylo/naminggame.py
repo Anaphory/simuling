@@ -339,6 +339,18 @@ class NamingGameLanguage(Language):
 
         self.statistics()
 
+    def clone(self):
+        """Copy the object and its vocabulary.
+
+        Generate a copy of this Language, with independent vocabulary,
+        so that the language and its clone can be evolved
+        differently.
+
+        """
+        lang = copy.copy(self)
+        lang.words = copy.deepcopy(self.words)
+        return lang
+
     def __repr__(self):
         """Representation."""
         return "<NamingGameLanguage\n{:}>".format(

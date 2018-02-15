@@ -223,7 +223,39 @@ def image_name(key):
     return "_".join([i.lower() for i in key.split()])
 
 
-def load(key, path="../robustness"):
+default_properties = {
+    "i": "d199",
+    "n": 0.004,
+    "w": 2,
+    "c": "degree_squared"}
+
+
+def properties(file):
+    if not (file.startswith("trivial_long_") and file.endswith(".csv")):
+        return None
+    props = default_properties.copy()
+    props.update({s[0]: s[1:] for s in file[13:-4].split("_")})
+    props["n"] = float(props["n"])
+    props["w"] = float(props["w"])
+    return props
+
+
+def property_key(property):
+    def key(file):
+        value = default_properties[property]
+        props = properties(file)
+        if props is None:
+            return None
+        for k, v in props.items():
+            if k == property:
+                value = v
+            elif k in default_properties and v != default_properties[k]:
+                return None
+        return value
+    return key
+
+
+def load(key, path="../"):
     """Load all files according to given key from directory path."""
     n = {}
     p = {}
@@ -233,13 +265,13 @@ def load(key, path="../robustness"):
         if weight is not None:
             all_data = pandas.read_csv(
                 os.path.join(path, file),
-                sep="\t",
+                sep=",",
                 na_values=[""],
                 keep_default_na=False,
                 encoding='utf-8')
 
             for language_id, language_data in all_data.groupby("Language_ID"):
-                if int(language_id) > 10**6:
+                if int(language_id) > 10**5:
                     words = set()
                     polysemy = Counter()
                     synonymy = Counter()

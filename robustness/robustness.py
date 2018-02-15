@@ -62,7 +62,7 @@ initial_weights = {
     # "pareto": lambda: int(random.pareto(0.4)),
     # "fpareto5": lambda: int(random.pareto(2) * 5.6 + 0.5),
     # "fpareto100": lambda: int(random.pareto(2) * 100 + 0.5)
-    }
+}
 
 parser = argparse.ArgumentParser(
     description="Run long simulations on branch lengths")

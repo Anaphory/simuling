@@ -340,11 +340,14 @@ class NamingGameLanguage(Language):
         self.statistics()
 
     def clone(self):
-        """Return a copy of this object."""
-        lang = NamingGameLanguage(
-            {}, generate_words=False,
-            related_concepts_edge_weight=self.get_weight)
-        lang.related_concepts = self.related_concepts
+        """Copy the object and its vocabulary.
+
+        Generate a copy of this Language, with independent vocabulary,
+        so that the language and its clone can be evolved
+        differently.
+
+        """
+        lang = copy.copy(self)
         lang.words = copy.deepcopy(self.words)
         return lang
 

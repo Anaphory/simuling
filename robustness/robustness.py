@@ -113,11 +113,12 @@ for run in itertools.chain(args.loglength,
             tips_only=False)
         write_to_file(
             columns, dataframe,
-            file=open("trivial_long_branch{:x}_r{:d}_i100_w2_n0.004.csv".format(
-                id + 1, run), 'w'))
+            file=open(
+                "trivial_long_branch{:x}_r{:d}_i100_w2_n0.004.csv".format(
+                    id + 1, run), 'w'))
     except KeyboardInterrupt:
         pass
-    
+
     for losswt in [
             lambda x: x,
             lambda x: 1,
@@ -138,11 +139,11 @@ for run in itertools.chain(args.loglength,
             write_to_file(
                 columns, dataframe,
                 file=open(
-                    "trivial_long_branch{:x}_r{:d}_id199_w{:f}_n0.004.csv".format(
+                    "trivial_long_branch{:x}_r{:d}_id199_w{:f}_n0.004.csv"
+                    "".format(
                         id, run, losswt(2)), 'w'))
         except KeyboardInterrupt:
             pass
-
 
     for name, distribution in initial_weights.items():
         print("X_I:", name)
@@ -157,10 +158,11 @@ for run in itertools.chain(args.loglength,
                 p_gain=0,
                 verbose=0,
                 tips_only=False)
-            write_to_file(columns, dataframe,
-                          file=open(
-                              "trivial_long_branch{:x}_r{:d}_i{:}_w2_n0.004.csv".format(
-                                  id, run, name), 'w'))
+            write_to_file(
+                columns, dataframe,
+                file=open(
+                    "trivial_long_branch{:x}_r{:d}_i{:}_w2_n0.004.csv".format(
+                        id, run, name), 'w'))
         except KeyboardInterrupt:
             pass
 
@@ -206,7 +208,8 @@ for run in itertools.chain(args.loglength,
             write_to_file(
                 columns, dataframe,
                 file=open(
-                    "trivial_long_branch{:x}_r{:d}_id199_c{:s}_w2_n0.004.csv".format(
+                    "trivial_long_branch{:x}_r{:d}_id199_c{:s}_w2_n0.004.csv"
+                    "".format(
                         id, run, name), 'w'))
         except KeyboardInterrupt:
             pass

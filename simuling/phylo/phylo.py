@@ -81,10 +81,16 @@ class Phylogeny(object):
                 self.tracer[node] = {
                     'language': new_language,
                     'distance': distance}
+            yield node
+
+    def word_list_columns(self):
+        return ("ID", "Language_ID", "Feature_ID", "Value",
+                "Weight", "Cognate_Set", "Concept_CogID")
 
     def collect_word_list(
             self,
             method=None,
+            collect_language=None,
             collect_tips_only=True):
         """Collect word lists from all (tip) languages in the tree.
 
@@ -106,14 +112,19 @@ class Phylogeny(object):
             def method(language):
                 return Language.basic_vocabulary(language, self.basic)
 
-        columns = ("ID", "Language_ID", "Feature_ID", "Value",
-                   "Weight", "Cognate_Set", "Concept_CogID")
         word_list = []
         concept_cogid_pairs = {}
 
         i = 0
-        for _, node in enumerate(self.tree.walk('preorder')):
-            if not collect_tips_only or node.is_leaf:
+        if collect_language is None:
+            languages = (node for node in self.tree.walk('preorder')
+                         if not collect_tips_only or node.is_leaf)
+        else:
+            if collect_language in self.tracer:
+                languages = [collect_language]
+            else:
+                languages = [self.tree.get_node(collect_language)]
+        for node in languages:
                 language = self.tracer[node]['language']
                 for concept, word, weight in method(language):
                     i += 1
@@ -128,4 +139,4 @@ class Phylogeny(object):
                         concept_cogid_pairs.setdefault(
                             (concept, word),
                             len(concept_cogid_pairs) + 1)))
-        return word_list, columns
+        return word_list

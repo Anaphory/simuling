@@ -6,9 +6,10 @@ Run the simulation on a long branch{:x} with parameter variation.
 """
 
 import os
+import csv
 import numpy
-import numpy.random as random
 import itertools
+import numpy.random as random
 
 import argparse
 
@@ -17,7 +18,7 @@ import networkx
 
 import simuling.phylo as phylo
 from simuling.phylo.naminggame import concept_weights
-from simuling.phylo.simulate import simulate as simulate, write_to_file
+from simuling.phylo.simulate import simulate as simulate
 
 
 def factory(n):
@@ -73,19 +74,6 @@ parser.add_argument("loglength", nargs=argparse.REMAINDER, type=int,
 args = parser.parse_args()
 start = max(args.loglength, default=0) + 1
 
-
-def simulate_g(*args, **kwargs):
-    return simulate(*args, **kwargs)
-
-
-def simulate_w(*args, **kwargs):
-    return simulate(*args, **kwargs)
-
-
-def simulate_e(*args, **kwargs):
-    return simulate(*args, **kwargs)
-
-
 for run in itertools.chain(args.loglength,
                            [] if args.stop else itertools.count(start=start)):
     long_tree = newick.Node("1", "1")
@@ -101,68 +89,46 @@ for run in itertools.chain(args.loglength,
 
     print("Generic")
     try:
-        columns, dataframe = simulate_g(
-            long_tree,
-            clics_concepts,
-            initial_weight=initial_weights["100"],
-            concept_weight='degree_squared',
-            scale=1,
-            related_concepts_edge_weight=factory(0.004),
-            p_gain=0,
-            verbose=0,
-            tips_only=False)
-        write_to_file(
-            columns, dataframe,
-            file=open(
+        with open(
                 "trivial_long_branch{:x}_r{:d}_i100_w2_n0.004.csv".format(
-                    id + 1, run), 'w'))
+                    id + 1, run), 'w') as file:
+            writer = csv.writer(file)
+            writer.writerow(("ID", "Language_ID", "Feature_ID", "Value",
+                             "Weight", "Cognate_Set", "Concept_CogID"))
+            for dataframe in simulate(
+                    long_tree,
+                    clics_concepts,
+                    initial_weight=initial_weights["100"],
+                    concept_weight='degree_squared',
+                    scale=1,
+                    related_concepts_edge_weight=factory(0.004),
+                    p_gain=0,
+                    verbose=0,
+                    tips_only=False):
+                writer.writerows(dataframe)
     except KeyboardInterrupt:
         pass
-
-    for losswt in [
-            lambda x: x,
-            lambda x: 1,
-            lambda x: 1/x]:
-        print("losswt(2):", losswt(2))
-        try:
-            columns, dataframe = simulate(
-                long_tree,
-                clics_concepts,
-                initial_weight=lambda: random.randint(1, 200),
-                concept_weight='degree_squared',
-                scale=1,
-                related_concepts_edge_weight=factory(0.004),
-                p_gain=0,
-                losswt=losswt,
-                verbose=0,
-                tips_only=False)
-            write_to_file(
-                columns, dataframe,
-                file=open(
-                    "trivial_long_branch{:x}_r{:d}_id199_w{:f}_n0.004.csv"
-                    "".format(
-                        id, run, losswt(2)), 'w'))
-        except KeyboardInterrupt:
-            pass
 
     for name, distribution in initial_weights.items():
         print("X_I:", name)
         try:
-            columns, dataframe = simulate(
-                long_tree,
-                clics_concepts,
-                initial_weight=distribution,
-                concept_weight='degree_squared',
-                scale=1,
-                related_concepts_edge_weight=factory(0.004),
-                p_gain=0,
-                verbose=0,
-                tips_only=False)
-            write_to_file(
-                columns, dataframe,
-                file=open(
+            with open(
                     "trivial_long_branch{:x}_r{:d}_i{:}_w2_n0.004.csv".format(
-                        id, run, name), 'w'))
+                        id, run, name), 'w') as file:
+                writer = csv.writer(file)
+                writer.writerow(("ID", "Language_ID", "Feature_ID", "Value",
+                                 "Weight", "Cognate_Set", "Concept_CogID"))
+                for dataframe in simulate(
+                        long_tree,
+                        clics_concepts,
+                        initial_weight=distribution,
+                        concept_weight='degree_squared',
+                        scale=1,
+                        related_concepts_edge_weight=factory(0.004),
+                        p_gain=0,
+                        verbose=0,
+                        tips_only=False):
+                    writer.writerows(dataframe)
         except KeyboardInterrupt:
             pass
 
@@ -170,46 +136,73 @@ for run in itertools.chain(args.loglength,
             0., 0.01, 0.02, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 1., 1.2])/25:
         print("n:", neighbor_factor)
         try:
-            columns, dataframe = simulate(
-                long_tree,
-                clics_concepts,
-                initial_weight=lambda: random.randint(1, 200),
-                concept_weight='degree_squared',
-                scale=1,
-                related_concepts_edge_weight=factory(neighbor_factor),
-                p_gain=0,
-                verbose=0,
-                tips_only=False)
-            write_to_file(
-                columns, dataframe,
-                file=open(
+            with open(
                     "trivial_long_branch{:x}_r{:d}_id199_w2_n{:f}.csv".format(
-                        id, run, neighbor_factor), 'w'))
+                        id, run, neighbor_factor), 'w') as file:
+                writer = csv.writer(file)
+                writer.writerow(("ID", "Language_ID", "Feature_ID", "Value",
+                                 "Weight", "Cognate_Set", "Concept_CogID"))
+                for dataframe in simulate(
+                        long_tree,
+                        clics_concepts,
+                        initial_weight=lambda: random.randint(1, 200),
+                        concept_weight='degree_squared',
+                        scale=1,
+                        related_concepts_edge_weight=factory(neighbor_factor),
+                        p_gain=0,
+                        verbose=0,
+                        tips_only=False):
+                    writer.writerows(dataframe)
         except KeyboardInterrupt:
             pass
 
     for name, c_weight in concept_weights.items():
         print(name)
-        if name == "exp_degree":
-            simulate_ = simulate_e
-        else:
-            simulate_ = simulate_w
         try:
-            columns, dataframe = simulate_(
-                long_tree,
-                clics_concepts,
-                initial_weight=lambda: random.randint(1, 200),
-                concept_weight=c_weight,
-                scale=1,
-                related_concepts_edge_weight=factory(0.004),
-                p_gain=0,
-                verbose=0,
-                tips_only=False)
-            write_to_file(
-                columns, dataframe,
-                file=open(
+            with open(
                     "trivial_long_branch{:x}_r{:d}_id199_c{:s}_w2_n0.004.csv"
+                    "".format(id, run, name), 'w') as file:
+                writer = csv.writer(file)
+                writer.writerow(("ID", "Language_ID", "Feature_ID", "Value",
+                                 "Weight", "Cognate_Set", "Concept_CogID"))
+                for dataframe in simulate(
+                        long_tree,
+                        clics_concepts,
+                        initial_weight=lambda: random.randint(1, 200),
+                        concept_weight=c_weight,
+                        scale=1,
+                        related_concepts_edge_weight=factory(0.004),
+                        p_gain=0,
+                        verbose=0,
+                        tips_only=False):
+                    writer.writerows(dataframe)
+        except KeyboardInterrupt:
+            pass
+
+    for losswt in [
+            lambda x: x,
+            lambda x: 1,
+            lambda x: 1/x]:
+        print("losswt(2):", losswt(2))
+        try:
+            with open(
+                    "trivial_long_branch{:x}_r{:d}_id199_w{:f}_n0.004.csv"
                     "".format(
-                        id, run, name), 'w'))
+                        id, run, losswt(2)), 'w') as file:
+                writer = csv.writer(file)
+                writer.writerow(("ID", "Language_ID", "Feature_ID", "Value",
+                                 "Weight", "Cognate_Set", "Concept_CogID"))
+                for dataframe in simulate(
+                        long_tree,
+                        clics_concepts,
+                        initial_weight=lambda: random.randint(1, 200),
+                        concept_weight='degree_squared',
+                        scale=1,
+                        related_concepts_edge_weight=factory(0.004),
+                        p_gain=0,
+                        losswt=losswt,
+                        verbose=0,
+                        tips_only=False):
+                    writer.writerows(dataframe)
         except KeyboardInterrupt:
             pass

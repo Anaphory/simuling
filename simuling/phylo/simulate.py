@@ -6,7 +6,7 @@ import sys
 
 import csv
 
-from .language import Language
+from .naminggame import NamingGameLanguage as Language
 from .phylo import Phylogeny
 
 
@@ -33,10 +33,14 @@ def simulate(
         related_concepts_edge_weight=lambda x: 0.1*x,
         root=None):
     """Run a phylogeny simulation with the given parameters."""
+    if root is None:
+        root = Language(
+                related_concepts,
+                related_concepts_edge_weight=related_concepts_edge_weight,
+                generate_words=False)
+        root.generate_words(initial_weight)
+
     phy = Phylogeny(
-        related_concepts=related_concepts,
-        related_concepts_edge_weight=related_concepts_edge_weight,
-        initial_weight=initial_weight,
         basic=[],
         tree=tree,
         root=root,

@@ -38,7 +38,7 @@ def test_pairwise_shared_vocabulary_half():
         return
     v2["Language_ID"] = -1
     for i, row in v2.iterrows():
-        v2.set_value(i, "Cognate_Set", -1)
+        v2.at[i, "Cognate_Set"] = -1
     vocabulary = v1.append(v2)
     for (language1, language2), score in compare.pairwise_shared_vocabulary(
             vocabulary):

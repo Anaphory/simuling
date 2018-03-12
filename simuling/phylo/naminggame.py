@@ -27,7 +27,7 @@ def degree(meaning, language):
     return len(language.related_concepts[meaning])
 
 
-def degree_squared(meaning, language):
+def degreesquared(meaning, language):
     """Draw random concept proportional to degree squared."""
     return len(language.related_concepts[meaning]) ** 2
 
@@ -50,7 +50,7 @@ def identity(x):
 concept_weights = {
     'preferential': preferential,
     'degree': degree,
-    'degree_squared': degree_squared,
+    'degreesquared': degreesquared,
     'exp_degree': exp_degree,
     'one': one,
 }
@@ -181,7 +181,7 @@ class NamingGameLanguage(Language):
             return self.gain(concept_weight)
         words[c_words[bisect.bisect(c_weights, q)]] += 1
 
-    def random_concept(self, weight=degree_squared):
+    def random_concept(self, weight=degreesquared):
         """Return a random concept.
 
         Calculate weights according to the `weight` function and draw
@@ -315,7 +315,7 @@ class NamingGameLanguage(Language):
 
     def change(self,
                p_gain=0.3,
-               concept_weight=degree_squared):
+               concept_weight=degreesquared):
         """Execute one change step.
 
         With probability p_gain, a rare meaning is lost and a frequent

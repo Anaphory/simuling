@@ -91,6 +91,15 @@ def main(args):
         concepticon, or a comma-separated list of glosses.""")
 
     parser.add_argument(
+        "--init-wordlist",
+        help="""A file containing a word list which will be used as starting
+        point, instead of running 10^7 simulation steps ahead""")
+    parser.add_argument(
+        "--init-language",
+        help="""The language ID to be taken from INIT_WORDLIST as starting point (default:
+        The language from the last row in the file)""")
+
+    parser.add_argument(
         "--semantic-network",
         # FIXME: This needs to become a path relative to __file__
         default=open(os.path.join(os.path.dirname(phylo.__file__),

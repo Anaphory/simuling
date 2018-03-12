@@ -19,7 +19,7 @@ def simulate_and_write(tree, features, related_concepts, scale=1,
         columns, dataframe = simulate(
             tree, related_concepts, initial_weight=lambda: initial_weight,
             related_concepts_edge_weight=related_concepts_edge_weight,
-            scale=scale, verbose=True, root=root)
+            scale=scale, verbose=True, root=root, tips_only=False)
         filename = "simulation_{:}_{:}.csv".format(scale, i)
         with open(filename, "w") as f:
             write_to_file(columns, dataframe, f)

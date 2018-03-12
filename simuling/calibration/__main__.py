@@ -10,6 +10,7 @@ steps.
 
 import os
 import sys
+import json
 import argparse
 import tempfile
 
@@ -21,8 +22,6 @@ from pyconcepticon.api import Concepticon
 from simuling.phylo.simulate import factory
 from .compare_simulation_with_data import (
     read_cldf,
-    # estimate_normal_distribution,
-    # normal_likelihood,
     pairwise_shared_vocabulary)
 
 from ..phylo.naminggame import NamingGameLanguage as Language
@@ -168,8 +167,20 @@ def main(args):
         for i in args.ignore:
             ignore.append(i.split(":"))
 
-    realdata = {pair: score
-                for pair, score in pairwise_shared_vocabulary(data)}
+    try:
+        with open(os.path.join(
+                os.path.dirname(__file__),
+                "pairwise_shared_vocabulary.json")) as realdata_cache:
+            realdata = json.load(realdata_cache)
+        realdata = {tuple(key.split()): value
+                    for key, value in realdata.items()}
+    except FileNotFoundError:
+        realdata = {" ".join(pair): score
+                    for pair, score in pairwise_shared_vocabulary(data)}
+        with open(os.path.join(
+                os.path.dirname(__file__),
+                "pairwise_shared_vocabulary.json"), "w") as realdata_cache:
+            json.dump(realdata, realdata_cache)
 
     def scaled_weight_threshold(x):
         if x[args.weight_name] < args.min_connection:

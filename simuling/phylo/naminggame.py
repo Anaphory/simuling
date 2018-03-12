@@ -261,9 +261,12 @@ class NamingGameLanguage(Language):
                         similar_meaning, 1)
                 except AttributeError:
                     edge = 1
+                edge = self.get_weight(edge)
+                if edge < 1e-5:
+                    continue
                 for word, word_weight in self.words[similar_meaning].items():
                     words.setdefault(word, 0)
-                    words[word] += self.get_weight(edge) * word_weight
+                    words[word] += edge * word_weight
             word_sets[meaning] = words
 
         exclusively = {}

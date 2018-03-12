@@ -22,8 +22,9 @@ class Phylogeny(object):
             initial_weight,
             root=None,
             basic=range(100),
-            scale=1000,
-            neighbor_factor=0.1):
+            related_concepts_edge_weight=lambda x: x,
+            losswt=lambda x: x,
+            scale=1000):
         """Create a phylogeny simulation object.
 
         related_concepts: a networkx.Graph or a dictionary of lists,
@@ -40,7 +41,7 @@ class Phylogeny(object):
         if root is None:
             self.root = Language(
                 self.related_concepts,
-                neighbor_factor=neighbor_factor,
+                related_concepts_edge_weight=related_concepts_edge_weight,
                 generate_words=False)
             self.root.generate_words(initial_weight)
         else:

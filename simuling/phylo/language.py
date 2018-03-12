@@ -10,6 +10,7 @@ This module supplies the functionality of a basic language model.
 
 import random
 import bisect
+import copy
 
 
 class Language(object):
@@ -310,11 +311,10 @@ class Language(object):
         differently.
 
         """
-        l = Language({}, generate_words=False)
-        l._cum_concept_weights = self._cum_concept_weights[:]
-        l._word_meaning_pairs = self._word_meaning_pairs[:]
-        l.related_concepts = self.related_concepts
-        return l
+        lang = copy.copy(self)
+        lang._cum_concept_weights = copy.copy(self._cum_concept_weights)
+        lang._word_meaning_pairs = copy.copy(self._word_meaning_pairs)
+        return lang
 
     def __repr__(self):
         """Object Representation."""

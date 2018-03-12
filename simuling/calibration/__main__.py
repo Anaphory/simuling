@@ -20,15 +20,19 @@ import simuling.phylo as phylo
 from pyconcepticon.api import Concepticon
 from simuling.phylo.simulate import simulate, write_to_file
 from .compare_simulation_with_data import (
-    read_cldf, estimate_normal_distribution, normal_likelihood)
+    read_cldf, estimate_normal_distribution, normal_likelihood,
+    pairwise_shared_vocabulary)
 
 
-def simulate_and_write(tree, features, related_concepts, scale=1, n_sim=3):
+def simulate_and_write(tree, features, related_concepts, scale=1,
+                       n_sim=3, initial_weight=100,
+                       related_concepts_edge_weight=lambda x: x):
     """Simulate evolution on tree and write results to file."""
     for i in range(n_sim):
-        columns, dataframe = simulate(tree, related_concepts,
-                                      initial_weight=lambda: 10,
-                                      scale=scale, verbose=True)
+        columns, dataframe = simulate(
+            tree, related_concepts, initial_weight=lambda: initial_weight,
+            related_concepts_edge_weight=related_concepts_edge_weight,
+            scale=scale, verbose=True)
         filename = "simulation_{:}_{:}.tsv".format(scale, i)
         with open(filename, "w") as f:
             write_to_file(columns, dataframe, f)
@@ -36,7 +40,9 @@ def simulate_and_write(tree, features, related_concepts, scale=1, n_sim=3):
 
 
 def run_sims_and_calc_lk(tree, realdata, features, related_concepts,
-                         scale=1, n_sim=3, ignore=[]):
+                         scale=1, n_sim=3, initial_weight=6,
+                         related_concepts_edge_weight=lambda x: x,
+                         ignore=[], normal=False):
     """Run simulations and calculate their Normal likelihood.
 
     Run `n` simulations and calculate the likelihood of `realdata`
@@ -44,10 +50,29 @@ def run_sims_and_calc_lk(tree, realdata, features, related_concepts,
     proportions give the results of the simulations.
 
     """
-    normals = estimate_normal_distribution(simulate_and_write(
-        tree, features=features, related_concepts=related_concepts,
-        scale=scale, n_sim=n_sim))
-    return normal_likelihood(realdata, normals, ignore=ignore)
+    if normal:
+        normals = estimate_normal_distribution(simulate_and_write(
+            tree, features=features, related_concepts=related_concepts,
+            related_concepts_edge_weight=related_concepts_edge_weight,
+            scale=scale, n_sim=n_sim))
+        return normal_likelihood(realdata, normals,
+                                 ignore=ignore)
+    else:
+        neg_squared_error = 0
+        for simulation in simulate_and_write(
+                tree, features=features, related_concepts=related_concepts,
+                related_concepts_edge_weight=related_concepts_edge_weight,
+                scale=scale, n_sim=n_sim):
+            for (l1, l2), score in (
+                    pairwise_shared_vocabulary(simulation, False)):
+                if l1 > l2:
+                    l1, l2 = l2, l1
+                if (l1, l2) in ignore:
+                    continue
+                error = (realdata[l1, l2] - score) ** 2
+                print(l1, l2, score, error)
+                neg_squared_error -= error
+        return neg_squared_error/n_sim
 
 
 def main(args):
@@ -103,10 +128,24 @@ def main(args):
         "--semantic-network",
         # FIXME: This needs to become a path relative to __file__
         default=open(os.path.join(os.path.dirname(phylo.__file__),
-                                  "clics.gml")),
+                                  "network-3-families.gml")),
         type=argparse.FileType("r"),
         help="""File containing the semantic network to be used (eg. a
         colexification graph) in GLM format""")
+    parser.add_argument(
+        "--weight-name",
+        default="FamilyWeight",
+        help="Name of the weight attribute in the GML file")
+    parser.add_argument(
+        "--initial-weight",
+        default=6,
+        type=int,
+        help="""Initial weight value for all words""")
+    parser.add_argument(
+        "--neighbor-factor",
+        type=float,
+        default=0.004,
+        help="Score for implicit polysemy along branches.")
     parser.add_argument(
         "--min-connection",
         type=float,
@@ -140,7 +179,7 @@ def main(args):
     if args.features != '*':
         try:
             features = [
-                c.concepticon_gloss.lower()
+                int(c.concepticon_id)
                 for c in Concepticon().conceptlists[
                     args.features].concepts.values()]
         except KeyError:
@@ -153,13 +192,24 @@ def main(args):
         for i in args.ignore:
             ignore.append(i.split(":"))
 
+    realdata = {pair: score
+                for pair, score in pairwise_shared_vocabulary(data)}
+
+    def scaled_weight_threshold(x):
+        if x[args.weight_name] < args.min_connection:
+            return 0
+        else:
+            return args.neighbor_factor * x[args.weight_name]
+
     def simulate_scale(scale):
         return run_sims_and_calc_lk(
             scale=scale,
             n_sim=args.sims,
             related_concepts=related_concepts,
             tree=tree,
-            realdata=data,
+            initial_weight=args.initial_weight,
+            related_concepts_edge_weight=scaled_weight_threshold,
+            realdata=realdata,
             features=features,
             ignore=ignore)
 

@@ -32,15 +32,26 @@ def degree_squared(meaning, language):
     return len(language.related_concepts[meaning]) ** 2
 
 
+def exp_degree(meaning, language):
+    """Draw random concept proportional to degree squared."""
+    return 1 << len(language.related_concepts[meaning])
+
+
 def one(*args, **kwargs):
     """Return 1."""
     return 1
+
+
+def identity(x):
+    """Identity function."""
+    return x
 
 
 concept_weights = {
     'preferential': preferential,
     'degree': degree,
     'degree_squared': degree_squared,
+    'exp_degree': exp_degree,
     'one': one,
 }
 
@@ -57,8 +68,9 @@ class NamingGameLanguage(Language):
 
     def __init__(self,
                  related_concepts,
-                 neighbor_factor=0.1,
+                 related_concepts_edge_weight=identity,
                  random=random.Random(),
+                 losswt=lambda x: x,
                  generate_words=True):
         """Create a random language.
 
@@ -70,19 +82,19 @@ class NamingGameLanguage(Language):
         will be initialized with a random integer between 1 and
         `initial_max_wt` inclusively.
 
-        >>> Language({1:[2,3],2:[1],3:[2]})
+        >>> NamingGameLanguage({1:{2:1,3:1},2:{1:1},3:{2:1}})
 
 
         Args:
-            related_concepts (`dict`): Maps concepts to semantically
-                related concepts.
+            related_concepts (`dict` of `dict`s-like): Maps concepts
+                to semantically related concepts.
 
             initial_weight (`→int`): A random number generator for the
                 initial weights.
 
-            neighbor_factor (`float`): The coefficient for words
-                meaning a similar concept contributing to their
-                neighbour's weight.
+            related_concepts_edge_weight (`?→float`): A function
+                mapping an edge properties object (the values of the
+                values of `related_concepts`) to the edge weight.
 
             random (`RandomState`, optional): The random number
                 generator to use. Defaults to `numpy.random`.
@@ -98,10 +110,11 @@ class NamingGameLanguage(Language):
         # calculating it anew every draw step.
 
         self.related_concepts = related_concepts
-        self.neighbor_factor = neighbor_factor
+        self.get_weight = related_concepts_edge_weight
         self.words = defaultdict(Counter)
         if generate_words:
             self.generate_words(lambda: self.rng.randrange(1, 10))
+        self.losswt = losswt
 
     def generate_words(self, initial_weight):
         """Naive initialization of the language."""
@@ -199,14 +212,14 @@ class NamingGameLanguage(Language):
         for meaning, words in self.words.items():
             for word, weight in words.items():
                 if weight > 0:
-                    sum_weights += weight
+                    sum_weights += self.losswt(weight)
                 else:
                     zeros.append((meaning, word))
         v = self.rng.random() * sum_weights
         for meaning, words in self.words.items():
             for word, weight in words.items():
                 if weight > 0:
-                    v -= weight
+                    v -= self.losswt(weight)
                 if v < 0:
                     break
             else:
@@ -232,7 +245,6 @@ class NamingGameLanguage(Language):
         This method increases the sum of word-meaning weights by 1.
 
         """
-        neighbor_factor = self.neighbor_factor
         word_sets = {}
         for _ in range(2):
             meaning = self.random_concept(concept_weight)
@@ -242,10 +254,16 @@ class NamingGameLanguage(Language):
                 # appropriate methods and data structures though.
                 meaning = self.random_concept(concept_weight)
             words = copy.deepcopy(self.words[meaning])
-            for similar_meaning in self.related_concepts[meaning]:
-                for word, weight in self.words[similar_meaning].items():
+            for similar_meaning in self.related_concepts[
+                    meaning]:
+                try:
+                    edge = self.related_concepts[meaning].get(
+                        similar_meaning, 1)
+                except AttributeError:
+                    edge = 1
+                for word, word_weight in self.words[similar_meaning].items():
                     words.setdefault(word, 0)
-                    words[word] += neighbor_factor * weight
+                    words[word] += self.get_weight(edge) * word_weight
             word_sets[meaning] = words
 
         exclusively = {}
@@ -319,15 +337,44 @@ class NamingGameLanguage(Language):
         else:
             self.naming_game(concept_weight)
 
+        self.statistics()
+
     def clone(self):
-        """Return a copy of this object."""
-        l = NamingGameLanguage({}, generate_words=False)
-        l.related_concepts = self.related_concepts
-        l.words = copy.deepcopy(self.words)
-        l.neighbor_factor = self.neighbor_factor
-        return l
+        """Copy the object and its vocabulary.
+
+        Generate a copy of this Language, with independent vocabulary,
+        so that the language and its clone can be evolved
+        differently.
+
+        """
+        lang = copy.copy(self)
+        lang.words = copy.deepcopy(self.words)
+        return lang
 
     def __repr__(self):
         """Representation."""
         return "<NamingGameLanguage\n{:}>".format(
             self.flat_frequencies())
+
+    def statistics(self):
+        try:
+            step = self.step
+            logfile = self.logfile
+            np = self.np
+        except AttributeError:
+            step = self.step = 0
+            import numpy
+            import sys
+            np = self.np = numpy
+            logfile = self.logfile = sys.stdout
+        self.step += 1
+        if step % 1000 != 0:
+            return
+        s = []
+        words = set()
+        for m, ws in self.words.items():
+            s += list(ws.values())
+            words |= set(ws)
+        print(step, len(words),
+              np.mean(s), np.median(s),
+              sep="\t", file=logfile)

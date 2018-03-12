@@ -17,23 +17,7 @@ import networkx
 
 import simuling.phylo as phylo
 from simuling.phylo.naminggame import concept_weights
-from simuling.phylo.simulate import simulate as simulate, write_to_file
-
-
-def factory(n):
-    """An edge weight extractor factory.
-
-    Return a function that returns the 'weight' attribute of its first
-    argument, scaled by n.
-
-    """
-    def scaled_weight_threshold(x):
-        if x['FamilyWeight'] < 2:
-            return 0
-        else:
-            return n * x['FamilyWeight']
-    return scaled_weight_threshold
-
+from simuling.phylo.simulate import simulate as simulate, write_to_file, factory
 
 id = random.randint(0x10000)
 

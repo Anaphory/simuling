@@ -18,21 +18,23 @@ import networkx
 
 import simuling.phylo as phylo
 from pyconcepticon.api import Concepticon
-from simuling.phylo.simulate import simulate, write_to_file
+from simuling.phylo.simulate import simulate, write_to_file, factory
 from .compare_simulation_with_data import (
     read_cldf, estimate_normal_distribution, normal_likelihood,
     pairwise_shared_vocabulary)
 
+from ..phylo.naminggame import NamingGameLanguage as Language
 
 def simulate_and_write(tree, features, related_concepts, scale=1,
                        n_sim=3, initial_weight=100,
-                       related_concepts_edge_weight=lambda x: x):
+                       related_concepts_edge_weight=lambda x: x,
+                       root=None):
     """Simulate evolution on tree and write results to file."""
     for i in range(n_sim):
         columns, dataframe = simulate(
             tree, related_concepts, initial_weight=lambda: initial_weight,
             related_concepts_edge_weight=related_concepts_edge_weight,
-            scale=scale, verbose=True)
+            scale=scale, verbose=True, root=root)
         filename = "simulation_{:}_{:}.tsv".format(scale, i)
         with open(filename, "w") as f:
             write_to_file(columns, dataframe, f)
@@ -42,7 +44,7 @@ def simulate_and_write(tree, features, related_concepts, scale=1,
 def run_sims_and_calc_lk(tree, realdata, features, related_concepts,
                          scale=1, n_sim=3, initial_weight=6,
                          related_concepts_edge_weight=lambda x: x,
-                         ignore=[], normal=False):
+                         ignore=[], normal=False, root=None):
     """Run simulations and calculate their Normal likelihood.
 
     Run `n` simulations and calculate the likelihood of `realdata`
@@ -54,7 +56,7 @@ def run_sims_and_calc_lk(tree, realdata, features, related_concepts,
         normals = estimate_normal_distribution(simulate_and_write(
             tree, features=features, related_concepts=related_concepts,
             related_concepts_edge_weight=related_concepts_edge_weight,
-            scale=scale, n_sim=n_sim))
+            scale=scale, n_sim=n_sim, root=root))
         return normal_likelihood(realdata, normals,
                                  ignore=ignore)
     else:
@@ -62,7 +64,7 @@ def run_sims_and_calc_lk(tree, realdata, features, related_concepts,
         for simulation in simulate_and_write(
                 tree, features=features, related_concepts=related_concepts,
                 related_concepts_edge_weight=related_concepts_edge_weight,
-                scale=scale, n_sim=n_sim):
+                scale=scale, n_sim=n_sim, root=root):
             for (l1, l2), score in (
                     pairwise_shared_vocabulary(simulation, False)):
                 if l1 > l2:
@@ -126,7 +128,6 @@ def main(args):
 
     parser.add_argument(
         "--semantic-network",
-        # FIXME: This needs to become a path relative to __file__
         default=open(os.path.join(os.path.dirname(phylo.__file__),
                                   "network-3-families.gml")),
         type=argparse.FileType("r"),
@@ -138,7 +139,7 @@ def main(args):
         help="Name of the weight attribute in the GML file")
     parser.add_argument(
         "--initial-weight",
-        default=6,
+        default=100,
         type=int,
         help="""Initial weight value for all words""")
     parser.add_argument(
@@ -163,18 +164,40 @@ def main(args):
     args = parser.parse_args(args)
 
     related_concepts = networkx.parse_gml(args.semantic_network)
-    for node1, edges in related_concepts.edge.items():
-        for node2, properties in list(edges.items()):
-            if properties.get("weight", 1) < args.min_connection:
-                related_concepts.remove_edge(node1, node2)
 
-    os.chdir(args.dir)
     lks = {}
     lower = args.minscale
     upper = args.maxscale
 
     tree = newick.load(args.tree)[0]
+    if args.init_wordlist is None:
+        virtual_root = newick.Node()
+        virtual_root.add_descendant(tree)
+        tree.length = 10000000
+        tree = virtual_root
+        starting_data = None
+    else:
+        raw_data = read_cldf(args.init_wordlist)
+        init_language = args.init_language or (
+            list(raw_data["Language_ID"])[-1])
+        raw_data = raw_data[
+            raw_data["Language_ID"] == init_language]
+        starting_data = Language(
+            related_concepts,
+            related_concepts_edge_weight=factory(args.neighbor_factor),
+            generate_words=False)
+        maxword = 0
+        for r, row in raw_data.iterrows():
+            meaning = row["Feature_ID"]
+            weight = row["Weight"]
+            i = row["Cognate_Set"]
+            maxword = max(i, maxword)
+            starting_data.words[meaning]["{:}{:}".format(meaning, i)] = weight
+        Language.max_word = maxword
+
     data = read_cldf(args.realdata)
+
+    os.chdir(args.dir)
 
     if args.features != '*':
         try:
@@ -208,10 +231,11 @@ def main(args):
             related_concepts=related_concepts,
             tree=tree,
             initial_weight=args.initial_weight,
-            related_concepts_edge_weight=scaled_weight_threshold,
+            related_concepts_edge_weight=factory(args.neigbor_factor),
             realdata=realdata,
             features=features,
-            ignore=ignore)
+            ignore=ignore,
+            root=starting_data)
 
     lks[lower] = simulate_scale(lower)
     lks[upper] = simulate_scale(upper)

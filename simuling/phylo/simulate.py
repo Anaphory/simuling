@@ -10,12 +10,28 @@ from .language import Language
 from .phylo import Phylogeny
 
 
+def factory(n):
+    """An edge weight extractor factory.
+
+    Return a function that returns the 'weight' attribute of its first
+    argument, scaled by n.
+
+    """
+    def scaled_weight_threshold(x):
+        if x['FamilyWeight'] < 2:
+            return 0
+        else:
+            return n * x['FamilyWeight']
+    return scaled_weight_threshold
+
+
 def simulate(
         tree, related_concepts, initial_weight,
-        concept_weight="degree_squared", scale=1, p_gain=0,
+        concept_weight="degreesquared", scale=1, p_gain=0,
         verbose=False, tips_only=True,
         losswt=lambda x: x,
-        related_concepts_edge_weight=lambda x: 0.1*x):
+        related_concepts_edge_weight=lambda x: 0.1*x,
+        root=None):
     """Run a phylogeny simulation with the given parameters."""
     phy = Phylogeny(
         related_concepts=related_concepts,
@@ -23,6 +39,7 @@ def simulate(
         initial_weight=initial_weight,
         basic=[],
         tree=tree,
+        root=root,
         losswt=losswt,
         scale=scale)
 

@@ -35,7 +35,7 @@ def simulate_and_write(tree, features, related_concepts, scale=1,
             tree, related_concepts, initial_weight=lambda: initial_weight,
             related_concepts_edge_weight=related_concepts_edge_weight,
             scale=scale, verbose=True, root=root)
-        filename = "simulation_{:}_{:}.tsv".format(scale, i)
+        filename = "simulation_{:}_{:}.csv".format(scale, i)
         with open(filename, "w") as f:
             write_to_file(columns, dataframe, f)
         yield read_cldf(filename, features=features)
@@ -231,7 +231,7 @@ def main(args):
             related_concepts=related_concepts,
             tree=tree,
             initial_weight=args.initial_weight,
-            related_concepts_edge_weight=factory(args.neigbor_factor),
+            related_concepts_edge_weight=factory(args.neighbor_factor),
             realdata=realdata,
             features=features,
             ignore=ignore,

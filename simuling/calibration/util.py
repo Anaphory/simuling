@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+import os
+import json
+
 from ..phylo.simulate import simulate, write_to_file
 
 
@@ -19,7 +22,7 @@ def simulate_and_write(tree, features, related_concepts, scale=1,
         columns, dataframe = simulate(
             tree, related_concepts, initial_weight=lambda: initial_weight,
             related_concepts_edge_weight=related_concepts_edge_weight,
-            scale=scale, verbose=True, root=root, tips_only=False)
+            scale=scale, verbose=True, root=root, tips_only=True)
         filename = "simulation_{:}_{:}.csv".format(scale, i)
         with open(filename, "w") as f:
             write_to_file(columns, dataframe, f)
@@ -56,7 +59,23 @@ def run_sims_and_calc_lk(tree, realdata, features, related_concepts,
                     l1, l2 = l2, l1
                 if (l1, l2) in ignore:
                     continue
-                error = (realdata[l1, l2] - score) ** 2
+                error = (realdata[l1, l2] - score)
                 print(l1, l2, score, error)
-                neg_squared_error -= error
+                neg_squared_error -= error ** 2
         return neg_squared_error/n_sim
+
+
+def cached_realdata(data):
+    try:
+        with open(os.path.join(
+                os.path.dirname(__file__),
+                "pairwise_shared_vocabulary.json")) as realdata_cache:
+            realdata = json.load(realdata_cache)
+    except FileNotFoundError:
+        realdata = {" ".join(pair): score
+                    for pair, score in pairwise_shared_vocabulary(data)}
+        with open(os.path.join(
+                os.path.dirname(__file__),
+                "pairwise_shared_vocabulary.json"), "w") as realdata_cache:
+            json.dump(realdata, realdata_cache)
+    return {tuple(key.split()): value for key, value in realdata.items()}

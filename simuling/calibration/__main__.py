@@ -10,7 +10,6 @@ steps.
 
 import os
 import sys
-import json
 import argparse
 import tempfile
 
@@ -21,12 +20,11 @@ import simuling.phylo as phylo
 from pyconcepticon.api import Concepticon
 from simuling.phylo.simulate import factory
 from .compare_simulation_with_data import (
-    read_cldf,
-    pairwise_shared_vocabulary)
+    read_cldf)
 
 from ..phylo.naminggame import NamingGameLanguage as Language
 
-from .util import run_sims_and_calc_lk
+from .util import run_sims_and_calc_lk, cached_realdata
 
 
 def main(args):
@@ -34,8 +32,9 @@ def main(args):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--realdata",
-        default=open(os.path.join(os.path.dirname(__file__),
-                                  "beijingdaxue1964.csv")),
+        default=None,
+        # open(os.path.join(os.path.dirname(__file__),
+        # "beijingdaxue1964.csv")),
         type=argparse.FileType("r"),
         help="Word list from real life")
     parser.add_argument(
@@ -100,12 +99,6 @@ def main(args):
         default=0.004,
         help="Score for implicit polysemy along branches.")
     parser.add_argument(
-        "--min-connection",
-        type=float,
-        default=0,
-        help="""The minimum 'weight' for a semantic network edge to be considered
-        in the simulation""")
-    parser.add_argument(
         "--ignore",
         action="append",
         default=[],
@@ -129,11 +122,11 @@ def main(args):
         tree = virtual_root
         starting_data = None
     else:
-        raw_data = read_cldf(args.init_wordlist)
+        raw_data = read_cldf(args.init_wordlist, top_word_only=False)
         init_language = args.init_language or (
             list(raw_data["Language_ID"])[-1])
         raw_data = raw_data[
-            raw_data["Language_ID"] == init_language]
+            raw_data["Language_ID"].astype(str) == init_language]
         starting_data = Language(
             related_concepts,
             related_concepts_edge_weight=factory(args.neighbor_factor),
@@ -146,8 +139,6 @@ def main(args):
             maxword = max(i, maxword)
             starting_data.words[meaning]["{:}{:}".format(meaning, i)] = weight
         Language.max_word = maxword
-
-    data = read_cldf(args.realdata)
 
     os.chdir(args.dir)
 
@@ -167,26 +158,11 @@ def main(args):
         for i in args.ignore:
             ignore.append(i.split(":"))
 
-    try:
-        with open(os.path.join(
-                os.path.dirname(__file__),
-                "pairwise_shared_vocabulary.json")) as realdata_cache:
-            realdata = json.load(realdata_cache)
-        realdata = {tuple(key.split()): value
-                    for key, value in realdata.items()}
-    except FileNotFoundError:
-        realdata = {" ".join(pair): score
-                    for pair, score in pairwise_shared_vocabulary(data)}
-        with open(os.path.join(
-                os.path.dirname(__file__),
-                "pairwise_shared_vocabulary.json"), "w") as realdata_cache:
-            json.dump(realdata, realdata_cache)
-
-    def scaled_weight_threshold(x):
-        if x[args.weight_name] < args.min_connection:
-            return 0
-        else:
-            return args.neighbor_factor * x[args.weight_name]
+    if args.realdata:
+        read_cldf(args.realdata)
+        raise NotImplementedError
+    else:
+        realdata = cached_realdata(None)
 
     def simulate_scale(scale):
         return run_sims_and_calc_lk(

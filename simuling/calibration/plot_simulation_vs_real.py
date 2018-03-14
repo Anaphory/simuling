@@ -11,13 +11,14 @@ import bisect
 
 import matplotlib.pyplot as plt
 
-import os
 import sys
+import os.path
 import argparse
 
 from . import compare_simulation_with_data
 from .compare_simulation_with_data import (
-    read_cldf, pairwise_shared_vocabulary)
+    read_cldf)
+from .util import cached_realdata
 
 
 def ordered_pairwise_shared_vocabulary(data):
@@ -38,8 +39,7 @@ def ordered_pairwise_shared_vocabulary(data):
     """
     proportions = []
     pairs = []
-    for (language1, language2), score in (
-            pairwise_shared_vocabulary(data, False)):
+    for (language1, language2), score in cached_realdata(data).items():
         i = bisect.bisect(proportions, score)
         proportions.insert(i, score)
         pairs.insert(i, (language1, language2))
@@ -92,7 +92,7 @@ def main(args=sys.argv):
         help="File to write the error plot to")
     args = parser.parse_args(args)
 
-    x, names = ordered_pairwise_shared_vocabulary(read_cldf(args.realdata))
+    x, names = ordered_pairwise_shared_vocabulary(cached_realdata(None))
     print("point", "error", *["'{:}-{:}'".format(n1, n2) for n1, n2 in names],
           sep="\t")
     print("real", "0", *x, sep="\t")

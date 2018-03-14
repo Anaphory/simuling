@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import pandas
 import numpy
-from collections import Counter
 import os
 
 
@@ -299,12 +298,10 @@ def load(key, path="../", sample_data=sample_data):
             for language_id, language_data in all_data.groupby("Language_ID"):
                 if int(language_id) > 8e6:
                     words = set()
-                    polysemy = Counter()
-                    synonymy = Counter()
+                    polysemy = semantic_width(language_data)
+                    synonymy = synonymity(language_data)
                     for concept, word in sample_data(language_data):
                         words.add(word)
-                        polysemy[word] += 1
-                        synonymy[concept] += 1
                     n.setdefault(weight, []).append(
                         len(words))
                     p.setdefault(weight, []).append(

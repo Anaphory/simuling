@@ -30,14 +30,14 @@ def simulate(
         concept_weight="degreesquared", scale=1, p_gain=0,
         verbose=False, tips_only=True,
         losswt=lambda x: x,
-        related_concepts_edge_weight=lambda x: 0.1*x,
+        related_concepts_edge_weight=lambda x: 0.1 * x,
         root=None):
     """Run a phylogeny simulation with the given parameters."""
     if root is None:
         root = Language(
-                related_concepts,
-                related_concepts_edge_weight=related_concepts_edge_weight,
-                generate_words=False)
+            related_concepts,
+            related_concepts_edge_weight=related_concepts_edge_weight,
+            generate_words=False)
         root.generate_words(initial_weight)
 
     phy = Phylogeny(
@@ -51,10 +51,6 @@ def simulate(
         concept_weight=concept_weight,
         p_gain=p_gain,
         verbose=verbose)
-
-    # "basic" is the number of words we afterwards use to to infer
-    # phylogeny with neighbor-joining
-
     dataframe, columns = phy.collect_word_list(
         Language.vocabulary,
         collect_tips_only=tips_only)

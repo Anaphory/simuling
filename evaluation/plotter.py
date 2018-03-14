@@ -315,8 +315,8 @@ def load(key, path="../", sample_data=sample_data):
     return n, p, s
 
 
-def plot_something(n, labels, xlabel, ylabel):
-    plt.boxplot([n[i] for i in labels], labels=labels, showfliers=False)
+def plot_something(n, labels, xlabel, ylabel, showfliers=True):
+    plt.boxplot([n[i] for i in labels], labels=labels, showfliers=showfliers)
 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)

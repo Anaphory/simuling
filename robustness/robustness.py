@@ -18,23 +18,7 @@ import networkx
 
 import simuling.phylo as phylo
 from simuling.phylo.naminggame import concept_weights
-from simuling.phylo.simulate import simulate as simulate
-
-
-def factory(n):
-    """An edge weight extractor factory.
-
-    Return a function that returns the 'weight' attribute of its first
-    argument, scaled by n.
-
-    """
-    def scaled_weight_threshold(x):
-        if x['FamilyWeight'] < 2:
-            return 0
-        else:
-            return n * x['FamilyWeight']
-    return scaled_weight_threshold
-
+from simuling.phylo.simulate import simulate, factory
 
 id = random.randint(0x10000)
 
@@ -99,7 +83,7 @@ for run in itertools.chain(args.loglength,
                     long_tree,
                     clics_concepts,
                     initial_weight=initial_weights["100"],
-                    concept_weight='degree_squared',
+                    concept_weight='degreesquared',
                     scale=1,
                     related_concepts_edge_weight=factory(0.004),
                     p_gain=0,
@@ -122,7 +106,7 @@ for run in itertools.chain(args.loglength,
                         long_tree,
                         clics_concepts,
                         initial_weight=distribution,
-                        concept_weight='degree_squared',
+                        concept_weight='degreesquared',
                         scale=1,
                         related_concepts_edge_weight=factory(0.004),
                         p_gain=0,
@@ -146,7 +130,7 @@ for run in itertools.chain(args.loglength,
                         long_tree,
                         clics_concepts,
                         initial_weight=lambda: random.randint(1, 200),
-                        concept_weight='degree_squared',
+                        concept_weight='degreesquared',
                         scale=1,
                         related_concepts_edge_weight=factory(neighbor_factor),
                         p_gain=0,
@@ -196,7 +180,7 @@ for run in itertools.chain(args.loglength,
                         long_tree,
                         clics_concepts,
                         initial_weight=lambda: random.randint(1, 200),
-                        concept_weight='degree_squared',
+                        concept_weight='degreesquared',
                         scale=1,
                         related_concepts_edge_weight=factory(0.004),
                         p_gain=0,

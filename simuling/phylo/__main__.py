@@ -78,8 +78,8 @@ def argparser(args=sys.argv):
                        help="Do not output progress")
     group.add_argument(
         "--concept-weight",
-        default="degree_squared",
-        choices=["one", "degree", "degree_squared", "preferential"],
+        default="degreesquared",
+        choices=["one", "degree", "degreesquared", "preferential"],
         help="Use this weight function for choosing random concepts.")
     group.add_argument(
         '--wordlist', type=str, default="{tree}-{i}.tsv",

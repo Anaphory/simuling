@@ -4,8 +4,6 @@ Phylogeny – the core simulation class.
 
 """
 
-from .naminggame import NamingGameLanguage as Language
-
 
 class Phylogeny(object):
     """A phylogenetic linguistic simulation.
@@ -17,12 +15,9 @@ class Phylogeny(object):
 
     def __init__(
             self,
-            related_concepts,
             tree,
-            initial_weight,
             root=None,
             basic=range(100),
-            related_concepts_edge_weight=lambda x: x,
             losswt=lambda x: x,
             scale=1000):
         """Create a phylogeny simulation object.
@@ -35,17 +30,13 @@ class Phylogeny(object):
         root: The phylo.Language to use at the root.
 
         """
-        self.related_concepts = related_concepts
         self.tree = tree
 
         if root is None:
-            self.root = Language(
-                self.related_concepts,
-                related_concepts_edge_weight=related_concepts_edge_weight,
-                generate_words=False)
-            self.root.generate_words(initial_weight)
+            raise DeprecationWarning("Root must be set.")
         else:
             self.root = root
+
         self.scale = scale
         self.basic = basic
         self.tracer = {}
@@ -81,16 +72,10 @@ class Phylogeny(object):
                 self.tracer[node] = {
                     'language': new_language,
                     'distance': distance}
-            yield node
-
-    def word_list_columns(self):
-        return ("ID", "Language_ID", "Feature_ID", "Value",
-                "Weight", "Cognate_Set", "Concept_CogID")
 
     def collect_word_list(
             self,
             method=None,
-            collect_language=None,
             collect_tips_only=True):
         """Collect word lists from all (tip) languages in the tree.
 
@@ -110,21 +95,16 @@ class Phylogeny(object):
         """
         if method is None:
             def method(language):
-                return Language.basic_vocabulary(language, self.basic)
+                return language.basic_vocabulary(self.basic)
 
+        columns = ("ID", "Language_ID", "Feature_ID", "Value",
+                   "Weight", "Cognate_Set", "Concept_CogID")
         word_list = []
         concept_cogid_pairs = {}
 
         i = 0
-        if collect_language is None:
-            languages = (node for node in self.tree.walk('preorder')
-                         if not collect_tips_only or node.is_leaf)
-        else:
-            if collect_language in self.tracer:
-                languages = [collect_language]
-            else:
-                languages = [self.tree.get_node(collect_language)]
-        for node in languages:
+        for _, node in enumerate(self.tree.walk('preorder')):
+            if not collect_tips_only or node.is_leaf:
                 language = self.tracer[node]['language']
                 for concept, word, weight in method(language):
                     i += 1
@@ -139,4 +119,4 @@ class Phylogeny(object):
                         concept_cogid_pairs.setdefault(
                             (concept, word),
                             len(concept_cogid_pairs) + 1)))
-        return word_list
+        return word_list, columns

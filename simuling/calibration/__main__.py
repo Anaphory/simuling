@@ -18,64 +18,13 @@ import networkx
 
 import simuling.phylo as phylo
 from pyconcepticon.api import Concepticon
-from simuling.phylo.simulate import simulate, write_to_file, factory
+from simuling.phylo.simulate import factory
 from .compare_simulation_with_data import (
-    read_cldf, estimate_normal_distribution, normal_likelihood,
-    pairwise_shared_vocabulary)
+    read_cldf)
 
 from ..phylo.naminggame import NamingGameLanguage as Language
 
-
-def simulate_and_write(tree, features, related_concepts, scale=1,
-                       n_sim=3, initial_weight=100,
-                       related_concepts_edge_weight=lambda x: x,
-                       root=None):
-    """Simulate evolution on tree and write results to file."""
-    for i in range(n_sim):
-        columns, dataframe = simulate(
-            tree, related_concepts, initial_weight=lambda: initial_weight,
-            related_concepts_edge_weight=related_concepts_edge_weight,
-            scale=scale, verbose=True, root=root)
-        filename = "simulation_{:}_{:}.csv".format(scale, i)
-        with open(filename, "w") as f:
-            write_to_file(columns, dataframe, f)
-        yield read_cldf(filename, features=features)
-
-
-def run_sims_and_calc_lk(tree, realdata, features, related_concepts,
-                         scale=1, n_sim=3, initial_weight=6,
-                         related_concepts_edge_weight=lambda x: x,
-                         ignore=[], normal=False, root=None):
-    """Run simulations and calculate their Normal likelihood.
-
-    Run `n` simulations and calculate the likelihood of `realdata`
-    under a Normal distribution assumption of pairwise shared vocabulary
-    proportions give the results of the simulations.
-
-    """
-    if normal:
-        normals = estimate_normal_distribution(simulate_and_write(
-            tree, features=features, related_concepts=related_concepts,
-            related_concepts_edge_weight=related_concepts_edge_weight,
-            scale=scale, n_sim=n_sim, root=root))
-        return normal_likelihood(realdata, normals,
-                                 ignore=ignore)
-    else:
-        neg_squared_error = 0
-        for simulation in simulate_and_write(
-                tree, features=features, related_concepts=related_concepts,
-                related_concepts_edge_weight=related_concepts_edge_weight,
-                scale=scale, n_sim=n_sim, root=root):
-            for (l1, l2), score in (
-                    pairwise_shared_vocabulary(simulation, False)):
-                if l1 > l2:
-                    l1, l2 = l2, l1
-                if (l1, l2) in ignore:
-                    continue
-                error = (realdata[l1, l2] - score) ** 2
-                print(l1, l2, score, error)
-                neg_squared_error -= error
-        return neg_squared_error/n_sim
+from .util import run_sims_and_calc_lk, cached_realdata
 
 
 def main(args):
@@ -83,8 +32,9 @@ def main(args):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--realdata",
-        default=open(os.path.join(os.path.dirname(__file__),
-                                  "beijingdaxue1964.csv")),
+        default=None,
+        # open(os.path.join(os.path.dirname(__file__),
+        # "beijingdaxue1964.csv")),
         type=argparse.FileType("r"),
         help="Word list from real life")
     parser.add_argument(
@@ -149,12 +99,6 @@ def main(args):
         default=0.004,
         help="Score for implicit polysemy along branches.")
     parser.add_argument(
-        "--min-connection",
-        type=float,
-        default=0,
-        help="""The minimum 'weight' for a semantic network edge to be considered
-        in the simulation""")
-    parser.add_argument(
         "--ignore",
         action="append",
         default=[],
@@ -178,11 +122,11 @@ def main(args):
         tree = virtual_root
         starting_data = None
     else:
-        raw_data = read_cldf(args.init_wordlist)
+        raw_data = read_cldf(args.init_wordlist, top_word_only=False)
         init_language = args.init_language or (
             list(raw_data["Language_ID"])[-1])
         raw_data = raw_data[
-            raw_data["Language_ID"] == init_language]
+            raw_data["Language_ID"].astype(str) == init_language]
         starting_data = Language(
             related_concepts,
             related_concepts_edge_weight=factory(args.neighbor_factor),
@@ -195,8 +139,6 @@ def main(args):
             maxword = max(i, maxword)
             starting_data.words[meaning]["{:}{:}".format(meaning, i)] = weight
         Language.max_word = maxword
-
-    data = read_cldf(args.realdata)
 
     os.chdir(args.dir)
 
@@ -216,14 +158,11 @@ def main(args):
         for i in args.ignore:
             ignore.append(i.split(":"))
 
-    realdata = {pair: score
-                for pair, score in pairwise_shared_vocabulary(data)}
-
-    def scaled_weight_threshold(x):
-        if x[args.weight_name] < args.min_connection:
-            return 0
-        else:
-            return args.neighbor_factor * x[args.weight_name]
+    if args.realdata:
+        read_cldf(args.realdata)
+        raise NotImplementedError
+    else:
+        realdata = cached_realdata(None)
 
     def simulate_scale(scale):
         return run_sims_and_calc_lk(

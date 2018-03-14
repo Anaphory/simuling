@@ -205,7 +205,7 @@ concept_list = generate_random_concept_list(all_concepts)
 print("Concept list length:", len(concept_list))
 
 
-def sample_data(data, relative=0.1, concepts=concept_list, at_most=10000):
+def sample_data(data, relative=2 / 3, concepts=all_concepts, at_most=10000):
     for concept, words in data.groupby("Feature_ID"):
         if concept not in concepts:
             continue
@@ -227,7 +227,7 @@ default_properties = {
     "i": "d199",
     "n": 0.004,
     "w": 2,
-    "c": "degree_squared"}
+    "c": "degreesquared"}
 
 
 def properties(file):
@@ -255,7 +255,7 @@ def property_key(property):
     return key
 
 
-def load(key, path="../"):
+def load(key, path="../", sample_data=sample_data):
     """Load all files according to given key from directory path."""
     n = {}
     p = {}
@@ -271,7 +271,7 @@ def load(key, path="../"):
                 encoding='utf-8')
 
             for language_id, language_data in all_data.groupby("Language_ID"):
-                if int(language_id) > 10**5:
+                if int(language_id) > 8e6:
                     words = set()
                     polysemy = Counter()
                     synonymy = Counter()

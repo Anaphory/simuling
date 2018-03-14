@@ -15,7 +15,7 @@ import sys
 import argparse
 
 
-def read_cldf(file, features=None):
+def read_cldf(file, features=None, top_word_only=True):
     """Read a CLDF TSV file.
 
     Read a tsv file as output by the simulation and rename the columns
@@ -48,6 +48,10 @@ def read_cldf(file, features=None):
             include |= data["Feature_ID"] == feature
         data = data[include]
     data = data[~pandas.isnull(data["Feature_ID"])]
+    if top_word_only:
+        data.sort_values(by="Weight", inplace=True)
+        data = data.groupby([
+            "Feature_ID", "Language_ID"]).last().reset_index(drop=False)
     return data
 
 

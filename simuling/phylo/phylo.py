@@ -4,8 +4,6 @@ Phylogeny – the core simulation class.
 
 """
 
-from .naminggame import NamingGameLanguage as Language
-
 
 class Phylogeny(object):
     """A phylogenetic linguistic simulation.
@@ -17,12 +15,9 @@ class Phylogeny(object):
 
     def __init__(
             self,
-            related_concepts,
             tree,
-            initial_weight,
             root=None,
             basic=range(100),
-            related_concepts_edge_weight=lambda x: x,
             losswt=lambda x: x,
             scale=1000):
         """Create a phylogeny simulation object.
@@ -35,17 +30,13 @@ class Phylogeny(object):
         root: The phylo.Language to use at the root.
 
         """
-        self.related_concepts = related_concepts
         self.tree = tree
 
         if root is None:
-            self.root = Language(
-                self.related_concepts,
-                related_concepts_edge_weight=related_concepts_edge_weight,
-                generate_words=False)
-            self.root.generate_words(initial_weight)
+            raise DeprecationWarning("Root must be set.")
         else:
             self.root = root
+
         self.scale = scale
         self.basic = basic
         self.tracer = {}
@@ -104,7 +95,7 @@ class Phylogeny(object):
         """
         if method is None:
             def method(language):
-                return Language.basic_vocabulary(language, self.basic)
+                return language.basic_vocabulary(self.basic)
 
         columns = ("ID", "Language_ID", "Feature_ID", "Value",
                    "Weight", "Cognate_Set", "Concept_CogID")

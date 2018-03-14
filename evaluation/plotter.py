@@ -255,6 +255,32 @@ def property_key(property):
     return key
 
 
+def semantic_width(data, column="Cognate_Set"):
+    """Calculate average synonym count.
+
+    Calculate the average weighted semantic width in the language
+    represented by data.
+
+    """
+    width = 0
+    m = 0
+    for form, meanings in data.groupby(column):
+        width += (meanings["Weight"].sum() ** 2 /
+                  (meanings["Weight"] ** 2).sum())
+        m += 1
+    return width / m
+
+
+def synonymity(data):
+    """Calculate average synonym count.
+
+    Calculate the average weighted synonym count in the language
+    represented by data.
+
+    """
+    return semantic_width(data, column="Feature_ID")
+
+
 def load(key, path="../", sample_data=sample_data):
     """Load all files according to given key from directory path."""
     n = {}
@@ -290,7 +316,7 @@ def load(key, path="../", sample_data=sample_data):
 
 
 def plot_something(n, labels, xlabel, ylabel):
-    plt.boxplot([n[i] for i in labels], labels=labels)
+    plt.boxplot([n[i] for i in labels], labels=labels, showfliers=False)
 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)

@@ -241,7 +241,7 @@ def properties(file):
 
 def property_key(property):
     def key(file):
-        value = default_properties[property]
+        value = default_properties.get(property, True)
         props = properties(file)
         if props is None:
             return None
@@ -298,16 +298,16 @@ def load(key, path="../", sample_data=sample_data):
             for language_id, language_data in all_data.groupby("Language_ID"):
                 if int(language_id) > 8e6:
                     words = set()
-                    polysemy = semantic_width(language_data)
-                    synonymy = synonymity(language_data)
+                    p0 = semantic_width(language_data)
+                    s0 = synonymity(language_data)
                     for concept, word in sample_data(language_data):
                         words.add(word)
                     n.setdefault(weight, []).append(
                         len(words))
                     p.setdefault(weight, []).append(
-                        numpy.mean(list(polysemy.values())))
+                        p0)
                     s.setdefault(weight, []).append(
-                        numpy.mean(list(synonymy.values())))
+                        s0)
 
     return n, p, s
 

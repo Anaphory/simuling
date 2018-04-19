@@ -91,11 +91,8 @@ def shared_vocabulary(vocab1, vocab2):
             vocab1["Feature_ID"] == feature])
         cognateset2 = set(vocab2["Cognate_Set"][
             vocab2["Feature_ID"] == feature])
-        if cognateset1 & cognateset2:
-            score += (len(cognateset1 & cognateset2) /
-                      len(cognateset1 | cognateset2))
-        else:
-            score += 1 / len(cognateset1 | cognateset2)
+        score += (len(cognateset1 & cognateset2) /
+                  len(cognateset1 | cognateset2))
     return score / len(features_present_in_one)
 
 

@@ -17,7 +17,6 @@ import newick
 import networkx
 
 import simuling.phylo as phylo
-from pyconcepticon.api import Concepticon
 from simuling.phylo.simulate import factory
 from .compare_simulation_with_data import (
     read_cldf)
@@ -62,11 +61,6 @@ def main(args):
         "--dir", "--directory",
         default=tempfile.mkdtemp(prefix="calibrate"),
         help="Write simulation results to this directory")
-    parser.add_argument(
-        "--features",
-        default="Swadesh-1964-215",
-        help="""The list of concepts to down-sample to. Either the ID of a list in
-        concepticon, or a comma-separated list of glosses.""")
 
     parser.add_argument(
         "--init-wordlist",
@@ -105,6 +99,10 @@ def main(args):
         help="""Ignore these pairs of languages.
         Pairs are separated by colons (":").
         For example --ignore Chaozou:Xiamen""")
+    parser.add_argument(
+        "--sample-threshold", "--threshold",
+        default=180,
+        help="Weight threshold to sample a word")
 
     args = parser.parse_args(args)
 
@@ -123,7 +121,7 @@ def main(args):
         starting_data = None
     else:
         raw_data = read_cldf(args.init_wordlist, top_word_only=False)
-        init_language = args.init_language or (
+        init_language = args.init_language or str(
             list(raw_data["Language_ID"])[-1])
         raw_data = raw_data[
             raw_data["Language_ID"].astype(str) == init_language]
@@ -137,21 +135,10 @@ def main(args):
             weight = row["Weight"]
             i = row["Cognate_Set"]
             maxword = max(i, maxword)
-            starting_data.words[meaning]["{:}{:}".format(meaning, i)] = weight
+            starting_data.words[meaning]["{:}-{:}".format(meaning, i)] = weight
         Language.max_word = maxword
 
     os.chdir(args.dir)
-
-    if args.features != '*':
-        try:
-            features = [
-                int(c.concepticon_id)
-                for c in Concepticon().conceptlists[
-                    args.features].concepts.values()]
-        except KeyError:
-            features = args.features.split(",")
-    else:
-        features = None
 
     ignore = []
     if args.ignore:
@@ -173,7 +160,7 @@ def main(args):
             initial_weight=args.initial_weight,
             related_concepts_edge_weight=factory(args.neighbor_factor),
             realdata=realdata,
-            features=features,
+            sample_threshold=args.sample_threshold,
             ignore=ignore,
             root=starting_data)
 

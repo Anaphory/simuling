@@ -15,7 +15,7 @@ import sys
 import argparse
 
 
-def read_cldf(file, features=None, top_word_only=True):
+def read_cldf(file, features=None, sample_threshold=0, top_word_only=True):
     """Read a CLDF TSV file.
 
     Read a tsv file as output by the simulation and rename the columns
@@ -28,9 +28,9 @@ def read_cldf(file, features=None, top_word_only=True):
     sep = "\t"
     if hasattr(file, 'name') and file.name.endswith("csv"):
         sep = ","
-    if hasattr(file, 'endswith') and file.endswith("csv"):
+    elif hasattr(file, 'endswith') and file.endswith("csv"):
         sep = ","
-    if hasattr(file, 'seek'):
+    elif hasattr(file, 'seek'):
         ...
 
     data = pandas.read_csv(file, sep=sep, index_col="ID")
@@ -48,6 +48,8 @@ def read_cldf(file, features=None, top_word_only=True):
             include |= data["Feature_ID"] == feature
         data = data[include]
     data = data[~pandas.isnull(data["Feature_ID"])]
+    if sample_threshold:
+        data = data[data["Weight"] > sample_threshold]
     if top_word_only:
         data.sort_values(by="Weight", inplace=True)
         data = data.groupby([

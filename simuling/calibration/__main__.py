@@ -31,7 +31,8 @@ def main(args):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--realdata",
-        default=open(os.path.join(os.path.dirname(__file__), "beijingdaxue1964.csv")),
+        default=open(os.path.join(os.path.dirname(__file__),
+                                  "beijingdaxue1964.csv")),
         type=argparse.FileType("r"),
         help="Word list from real life")
     parser.add_argument(
@@ -66,7 +67,8 @@ def main(args):
         point, instead of running 10^7 simulation steps ahead""")
     parser.add_argument(
         "--init-language",
-        help="""The language ID to be taken from INIT_WORDLIST as starting point (default:
+        help="""The language ID to be taken from
+            INIT_WORDLIST as starting point (default:
         The language from the last row in the file)""")
 
     parser.add_argument(

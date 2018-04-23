@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import pandas
 import numpy
-from collections import Counter
 import os
 
 
@@ -242,7 +241,7 @@ def properties(file):
 
 def property_key(property):
     def key(file):
-        value = default_properties[property]
+        value = default_properties.get(property, True)
         props = properties(file)
         if props is None:
             return None
@@ -253,6 +252,32 @@ def property_key(property):
                 return None
         return value
     return key
+
+
+def semantic_width(data, column="Cognate_Set"):
+    """Calculate average synonym count.
+
+    Calculate the average weighted semantic width in the language
+    represented by data.
+
+    """
+    width = 0
+    m = 0
+    for form, meanings in data.groupby(column):
+        width += (meanings["Weight"].sum() ** 2 /
+                  (meanings["Weight"] ** 2).sum())
+        m += 1
+    return width / m
+
+
+def synonymity(data):
+    """Calculate average synonym count.
+
+    Calculate the average weighted synonym count in the language
+    represented by data.
+
+    """
+    return semantic_width(data, column="Feature_ID")
 
 
 def load(key, path="../", sample_data=sample_data):
@@ -273,24 +298,22 @@ def load(key, path="../", sample_data=sample_data):
             for language_id, language_data in all_data.groupby("Language_ID"):
                 if int(language_id) > 8e6:
                     words = set()
-                    polysemy = Counter()
-                    synonymy = Counter()
+                    p0 = semantic_width(language_data)
+                    s0 = synonymity(language_data)
                     for concept, word in sample_data(language_data):
                         words.add(word)
-                        polysemy[word] += 1
-                        synonymy[concept] += 1
                     n.setdefault(weight, []).append(
                         len(words))
                     p.setdefault(weight, []).append(
-                        numpy.mean(list(polysemy.values())))
+                        p0)
                     s.setdefault(weight, []).append(
-                        numpy.mean(list(synonymy.values())))
+                        s0)
 
     return n, p, s
 
 
-def plot_something(n, labels, xlabel, ylabel):
-    plt.boxplot([n[i] for i in labels], labels=labels)
+def plot_something(n, labels, xlabel, ylabel, showfliers=True):
+    plt.boxplot([n[i] for i in labels], labels=labels, showfliers=showfliers)
 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)

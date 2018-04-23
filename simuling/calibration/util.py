@@ -13,7 +13,7 @@ from .compare_simulation_with_data import (
     pairwise_shared_vocabulary)
 
 
-def simulate_and_write(tree, features, related_concepts, scale=1,
+def simulate_and_write(tree, sample_threshold, related_concepts, scale=1,
                        n_sim=3, initial_weight=100,
                        related_concepts_edge_weight=lambda x: x,
                        root=None):
@@ -26,11 +26,14 @@ def simulate_and_write(tree, features, related_concepts, scale=1,
         filename = "simulation_{:}_{:}.csv".format(scale, i)
         with open(filename, "w") as f:
             write_to_file(columns, dataframe, f)
-        yield read_cldf(filename, features=features)
+        yield read_cldf(
+            filename, sample_threshold=sample_threshold,
+            top_word_only=False)
 
 
-def run_sims_and_calc_lk(tree, realdata, features, related_concepts,
-                         scale=1, n_sim=3, initial_weight=6,
+def run_sims_and_calc_lk(tree, realdata, sample_threshold,
+                         related_concepts, scale=1, n_sim=3,
+                         initial_weight=6,
                          related_concepts_edge_weight=lambda x: x,
                          ignore=[], normal=False, root=None):
     """Run simulations and calculate their Normal likelihood.
@@ -42,7 +45,8 @@ def run_sims_and_calc_lk(tree, realdata, features, related_concepts,
     """
     if normal:
         normals = estimate_normal_distribution(simulate_and_write(
-            tree, features=features, related_concepts=related_concepts,
+            tree, sample_threshold=sample_threshold,
+            related_concepts=related_concepts,
             related_concepts_edge_weight=related_concepts_edge_weight,
             scale=scale, n_sim=n_sim, root=root))
         return normal_likelihood(realdata, normals,
@@ -50,7 +54,8 @@ def run_sims_and_calc_lk(tree, realdata, features, related_concepts,
     else:
         neg_squared_error = 0
         for simulation in simulate_and_write(
-                tree, features=features, related_concepts=related_concepts,
+                tree, sample_threshold=sample_threshold,
+                related_concepts=related_concepts,
                 related_concepts_edge_weight=related_concepts_edge_weight,
                 scale=scale, n_sim=n_sim, root=root):
             for (l1, l2), score in (

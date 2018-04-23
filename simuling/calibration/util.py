@@ -2,6 +2,7 @@
 
 import os
 import json
+import pandas
 
 from ..phylo.simulate import simulate, write_to_file
 
@@ -76,9 +77,14 @@ def cached_realdata(data):
                 os.path.dirname(__file__),
                 "pairwise_shared_vocabulary.json")) as realdata_cache:
             realdata = json.load(realdata_cache)
-    except FileNotFoundError:
+        realdata_cache_filename = realdata.pop("FILENAME")
+        if realdata_cache_filename != data.name:
+            raise ValueError("Cached filename mismatches data file")
+    except (FileNotFoundError, ValueError):
         realdata = {" ".join(pair): score
-                    for pair, score in pairwise_shared_vocabulary(data)}
+                    for pair, score in pairwise_shared_vocabulary(
+                            read_cldf(data, sample_threshold=None, top_word_only=False))}
+        realdata["FILENAME"] = data.name
         with open(os.path.join(
                 os.path.dirname(__file__),
                 "pairwise_shared_vocabulary.json"), "w") as realdata_cache:

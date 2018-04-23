@@ -31,9 +31,7 @@ def main(args):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--realdata",
-        default=None,
-        # open(os.path.join(os.path.dirname(__file__),
-        # "beijingdaxue1964.csv")),
+        default=open(os.path.join(os.path.dirname(__file__), "beijingdaxue1964.csv")),
         type=argparse.FileType("r"),
         help="Word list from real life")
     parser.add_argument(
@@ -45,12 +43,12 @@ def main(args):
     parser.add_argument(
         "--minscale",
         type=float,
-        default=0.2,
+        default=10,
         help="The minimum scale to use")
     parser.add_argument(
         "--maxscale",
         type=float,
-        default=15,
+        default=200,
         help="The maximum scale to use")
     parser.add_argument(
         "--sims",
@@ -145,11 +143,7 @@ def main(args):
         for i in args.ignore:
             ignore.append(i.split(":"))
 
-    if args.realdata:
-        read_cldf(args.realdata)
-        raise NotImplementedError
-    else:
-        realdata = cached_realdata(None)
+    realdata = cached_realdata(args.realdata)
 
     def simulate_scale(scale):
         return run_sims_and_calc_lk(

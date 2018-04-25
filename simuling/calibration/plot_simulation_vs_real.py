@@ -92,7 +92,8 @@ def main(args=sys.argv):
         help="File to write the error plot to")
     args = parser.parse_args(args)
 
-    x, names = ordered_pairwise_shared_vocabulary(cached_realdata(None))
+    x, names = ordered_pairwise_shared_vocabulary(
+        cached_realdata(args.realdata))
     print("point", "error", *["'{:}-{:}'".format(n1, n2) for n1, n2 in names],
           sep="\t")
     print("real", "0", *x, sep="\t")

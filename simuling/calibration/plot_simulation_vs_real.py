@@ -39,7 +39,7 @@ def ordered_pairwise_shared_vocabulary(data):
     """
     proportions = []
     pairs = []
-    for (language1, language2), score in cached_realdata(data).items():
+    for (language1, language2), score in data.items():
         i = bisect.bisect(proportions, score)
         proportions.insert(i, score)
         pairs.insert(i, (language1, language2))

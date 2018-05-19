@@ -2,8 +2,9 @@
 
 import os
 import json
+import csv
 
-from ..phylo.simulate import simulate, write_to_file
+from ..phylo.simulate import simulate
 
 
 from .compare_simulation_with_data import (
@@ -19,13 +20,17 @@ def simulate_and_write(tree, sample_threshold, related_concepts, scale=1,
                        root=None):
     """Simulate evolution on tree and write results to file."""
     for i in range(n_sim):
-        columns, dataframe = simulate(
-            tree, related_concepts, initial_weight=lambda: initial_weight,
-            related_concepts_edge_weight=related_concepts_edge_weight,
-            scale=scale, verbose=True, root=root, tips_only=False)
         filename = "simulation_{:}_{:}.csv".format(scale, i)
         with open(filename, "w") as f:
-            write_to_file(columns, dataframe, f)
+            writer = csv.writer(f)
+            writer.writerow(("ID", "Language_ID", "Feature_ID", "Value",
+                             "Weight", "Cognate_Set", "Concept_CogID"))
+            for dataframe in simulate(
+                    tree, related_concepts,
+                    initial_weight=lambda: initial_weight,
+                    related_concepts_edge_weight=related_concepts_edge_weight,
+                    scale=scale, verbose=True, root=root, tips_only=False):
+                writer.writerows(dataframe)
         yield read_cldf(
             filename, sample_threshold=sample_threshold,
             top_word_only=False)

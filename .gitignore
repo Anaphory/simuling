@@ -4,15 +4,9 @@ simuling.egg-info/
 # Simulation outputs
 *.tre
 *.tsv
-*.csv
-exaluation/statistics.tex
 .*
 *.tree
 __pycache__
 *.pyc
 
 simuling/calibration/beijingdaxue1964.csv
-
-
-# Other things
-*.pdf

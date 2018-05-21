@@ -16,9 +16,8 @@ import tempfile
 import newick
 import networkx
 
-import simuling.phylo as phylo
-from simuling.defaults import defaults
-from simuling.phylo.simulate import factory
+from ..defaults import defaults
+from ..phylo.simulate import factory
 from .compare_simulation_with_data import (
     read_cldf)
 
@@ -28,7 +27,7 @@ from .util import run_sims_and_calc_lk, cached_realdata
 
 
 def argparser(args=sys.argv):
-    """Run the CLI."""
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--realdata",
@@ -74,8 +73,8 @@ def argparser(args=sys.argv):
 
     parser.add_argument(
         "--semantic-network",
-        default=open(os.path.join(os.path.dirname(phylo.__file__),
-                                  "network-3-families.gml")),
+        default=open(os.path.join(os.path.dirname(__file__),
+                                  "../phylo/network-3-families.gml")),
         type=argparse.FileType("r"),
         help="""File containing the semantic network to be used (eg. a
         colexification graph) in GLM format""")
@@ -109,6 +108,7 @@ def argparser(args=sys.argv):
 
 
 def main(args):
+    """Run the CLI."""
     args = argparser(args)
 
     parameters = defaults.copy()

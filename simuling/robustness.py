@@ -2,7 +2,7 @@
 
 """Generate the data to assess simulation robustness.
 
-Run the simulation on a long branch{:x} with parameter variation.
+Run the simulation on a long branch with parameter variation.
 """
 
 import csv
@@ -14,9 +14,9 @@ import argparse
 
 import newick
 
-from simuling.phylo.naminggame import concept_weights
-from simuling.phylo.simulate import simulate, factory
-from simuling.defaults import defaults
+from .phylo.naminggame import concept_weights
+from .phylo.simulate import simulate, factory
+from .defaults import defaults
 
 id = random.randint(0x10000)
 

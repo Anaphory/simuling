@@ -3,6 +3,7 @@
 
 """
 
+import csv
 import bisect
 import random
 import collections
@@ -201,6 +202,21 @@ def simulate(phylogeny, language):
             yield (name, language)
 
 
+def parse_distribution_description(text):
+    try:
+        name, parameters = text.strip().split("(")
+    except TypeError:
+        const = int(text.strip())
+        return lambda: const
+    if not parameters.endswith(")"):
+        raise ValueError("Could not parse distribution string")
+    function = {
+        "uniform": lambda x: random.randint(1, x),
+        "constant": lambda x: x}[name]
+    args = [int(x) for x in parameters.split(",")]
+    return lambda: function(args)
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
@@ -215,7 +231,8 @@ if __name__ == "__main__":
         help="Load this Language_ID from the CLDF Wordlist. (default: The one"
         " referred to in the last line of the table with the Cognateset_IDs.)")
     initialization.add_argument(
-        "--weight",
+        "--weight", type=parse_distribution_description,
+        default="100",
         help="Random distribution to use when initializing the root language,"
         " if no weights are given in the CLDF Wordlist. (default: The"
         " distribution that always returns 100.)")
@@ -230,11 +247,17 @@ if __name__ == "__main__":
         " (default: FamilyWeight.)")
     tree = parser.add_argument_group(
         "Shape of the phylogeny")
-    parameters.add_argument(
+    tree.add_argument(
         "--tree", type=argparse.FileType("r"),
         help="A file containing the phylogenetic trees to be simulated in"
         " Newick format. (default: A single long branch with nodes after"
         " 0, 1, 2, 4, 8, …, 2^20 time steps.)")
+    output = parser.add_argument_group(
+        "Output")
+    output.add_argument(
+        "--output-file", type=argparse.FileType("w"),
+        help="The file to write output data to (in CLDF-like CSV)."
+        " (default: A temporary file.)")
 
     args = parser.parse_args()
     if args.semantic_map:
@@ -245,11 +268,6 @@ if __name__ == "__main__":
             (Path(__file__).absolute().parent.parent /
              "phylo" / "network-3-families.gml").open(),
             args.weight_attribute)
-    if args.weight:
-        ...
-    else:
-        def weight():
-            return 100
     if args.tree:
         phylogeny = newick.load(args.tree)[0]
     else:
@@ -265,24 +283,41 @@ if __name__ == "__main__":
             parent = child
             length = new_length
     if args.wordlist:
-        ...
+        languages = collections.OrderedDict()
+        reader = csv.DictReader(args.wordlist)
+        for line in reader:
+            language_id = line["Language_ID"]
+            concept = line["Parameter_ID"]
+            try:
+                wt = line["Weight"]
+            except KeyError:
+                wt = args.weight()
+            word_weights = languages.setdefault(
+                language_id, {}).setdefault(
+                    concept, collections.defaultdict(
+                        lambda: 0, {}))
+            word_weights[line["Cognateset_ID"]] = wt
+        if args.language is None:
+            args.language = languages.keys()[-1]
+        language = Language(languages[args.language],
+                            semantics)
     else:
         raw_language = {
             concept: collections.defaultdict(
-                (lambda: 0), {c: weight()})
+                (lambda: 0), {c: args.weight()})
             for c, concept in enumerate(semantics)}
         language = Language(raw_language, semantics)
         Language.max_word = len(raw_language)
     print(phylogeny.newick)
-    with Path("test.log").open("w") as log:
-        print("Language_ID", "Parameter_ID", "Cognateset_ID", "Weight",
-              sep="\t", file=log)
+    print("Language_ID", "Parameter_ID", "Cognateset_ID", "Weight",
+          sep="\t", file=args.output_file)
     for id, data in simulate(phylogeny, language):
         with Path("test.log").open("a") as log:
             for concept, words in data.items():
                 for word, weight in words.items():
                     if weight:
-                        print(id, concept, word, weight, sep="\t", file=log)
+                        print(id, concept, word, weight, sep="\t",
+                              file=args.output_file)
 
 
 # Tests

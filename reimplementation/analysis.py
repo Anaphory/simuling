@@ -3,10 +3,9 @@ from csvw.dsv_dialects import Dialect
 
 import matplotlib.pyplot as plt
 import pandas
-import numpy
 import os
 
-from .__init__ import echo, argparser
+from . import cli
 
 
 # This can be calculated from the data
@@ -199,16 +198,6 @@ all_concepts = {2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
                 3000, 3001, 3002, 3003, 3004, 3005, 3006}
 
 
-def generate_random_concept_list(concepts, length=400):
-    concepts = list(concepts)
-    numpy.random.shuffle(concepts)
-    return set(concepts[:length])
-
-
-concept_list = generate_random_concept_list(all_concepts)
-print("Concept list length:", len(concept_list))
-
-
 def sample_data(data, relative=2 / 3, concepts=all_concepts, at_most=10000):
     for concept, words in data.groupby("Feature_ID"):
         if concept not in concepts:
@@ -241,9 +230,11 @@ def properties(file):
     return properties
 
 
+default_properties = cli.argparser().parse_args([])
+cli.phylogeny(default_properties)
 default_properties = {
     "--{:s}".format(key): str(value)
-    for key, value in echo(argparser().parse_args([]))}
+    for key, value in cli.echo(default_properties)}
 
 
 def property_key(property):

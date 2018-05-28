@@ -2,16 +2,17 @@ import random
 import collections
 from pathlib import Path
 
-import newick
 from csvw import UnicodeDictReader, UnicodeWriter
 
-from .cli import argparser
+from .cli import argparser, phylogeny
 from .simulation import (SemanticNetwork, parse_distribution_description,
                          Language, simulate, echo)
 
 args = argparser().parse_args()
+phylogeny = phylogeny(args)
 
 random.seed(args.seed)
+
 if args.semantic_network:
     semantics = SemanticNetwork.load_from_gml(
         args.semantic_network, args.weight_attribute)
@@ -21,28 +22,6 @@ else:
             "phylo" / "network-3-families.gml").open(),
         args.weight_attribute)
 semantics.neighbor_factor = args.neighbor_factor
-
-if args.tree is None:
-    phylogeny = newick.Node("0")
-    parent = phylogeny
-    length = 0
-    for i in range(args.branchlength + 1):
-        new_length = 2 ** i
-        child = newick.Node(
-            str(new_length),
-            str(new_length - length))
-        parent.add_descendant(child)
-        parent = child
-        length = new_length
-elif Path(args.tree).exists:
-    phylogeny = newick.load(Path(args.tree).open())[0]
-elif ":" in args.tree or "(" in args.tree:
-    phylogeny = newick.loads(args.tree)[0]
-else:
-    raise ValueError(
-        "Argument for --tree looked like a filename, not like a Newick"
-        "tree, but no such file exists.")
-args.tree = phylogeny.newick
 
 weight = parse_distribution_description(args.weight)
 if args.wordlist:

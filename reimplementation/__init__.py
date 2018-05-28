@@ -3,15 +3,16 @@
 
 """
 
-import csv
 import bisect
-import random
 import collections
+from pathlib import Path
+import numpy.random as random
 
 import newick
 import networkx
+from csvw.dsv import UnicodeDictReader, UnicodeWriter
 
-from pathlib import Path
+import argparse
 
 
 class SemanticNetwork (networkx.Graph):
@@ -21,7 +22,9 @@ class SemanticNetwork (networkx.Graph):
     easy generation of random concepts.
 
     """
-    neighbor_factor = 0.004
+    def __init__(self, *args, neighbor_factor=0.004, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.neighbor_factor = neighbor_factor
 
     @classmethod
     def load_from_gml(cls, lines, weight_attribute):
@@ -202,23 +205,24 @@ def simulate(phylogeny, language):
             yield (name, language)
 
 
-def parse_distribution_description(text):
+def parse_distribution_description(text, random=random):
     try:
         name, parameters = text.strip().split("(")
-    except TypeError:
+    except ValueError:
         const = int(text.strip())
         return lambda: const
     if not parameters.endswith(")"):
         raise ValueError("Could not parse distribution string")
     function = {
         "uniform": lambda x: random.randint(1, x),
-        "constant": lambda x: x}[name]
+        "constant": lambda x: x,
+        "geometric": lambda x: random.geometric(1 / x),
+        "poisson": lambda x: random.poisson(x)}[name]
     args = [int(x) for x in parameters.split(",")]
     return lambda: function(args)
 
 
-if __name__ == "__main__":
-    import argparse
+def argparser():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     initialization = parser.add_argument_group(
         "Initializing the root language")
@@ -231,7 +235,7 @@ if __name__ == "__main__":
         help="Load this Language_ID from the CLDF Wordlist. (default: The one"
         " referred to in the last line of the table with the Cognateset_IDs.)")
     initialization.add_argument(
-        "--weight", type=parse_distribution_description,
+        "--weight",
         default="100",
         help="Random distribution to use when initializing the root language,"
         " if no weights are given in the CLDF Wordlist. (default: The"
@@ -239,42 +243,81 @@ if __name__ == "__main__":
     parameters = parser.add_argument_group(
         "Simulation parameters")
     parameters.add_argument(
-        "--semantic-map", type=argparse.FileType("r"),
+        "--semantic-network", type=argparse.FileType("r"),
         help="The semantic network, given as GML file. (default: CLICS.)")
     parameters.add_argument(
+        "--neighbor-factor", type=float,
+        default=0.004,
+        help="The connection strength between adjacent concepts of edge weight"
+        " 1 in the semantic network. (default: 0.004)")
+    parameters.add_argument(
         "--weight-attribute",
+        default="FamilyWeight",
         help="The GML edge attribute to be used as edge weight."
         " (default: FamilyWeight.)")
+    parameters.add_argument(
+        "--seed", type=int,
+        default=0,
+        help="The random number generator seed (default: 0)")
     tree = parser.add_argument_group(
         "Shape of the phylogeny")
     tree.add_argument(
-        "--tree", type=argparse.FileType("r"),
-        help="A file containing the phylogenetic trees to be simulated in"
-        " Newick format. (default: A single long branch with nodes after"
-        " 0, 1, 2, 4, 8, …, 2^20 time steps.)")
+        "--tree",
+        help="A phylogenetic tree to be simulated in Newick format, or the"
+        " path to an existing file containing such a tree. (default: A single"
+        " long branch with nodes after 0, 1, 2, 4, 8, …, 2^N time steps.)")
+    tree.add_argument(
+        "--branchlength", type=int,
+        default=20,
+        help="If no tree is given, the log₂ of the maximum branch length"
+        " of the long branch, i.e. N from the default value above."
+        " (default: 20.)")
     output = parser.add_argument_group(
         "Output")
     output.add_argument(
         "--output-file", type=argparse.FileType("w"),
+        default="tmp",
         help="The file to write output data to (in CLDF-like CSV)."
         " (default: A temporary file.)")
+    output.add_argument(
+        "--embed-parameters", action="store_true",
+        default=False,
+        help="Echo the simulation parameters to comments in the CSV output"
+        " file.")
+    return parser
 
-    args = parser.parse_args()
-    if args.semantic_map:
-        semantics = SemanticNetwork.load_from_gml(args.semantic_map,
-                                                  args.weight_attribute)
+
+def echo(args):
+    for arg, value in args.__dict__.items():
+        if arg == "embed_parameters":
+            continue
+        if value is not None:
+            try:
+                value = value.name
+            except AttributeError:
+                pass
+            yield arg, value
+
+
+if __name__ == "__main__":
+    args = argparser().parse_args()
+
+    random.seed(args.seed)
+    if args.semantic_network:
+        semantics = SemanticNetwork.load_from_gml(
+            args.semantic_network, args.weight_attribute)
     else:
         semantics = SemanticNetwork.load_from_gml(
             (Path(__file__).absolute().parent.parent /
              "phylo" / "network-3-families.gml").open(),
             args.weight_attribute)
-    if args.tree:
-        phylogeny = newick.load(args.tree)[0]
-    else:
+    semantics.neighbor_factor = args.neighbor_factor
+
+    if args.tree is None:
         phylogeny = newick.Node("0")
         parent = phylogeny
         length = 0
-        for i in range(21):
+        for i in range(args.branchlength + 1):
             new_length = 2 ** i
             child = newick.Node(
                 str(new_length),
@@ -282,42 +325,63 @@ if __name__ == "__main__":
             parent.add_descendant(child)
             parent = child
             length = new_length
+    elif Path(args.tree).exists:
+        phylogeny = newick.load(Path(args.tree).open())[0]
+    elif ":" in args.tree or "(" in args.tree:
+        phylogeny = newick.loads(args.tree)[0]
+    else:
+        raise ValueError(
+            "Argument for --tree looked like a filename, not like a Newick"
+            "tree, but no such file exists.")
+    args.tree = phylogeny.newick
+
+    weight = parse_distribution_description(args.weight)
     if args.wordlist:
         languages = collections.OrderedDict()
-        reader = csv.DictReader(args.wordlist)
+        reader = UnicodeDictReader(args.wordlist)
         for line in reader:
             language_id = line["Language_ID"]
+            if args.language and language_id != args.language:
+                continue
             concept = line["Parameter_ID"]
             try:
-                wt = line["Weight"]
+                wt = int(line["Weight"])
             except KeyError:
-                wt = args.weight()
+                wt = weight()
             word_weights = languages.setdefault(
                 language_id, {}).setdefault(
                     concept, collections.defaultdict(
                         lambda: 0, {}))
             word_weights[line["Cognateset_ID"]] = wt
         if args.language is None:
-            args.language = languages.keys()[-1]
+            args.language = list(languages)[-1]
         language = Language(languages[args.language],
                             semantics)
     else:
         raw_language = {
             concept: collections.defaultdict(
-                (lambda: 0), {c: args.weight()})
+                (lambda: 0), {c: weight()})
             for c, concept in enumerate(semantics)}
         language = Language(raw_language, semantics)
         Language.max_word = len(raw_language)
-    print(phylogeny.newick)
-    print("Language_ID", "Parameter_ID", "Cognateset_ID", "Weight",
-          sep="\t", file=args.output_file)
-    for id, data in simulate(phylogeny, language):
-        with Path("test.log").open("a") as log:
-            for concept, words in data.items():
-                for word, weight in words.items():
-                    if weight:
-                        print(id, concept, word, weight, sep="\t",
-                              file=args.output_file)
+    with UnicodeWriter(args.output_file, commentPrefix="# ") as writer:
+        writer.writerow(
+            ["Language_ID", "Parameter_ID", "Cognateset_ID", "Weight"])
+        if args.embed_parameters:
+            for arg, value in echo(args):
+                writer.writecomment(
+                    "--{:s} {:}".format(
+                        arg, value))
+        for id, data in simulate(phylogeny, language):
+            with Path("test.log").open("a") as log:
+                for concept, words in data.items():
+                    for word, weight in words.items():
+                        if weight:
+                            writer.writerow([
+                                id,
+                                concept,
+                                word,
+                                weight])
 
 
 # Tests

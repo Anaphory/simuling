@@ -25,7 +25,8 @@ else:
             "phylo" / "network-3-families.gml").open(),
         args.weight_attribute)
 semantics.neighbor_factor = args.neighbor_factor
-semantics.concept_weight = concept_weights[args.concept_weight]
+semantics.concept_weight = lambda concept: concept_weights[
+    args.concept_weight](len(semantics[concept]))
 
 weight = parse_distribution_description(args.weight)
 if args.wordlist:

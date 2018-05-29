@@ -85,7 +85,7 @@ def argparser():
         " long branch with nodes after 0, 1, 2, 4, 8, …, 2^N time steps.)")
     tree.add_argument(
         "--branchlength", type=int,
-        default=20,
+        default=28,
         help="If no tree is given, the log₂ of the maximum branch length"
         " of the long branch, i.e. N from the default value above."
         " (default: 20.)")
@@ -117,14 +117,17 @@ def phylogeny(args):
             parent.add_descendant(child)
             parent = child
             length = new_length
-    elif Path(args.tree).exists:
-        phylogeny = newick.load(Path(args.tree).open())[0]
-    elif ":" in args.tree or "(" in args.tree:
-        phylogeny = newick.loads(args.tree)[0]
     else:
-        raise ValueError(
-            "Argument for --tree looked like a filename, not like a Newick"
-            "tree, but no such file exists.")
+        try:
+            file = Path(args.tree).open()
+            phylogeny = newick.load(file)[0]
+        except (OSError, FileNotFoundError):
+            if ":" in args.tree or "(" in args.tree:
+                phylogeny = newick.loads(args.tree)[0]
+            else:
+                raise ValueError(
+                    "Argument for --tree looked like a filename, not like a"
+                    " Newick tree, but no such file could be opened.")
     args.tree = phylogeny.newick
     return phylogeny
 

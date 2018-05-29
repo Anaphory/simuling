@@ -2,6 +2,7 @@
 
 """
 
+import random
 import argparse
 import tempfile
 from pathlib import Path
@@ -14,6 +15,23 @@ concept_weights = {
     "degree": lambda degree: degree,
     "square": lambda degree: degree ** 2,
     "exponential": lambda degree: 2 ** degree}
+
+
+def parse_distribution_description(text, random=random):
+    try:
+        name, parameters = text.strip().split("(")
+    except ValueError:
+        const = int(text.strip())
+        return lambda: const
+    if not parameters.endswith(")"):
+        raise ValueError("Could not parse distribution string")
+    function = {
+        "uniform": lambda x: random.randint(1, x),
+        "constant": lambda x: x,
+        "geometric": lambda x: random.geometric(1 / x),
+        "poisson": lambda x: random.poisson(x)}[name]
+    args = [int(x) for x in parameters.split(",")]
+    return lambda: function(args)
 
 
 def argparser():

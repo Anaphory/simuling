@@ -4,10 +4,11 @@ from pathlib import Path
 
 from csvw import UnicodeDictReader, UnicodeWriter
 
-from .cli import argparser, phylogeny, echo, concept_weights
+from .cli import (
+    argparser, phylogeny, echo, parse_distribution_description,
+    concept_weights)
 from .simulation import (
-    SemanticNetworkWithConceptWeight, parse_distribution_description,
-    Language, simulate)
+    SemanticNetworkWithConceptWeight, Language, simulate)
 
 args = argparser().parse_args()
 phylogeny = phylogeny(args)

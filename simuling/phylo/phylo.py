@@ -22,9 +22,6 @@ class Phylogeny(object):
             scale=1000):
         """Create a phylogeny simulation object.
 
-        related_concepts: a networkx.Graph or a dictionary of lists,
-        describing which concepts can evolve into which other concepts.
-
         tree: The phylogenetic tree along which to run the simulation.
 
         root: The phylo.Language to use at the root.

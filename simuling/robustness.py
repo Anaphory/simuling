@@ -68,7 +68,7 @@ for run in itertools.chain(args.loglength,
     print("Generic")
     try:
         with open(
-                "trivial_long_branch{:x}_r{:d}_i100_w2_n0.004.csv".format(
+                "trivial_long_branch_r{:d}_i100_w2_n0_x{:x}.004.csv".format(
                     id + 1, run), 'w') as file:
             writer = csv.writer(file)
             writer.writerow(("ID", "Language_ID", "Feature_ID", "Value",
@@ -87,8 +87,9 @@ for run in itertools.chain(args.loglength,
         parameters["initial_weight"] = distribution
         try:
             with open(
-                    "trivial_long_branch{:x}_r{:d}_i{:}_w2_n0.004.csv".format(
-                        id, run, name), 'w') as file:
+                    "trivial_long_branch_r{:d}_i{:}_w2_n0_x{:x}.004.csv"
+                    "".format(
+                        run, name, id), 'w') as file:
                 writer = csv.writer(file)
                 writer.writerow(("ID", "Language_ID", "Feature_ID", "Value",
                                  "Weight", "Cognate_Set", "Concept_CogID"))
@@ -107,8 +108,9 @@ for run in itertools.chain(args.loglength,
         parameters["related_concepts_edge_weight"] = factory(neighbor_factor)
         try:
             with open(
-                    "trivial_long_branch{:x}_r{:d}_id199_w2_n{:f}.csv".format(
-                        id, run, neighbor_factor), 'w') as file:
+                    "trivial_long_branch_r{:d}_id199_w2_n{:f}_x{:x}.csv"
+                    "".format(
+                        run, neighbor_factor, id), 'w') as file:
                 writer = csv.writer(file)
                 writer.writerow(("ID", "Language_ID", "Feature_ID", "Value",
                                  "Weight", "Cognate_Set", "Concept_CogID"))
@@ -126,8 +128,8 @@ for run in itertools.chain(args.loglength,
         parameters["concept_weight"] = c_weight
         try:
             with open(
-                    "trivial_long_branch{:x}_r{:d}_id199_c{:s}_w2_n0.004.csv"
-                    "".format(id, run, name), 'w') as file:
+                    "trivial_long_branch_r{:d}_id199_c{:s}_w2_n0_x{:x}.004.csv"
+                    "".format(run, name, id), 'w') as file:
                 writer = csv.writer(file)
                 writer.writerow(("ID", "Language_ID", "Feature_ID", "Value",
                                  "Weight", "Cognate_Set", "Concept_CogID"))
@@ -148,9 +150,9 @@ for run in itertools.chain(args.loglength,
         parameters["losswt"] = losswt
         try:
             with open(
-                    "trivial_long_branch{:x}_r{:d}_id199_w{:f}_n0.004.csv"
+                    "trivial_long_branch_r{:d}_id199_w{:f}_n0_x{:x}.004.csv"
                     "".format(
-                        id, run, losswt(2)), 'w') as file:
+                        run, losswt(2), id), 'w') as file:
                 writer = csv.writer(file)
                 writer.writerow(("ID", "Language_ID", "Feature_ID", "Value",
                                  "Weight", "Cognate_Set", "Concept_CogID"))

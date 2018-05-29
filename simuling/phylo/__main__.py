@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-"""Run a language evolution model.
+"""Run a simulation of cognate class evolution in a language family.
 
 This module implements the CLI interface for running a very simple
 forward-time phylogenetic simulation of cognate class evolution in a
@@ -9,32 +9,28 @@ language family represented by a given tree.
 
 """
 
-import os
 import sys
-from collections import defaultdict
 import argparse
-import random
-import networkx
-import newick
+import csv
 
-from .simulate import simulate, write_to_file
+import newick
+import networkx
+
+from .simulate import simulate
+from ..defaults import defaults, initial_weights
+from ..calibration.compare_simulation_with_data import (
+    read_cldf)
+from .naminggame import NamingGameLanguage as Language
+from .simulate import factory
 
 
 def argparser(args=sys.argv):
     """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description=""" Run a very simple forward-time
-    phylogenetic simulation of cognate class evolution in a language
-    family.""")
-    group = parser.add_argument_group("Shared properties of the languages")
-    group.add_argument("--concepts", '-s', type=int, default=2000,
-                       help="Number of concepts to be simulated")
-    group.add_argument("--fields", '-f', type=int, default=50,
-                       help="Number of semantic fields the concepts show")
+    parser = argparse.ArgumentParser(description=__doc__)
+    group = parser.add_argument_group("Semantic Network")
     group.add_argument(
         "--semantic-network", type=argparse.FileType('r'),
-        # FIXME: This needs to become a path relative to __file__
-        default=open(os.path.join(os.path.dirname(__file__),
-                                  "network-3-families.gml")),
+        default=None,
         help="File containing the semantic network to be used (eg. "
         "a colexification graph) in GLM format")
     group.add_argument(
@@ -49,20 +45,37 @@ def argparser(args=sys.argv):
         in the simulation""")
     group = parser.add_argument_group(
         "Properties of the phylogenetic simulation")
+
+    parser.add_argument(
+        "--init-wordlist",
+        help="""A file containing a word list which will be used as starting
+        point, instead of running 10^7 simulation steps ahead""")
+    parser.add_argument(
+        "--init-language",
+        help="""The language ID to be taken from
+            INIT_WORDLIST as starting point (default:
+        The language from the last row in the file)""")
+    parser.add_argument(
+        "--neighbor-factor",
+        type=float,
+        default=0.004,
+        help="Score for implicit polysemy along branches.")
+
     group.add_argument(
         "trees", type=argparse.FileType("r"), nargs="+",
         help="""Files containing Newick trees (one tree per line) to be
         simulated. You can specify the same tree file multiple times
         to obtain multiple simulations.""")
     group.add_argument(
-        "--init-max-edge-weight",
-        type=int,
-        default=10,
-        help="Initial maximum connection weight")
-    group.add_argument("--scale", type=float, default=1.46,
+        "--initial_weight",
+        type=lambda x: initial_weights[x],
+        default=defaults["initial_weight"],
+        help="Name of the initial weight distribution")
+    group.add_argument("--scale", type=float, default=defaults["scale"],
                        help="Scaling factor of the tree, or equivalently the "
                        "number of change events per unit of branchlength.")
-    group.add_argument("--neighbor-factor", type=float, default=0.1,
+    group.add_argument("--related-concepts-edge-weight", type=factory,
+                       default=defaults["related_concepts_edge_weight"],
                        help="How the score for implicit polysemy.")
     group.add_argument('--p-loss', type=float, default=0.0,
                        help="Probability, per time step, that a word becomes "
@@ -104,36 +117,33 @@ def run_simulation_with_arguments(args):
     if args.semantic_network:
         related_concepts = networkx.parse_gml(args.semantic_network)
     else:
-        concept2field = defaultdict(set)
-        for c in range(args.concepts):
-            concept2field[random.randint(0, args.fields - 1)].add(c)
-        related_concepts = {}
-        for field in concept2field.values():
-            for concept in field:
-                related_concepts[concept] = {other: 1
-                                             for other in field
-                                             if other != concept}
+        related_concepts = defaults["related_concepts"]
 
-    def scaled_weight_threshold(x):
-        if x[args.weight_name] < args.min_connection:
-            return 0
-        else:
-            return args.neighbor_factor * x[args.weight_name]
+    if args.init_wordlist is not None:
+        raw_data = read_cldf(args.init_wordlist, top_word_only=False)
+        init_language = args.init_language or str(
+            list(raw_data["Language_ID"])[-1])
+        raw_data = raw_data[
+            raw_data["Language_ID"].astype(str) == init_language]
+        starting_data = Language(
+            related_concepts,
+            related_concepts_edge_weight=args.related_concepts_edge_weight,
+            generate_words=False)
+        maxword = 0
+        for r, row in raw_data.iterrows():
+            meaning = row["Feature_ID"]
+            weight = row["Weight"]
+            i = row["Cognate_Set"]
+            maxword = max(i, maxword)
+            starting_data.words[meaning][i] = weight
+        Language.max_word = maxword
+    else:
+        starting_data = None
 
     i = 0
     for _, tree_file in enumerate(args.trees):
         for tree in newick.load(tree_file):
             i += 1
-            dataframe, columns = simulate(
-                tree, related_concepts,
-                initial_weight=lambda: random.randrange(
-                    args.init_max_edge_weight) + 1,
-                concept_weight=args.concept_weight,
-                scale=args.scale,
-                related_concepts_edge_weight=scaled_weight_threshold,
-                p_gain=args.p_gain,
-                verbose=0 if args.quiet else 1,
-                tips_only=not args.sample_internal_nodes)
             if args.wordlist == "-":
                 wordlist_file = sys.stdout
             else:
@@ -141,7 +151,20 @@ def run_simulation_with_arguments(args):
                     tree=(tree_file.name).rsplit(".", 1)[0],
                     i=i)
                 wordlist_file = open(filename, "w")
-            write_to_file(dataframe, columns, file=wordlist_file)
+            writer = csv.writer(wordlist_file)
+            writer.writerow(("ID", "Language_ID", "Feature_ID", "Value",
+                             "Weight", "Cognate_Set", "Concept_CogID"))
+            for dataframe in simulate(
+                    tree, related_concepts,
+                    initial_weight=defaults["initial_weight"],
+                    concept_weight=args.concept_weight,
+                    scale=args.scale,
+                    related_concepts_edge_weight=factory(args.neighbor_factor),
+                    p_gain=args.p_gain,
+                    verbose=0 if args.quiet else 1,
+                    root=starting_data,
+                    tips_only=not args.sample_internal_nodes):
+                writer.writerows(dataframe)
 
 
 def main(args=sys.argv):

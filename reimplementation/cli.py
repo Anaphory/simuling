@@ -9,6 +9,13 @@ from pathlib import Path
 import newick
 
 
+concept_weights = {
+    "one": lambda degree: 1,
+    "degree": lambda degree: degree,
+    "square": lambda degree: degree ** 2,
+    "exponential": lambda degree: 2 ** degree}
+
+
 def argparser():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     initialization = parser.add_argument_group(
@@ -43,7 +50,7 @@ def argparser():
         help="The GML edge attribute to be used as edge weight."
         " (default: FamilyWeight.)")
     parameters.add_argument(
-        "--concept-weight", choices=["one", "degree", "square"],
+        "--concept-weight", choices=list(concept_weights),
         default="square",
         help="The weight of a concept, as function of its degree."
         " (default: square.)")

@@ -4,24 +4,30 @@ from pathlib import Path
 
 from csvw import UnicodeDictReader, UnicodeWriter
 
-from .cli import argparser, phylogeny
-from .simulation import (SemanticNetwork, parse_distribution_description,
-                         Language, simulate, echo)
+from .cli import argparser, phylogeny, echo
+from .simulation import (
+    SemanticNetworkWithConceptWeight, parse_distribution_description,
+    Language, simulate)
 
 args = argparser().parse_args()
 phylogeny = phylogeny(args)
 
 random.seed(args.seed)
 
+
 if args.semantic_network:
-    semantics = SemanticNetwork.load_from_gml(
+    semantics = SemanticNetworkWithConceptWeight.load_from_gml(
         args.semantic_network, args.weight_attribute)
 else:
-    semantics = SemanticNetwork.load_from_gml(
+    semantics = SemanticNetworkWithConceptWeight.load_from_gml(
         (Path(__file__).absolute().parent.parent /
             "phylo" / "network-3-families.gml").open(),
         args.weight_attribute)
 semantics.neighbor_factor = args.neighbor_factor
+semantics.concept_weight = {
+    "one": lambda degree: 1,
+    "degree": lambda degree: degree,
+    "square": lambda degree: degree ** 2}[args.concept_weight]
 
 weight = parse_distribution_description(args.weight)
 if args.wordlist:

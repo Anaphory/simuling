@@ -1,3 +1,7 @@
+"""Simulate lexical evolution based on gradual semantic shift.
+
+"""
+
 import argparse
 import tempfile
 from pathlib import Path
@@ -38,6 +42,11 @@ def argparser():
         default="FamilyWeight",
         help="The GML edge attribute to be used as edge weight."
         " (default: FamilyWeight.)")
+    parameters.add_argument(
+        "--concept-weight", choices=["one", "degree", "square"],
+        default="square",
+        help="The weight of a concept, as function of its degree."
+        " (default: square.)")
     parameters.add_argument(
         "--seed", type=int,
         default=0,

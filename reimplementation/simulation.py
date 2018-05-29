@@ -57,6 +57,14 @@ class SemanticNetwork (networkx.Graph):
         return self.nodes()[index]
 
 
+class SemanticNetworkWithConceptWeight (SemanticNetwork):
+    def __init__(self, *args, concept_weight=lambda degree: degree**2,
+                 **kwargs):
+        super().__init__(*args, **kwargs)
+        self.concept_weight = lambda concept: concept_weight(
+            len(self[concept]))
+
+
 class WeightedBipartiteGraph (dict):
     """A weighted, bipartite graph
 

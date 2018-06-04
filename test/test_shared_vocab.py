@@ -34,15 +34,28 @@ def test_pairwise_shared_vocabulary_half():
     """Check that two half-similar languages return psv 0.5 when compared."""
     v1 = wordlist()
     v2 = v1.copy()
-    if len(v2) % 2 == 1:
-        return
+    v2["Language_ID"] = -1
+    for i, row in v2.iterrows():
+        if i % 2 == 1:
+            continue
+        v2.at[i, "Cognate_Set"] = -1
+    vocabulary = v1.append(v2)
+    for (language1, language2), score in compare.pairwise_shared_vocabulary(
+            vocabulary):
+        assert score == 0.5
+
+
+def test_pairwise_shared_vocabulary_none():
+    """Check that two dissimilar languages return psv 0.0 when compared."""
+    v1 = wordlist()
+    v2 = v1.copy()
     v2["Language_ID"] = -1
     for i, row in v2.iterrows():
         v2.at[i, "Cognate_Set"] = -1
     vocabulary = v1.append(v2)
     for (language1, language2), score in compare.pairwise_shared_vocabulary(
             vocabulary):
-        assert score == 0.5
+        assert score == 0.0
 
 
 def test_pairwise_shared_vocabulary_synonyms():

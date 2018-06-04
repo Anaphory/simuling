@@ -340,6 +340,8 @@ class NamingGameLanguage(Language):
         else:
             self.naming_game(concept_weight)
 
+        x = vars(self).copy()
+        del x["words"]
         self.statistics()
 
     def clone(self):
@@ -380,4 +382,6 @@ class NamingGameLanguage(Language):
             words |= set(ws)
         print(step, len(words),
               np.mean(s), np.median(s),
-              sep="\t", file=logfile)
+              len(self.related_concepts.edges()),
+              sep="\t",
+              file=logfile)

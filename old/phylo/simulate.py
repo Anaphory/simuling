@@ -47,14 +47,16 @@ def simulate(
         losswt=losswt,
         scale=scale)
 
-    phy.simulate(
-        concept_weight=concept_weight,
-        p_gain=p_gain,
-        verbose=verbose)
-    dataframe, columns = phy.collect_word_list(
-        Language.vocabulary,
-        collect_tips_only=tips_only)
-    return columns, dataframe
+    for language in phy.simulate(
+            concept_weight=concept_weight,
+            p_gain=p_gain,
+            verbose=verbose):
+
+        dataframe = phy.collect_word_list(
+            Language.vocabulary,
+            collect_language=language,
+            collect_tips_only=tips_only)
+        yield dataframe
 
 
 def write_to_file(columns, dataframe, file=sys.stdout):

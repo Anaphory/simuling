@@ -16,8 +16,8 @@ import tempfile
 import newick
 import networkx
 
-import simuling.phylo as phylo
-from simuling.phylo.simulate import factory
+from ..defaults import defaults
+from ..phylo.simulate import factory
 from .compare_simulation_with_data import (
     read_cldf)
 
@@ -26,8 +26,8 @@ from ..phylo.naminggame import NamingGameLanguage as Language
 from .util import run_sims_and_calc_lk, cached_realdata
 
 
-def main(args):
-    """Run the CLI."""
+def argparser(args=sys.argv):
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--realdata",
@@ -73,8 +73,8 @@ def main(args):
 
     parser.add_argument(
         "--semantic-network",
-        default=open(os.path.join(os.path.dirname(phylo.__file__),
-                                  "network-3-families.gml")),
+        default=open(os.path.join(os.path.dirname(__file__),
+                                  "../phylo/network-3-families.gml")),
         type=argparse.FileType("r"),
         help="""File containing the semantic network to be used (eg. a
         colexification graph) in GLM format""")
@@ -84,13 +84,13 @@ def main(args):
         help="Name of the weight attribute in the GML file")
     parser.add_argument(
         "--initial-weight",
-        default=100,
+        default=None,
         type=int,
         help="""Initial weight value for all words""")
     parser.add_argument(
         "--neighbor-factor",
         type=float,
-        default=0.004,
+        default=None,
         help="Score for implicit polysemy along branches.")
     parser.add_argument(
         "--ignore",
@@ -103,8 +103,20 @@ def main(args):
         "--sample-threshold", "--threshold",
         default=180,
         help="Weight threshold to sample a word")
-
     args = parser.parse_args(args)
+    return args
+
+
+def main(args):
+    """Run the CLI."""
+    args = argparser(args)
+
+    parameters = defaults.copy()
+    if args.neighbor_factor is not None:
+        parameters["related_concepts_edge_weight"] = factory(
+            args.neighbor_factor)
+    if args.initial_weight is not None:
+        parameters["initial_weight"] = lambda x: args.initial_weight
 
     related_concepts = networkx.parse_gml(args.semantic_network)
 
@@ -127,7 +139,8 @@ def main(args):
             raw_data["Language_ID"].astype(str) == init_language]
         starting_data = Language(
             related_concepts,
-            related_concepts_edge_weight=factory(args.neighbor_factor),
+            related_concepts_edge_weight=parameters[
+                "related_concepts_edge_weight"],
             generate_words=False)
         maxword = 0
         for r, row in raw_data.iterrows():
@@ -148,17 +161,15 @@ def main(args):
     realdata = cached_realdata(args.realdata)
 
     def simulate_scale(scale):
+        parameters["scale"] = scale
         return run_sims_and_calc_lk(
-            scale=scale,
             n_sim=args.sims,
-            related_concepts=related_concepts,
             tree=tree,
-            initial_weight=args.initial_weight,
-            related_concepts_edge_weight=factory(args.neighbor_factor),
             realdata=realdata,
             sample_threshold=args.sample_threshold,
             ignore=ignore,
-            root=starting_data)
+            root=starting_data,
+            **parameters)
 
     lks[lower] = simulate_scale(lower)
     lks[upper] = simulate_scale(upper)

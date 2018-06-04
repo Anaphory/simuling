@@ -62,13 +62,13 @@ def compatible_pairwise_shared_vocabulary(data, order):
         yield score
 
 
-def plot_vocabulary(x, names, simulated, axis=None):
+def plot_vocabulary(x, names, simulated, name=None, axis=None):
     """Plot the simulated data against reference language distances."""
     if axis is None:
         axis = plt.gca()
 
     y = list(compatible_pairwise_shared_vocabulary(simulated, names))
-    axis.plot(x, y)
+    axis.plot(x, y, label=name, marker="_")
     return y
 
 
@@ -79,6 +79,10 @@ def main(args=sys.argv):
         "realdata",
         type=argparse.FileType("r"),
         help="Word list from real life")
+    # parser.add_argument(
+    #     "--no-legend",
+    #     default=False,
+    #     action='store_true')
     parser.add_argument(
         "simulationdata",
         nargs="*",
@@ -90,10 +94,23 @@ def main(args=sys.argv):
     parser.add_argument(
         "--error-figure-file",
         help="File to write the error plot to")
+    parser.add_argument(
+        "--exclude", "-x",
+        default=[],
+        action="append",
+        help="language pairs (separated by '-') to ignore")
     args = parser.parse_args(args)
 
     x, names = ordered_pairwise_shared_vocabulary(
         cached_realdata(args.realdata))
+    for pair in args.exclude:
+        first, second = sorted(pair.split("-"))
+        try:
+            i = names.index((first, second))
+            del x[i]
+            del names[i]
+        except ValueError:
+            continue
     print("point", "error", *["'{:}-{:}'".format(n1, n2) for n1, n2 in names],
           sep="\t")
     print("real", "0", *x, sep="\t")
@@ -106,7 +123,8 @@ def main(args=sys.argv):
     parameters = []
     errors = []
     for sim in args.simulationdata:
-        y = plot_vocabulary(x, names, read_cldf(sim))
+        y = plot_vocabulary(x, names, read_cldf(sim, sample_threshold=4),
+                            name=sim.name)
         error = (sum([(xi-yi)**2 for xi, yi in zip(x, y)])/len(x))**0.5
         try:
             p = float(os.path.basename(sim.name).split("_")[1])
@@ -115,6 +133,8 @@ def main(args=sys.argv):
         parameters.append(p)
         errors.append(error)
         print(sim.name, p, error, *y, sep="\t")
+
+    plt.legend()
 
     for tick in ax.xaxis.get_major_ticks():
         tick.label.set_fontsize(6)

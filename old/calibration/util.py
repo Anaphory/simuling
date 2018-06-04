@@ -2,9 +2,9 @@
 
 import os
 import json
-import pandas
+import csv
 
-from ..phylo.simulate import simulate, write_to_file
+from ..phylo.simulate import simulate
 
 
 from .compare_simulation_with_data import (
@@ -14,29 +14,51 @@ from .compare_simulation_with_data import (
     pairwise_shared_vocabulary)
 
 
-def simulate_and_write(tree, sample_threshold, related_concepts, scale=1,
-                       n_sim=3, initial_weight=100,
-                       related_concepts_edge_weight=lambda x: x,
-                       root=None):
-    """Simulate evolution on tree and write results to file."""
+def simulate_and_write(tree, sample_threshold, n_sim=3, root=None,
+                       **parameters):
+    """Simulate evolution on tree and write results to file.
+
+    Simulate lexical evolution on the tree described by `tree`,
+    returning a generator that yields a pandas.DataFrame representing
+    a CLDF Wordlist for each of the n_sim different simulations.
+
+    If `root` is specified, start the simulation from that language;
+    otherwise, initialize the simulation with a random language.
+
+    Side Effects
+    ------------
+    Writes a file in the current directory for each generated word list.
+
+    Parameters
+    ----------
+    tree: newick.Node
+    sample_threshold: int
+    n_sims: int
+    root: simuling.phylo.Language or None
+
+    Other named arguments are passed through to simuling.simulate.simulate
+
+    Yields
+    ------
+    wordlist: pandas.DataFrame
+
+    """
     for i in range(n_sim):
-        columns, dataframe = simulate(
-            tree, related_concepts, initial_weight=lambda: initial_weight,
-            related_concepts_edge_weight=related_concepts_edge_weight,
-            scale=scale, verbose=True, root=root, tips_only=True)
-        filename = "simulation_{:}_{:}.csv".format(scale, i)
+        filename = "simulation_{:}_{:}.csv".format(parameters["scale"], i)
         with open(filename, "w") as f:
-            write_to_file(columns, dataframe, f)
+            writer = csv.writer(f)
+            writer.writerow(("ID", "Language_ID", "Feature_ID", "Value",
+                             "Weight", "Cognate_Set", "Concept_CogID"))
+            for dataframe in simulate(
+                    tree, root=root, **parameters):
+                writer.writerows(dataframe)
         yield read_cldf(
             filename, sample_threshold=sample_threshold,
             top_word_only=False)
 
 
-def run_sims_and_calc_lk(tree, realdata, sample_threshold,
-                         related_concepts, scale=1, n_sim=3,
-                         initial_weight=6,
-                         related_concepts_edge_weight=lambda x: x,
-                         ignore=[], normal=False, root=None):
+def run_sims_and_calc_lk(tree, realdata, sample_threshold, n_sim=3,
+                         ignore=[], normal=False, root=None, **parameters):
     """Run simulations and calculate their Normal likelihood.
 
     Run `n` simulations and calculate the likelihood of `realdata`
@@ -47,18 +69,14 @@ def run_sims_and_calc_lk(tree, realdata, sample_threshold,
     if normal:
         normals = estimate_normal_distribution(simulate_and_write(
             tree, sample_threshold=sample_threshold,
-            related_concepts=related_concepts,
-            related_concepts_edge_weight=related_concepts_edge_weight,
-            scale=scale, n_sim=n_sim, root=root))
+            n_sim=n_sim, root=root, **parameters))
         return normal_likelihood(realdata, normals,
                                  ignore=ignore)
     else:
         neg_squared_error = 0
         for simulation in simulate_and_write(
-                tree, sample_threshold=sample_threshold,
-                related_concepts=related_concepts,
-                related_concepts_edge_weight=related_concepts_edge_weight,
-                scale=scale, n_sim=n_sim, root=root):
+                tree, sample_threshold=sample_threshold, n_sim=n_sim,
+                root=root, **parameters):
             for (l1, l2), score in (
                     pairwise_shared_vocabulary(simulation, False)):
                 if l1 > l2:
@@ -68,7 +86,7 @@ def run_sims_and_calc_lk(tree, realdata, sample_threshold,
                 error = (realdata[l1, l2] - score)
                 print(l1, l2, score, error)
                 neg_squared_error -= error ** 2
-        return neg_squared_error/n_sim
+        return neg_squared_error / n_sim
 
 
 def cached_realdata(data):

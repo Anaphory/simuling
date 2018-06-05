@@ -10,6 +10,23 @@ from .cli import (
 from .simulation import (
     SemanticNetworkWithConceptWeight, Language, simulate)
 
+
+class CommentedUnicodeWriter (UnicodeWriter):
+    def __init__(self, f=None, dialect=None, **kw):
+        comment_prefix = kw.pop('commentPrefix', None)
+        super().__init__(f=f, dialect=dialect, **kw)
+        self.comment_prefix = comment_prefix
+
+    def writecomment(self, comment):
+        if self.comment_prefix is None:
+            raise ValueError(
+                'Cannot write comments in this csv dialect')
+        for row in comment.split('\n'):
+            self.f.write(self.comment_prefix)
+            self.f.write(row)
+            self.f.write('\n')
+
+
 args = argparser().parse_args()
 phylogeny = phylogeny(args)
 
@@ -21,8 +38,7 @@ if args.semantic_network:
         args.semantic_network, args.weight_attribute)
 else:
     semantics = SemanticNetworkWithConceptWeight.load_from_gml(
-        (Path(__file__).absolute().parent.parent /
-            "phylo" / "network-3-families.gml").open(),
+        (Path(__file__).absolute().parent / "network-3-families.gml").open(),
         args.weight_attribute)
 semantics.neighbor_factor = args.neighbor_factor
 semantics.concept_weight = lambda concept: concept_weights[
@@ -57,7 +73,7 @@ else:
         for c, concept in enumerate(semantics)}
     language = Language(raw_language, semantics)
     Language.max_word = len(raw_language)
-with UnicodeWriter(args.output_file, commentPrefix="# ") as writer:
+with CommentedUnicodeWriter(args.output_file, commentPrefix="# ") as writer:
     writer.writerow(
         ["Language_ID", "Parameter_ID", "Cognateset_ID", "Weight"])
     if args.embed_parameters:

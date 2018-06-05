@@ -21,8 +21,7 @@ if args.semantic_network:
         args.semantic_network, args.weight_attribute)
 else:
     semantics = SemanticNetworkWithConceptWeight.load_from_gml(
-        (Path(__file__).absolute().parent.parent /
-            "phylo" / "network-3-families.gml").open(),
+        (Path(__file__).absolute().parent / "network-3-families.gml").open(),
         args.weight_attribute)
 semantics.neighbor_factor = args.neighbor_factor
 semantics.concept_weight = lambda concept: concept_weights[

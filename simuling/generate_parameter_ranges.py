@@ -41,7 +41,7 @@ def write_parameter_line(updater, arguments=default_properties):
     arguments = arguments.copy()
     arguments.update(updater)
     arguments["--output-file"] = new_output_file()
-    print("python -m reimplementation " + " ".join(
+    print("python -m simuling --embed " + " ".join(
         "{:} {:}".format(argument.replace("_", "-"),
                          shlex.quote(str(value)))
         for argument, value in arguments.items()))

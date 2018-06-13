@@ -1,7 +1,11 @@
+from csvw import UnicodeReader
+from csvw.dsv_dialects import Dialect
+
 import matplotlib.pyplot as plt
 import pandas
-import numpy
 import os
+
+from . import cli
 
 
 # This can be calculated from the data
@@ -194,16 +198,6 @@ all_concepts = {2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
                 3000, 3001, 3002, 3003, 3004, 3005, 3006}
 
 
-def generate_random_concept_list(concepts, length=400):
-    concepts = list(concepts)
-    numpy.random.shuffle(concepts)
-    return set(concepts[:length])
-
-
-concept_list = generate_random_concept_list(all_concepts)
-print("Concept list length:", len(concept_list))
-
-
 def sample_data(data, relative=2 / 3, concepts=all_concepts, at_most=10000):
     for concept, words in data.groupby("Feature_ID"):
         if concept not in concepts:
@@ -222,21 +216,25 @@ def image_name(key):
     return "_".join([i.lower() for i in key.split()])
 
 
-default_properties = {
-    "i": "d199",
-    "n": 0.004,
-    "w": 2,
-    "c": "degreesquared"}
-
-
 def properties(file):
-    if not (file.startswith("trivial_long_") and file.endswith(".csv")):
+    if not (file.name.startswith("trivial_long_") and
+            file.name.endswith(".csv")):
         return None
-    props = default_properties.copy()
-    props.update({s[0]: s[1:] for s in file[13:-4].split("_")})
-    props["n"] = float(props["n"])
-    props["w"] = float(props["w"])
-    return props
+    properties = {}
+    with UnicodeReader(file.open(), dialect=Dialect()) as reader:
+        for line in reader:
+            pass
+        for line, argument in reader.comments:
+            key, value = argument.strip().split(" ", 1)
+            properties[key] = value
+    return properties
+
+
+default_properties = cli.argparser().parse_args([])
+cli.phylogeny(default_properties)
+default_properties = {
+    "--{:s}".format(key): str(value)
+    for key, value in cli.echo(default_properties)}
 
 
 def property_key(property):

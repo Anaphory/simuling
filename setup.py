@@ -6,7 +6,7 @@ from setuptools import setup
 
 setup(
     name="simuling",
-    version="0.1",
+    version="0.2",
     description="Forward-time stochastic simulation of word/meaning coupling",
     author="Gereon Kaiping",
     author_email="g.a.kaiping@hum.leidenuniv.nl",

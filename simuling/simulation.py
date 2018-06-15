@@ -265,7 +265,11 @@ def walk_depth_order(tree, root_depth=0):
     >>> intermingled = ("((((A:1.9,B:1.8)K:5,(C:4.7,D:4.6)N:2)P:1,(E:2.5,"
     ... "F:2.4)L:5)Q:2,((G:5.3,H:5.2)O:3,(I:3.1,J:3.0)M:5)R:1)S;")
     >>> list(walk_tree_depth_order(t(intermingled)))
-    [(Node("S"), 0), (Node("R"), 1.0), (Node("Q"), 2.0), (Node("P"), 3.0), (Node("O"), 4.0), (Node("N"), 5.0), (Node("M"), 6.0), (Node("L"), 7.0), (Node("K"), 8.0), (Node("J"), 9.0), (Node("I"), 9.1), (Node("H"), 9.2), (Node("G"), 9.3), (Node("F"), 9.4), (Node("E"), 9.5), (Node("D"), 9.6), (Node("C"), 9.7), (Node("B"), 9.8), (Node("A"), 9.9)]
+    [(Node("S"), 0), (Node("R"), 1.0), (Node("Q"), 2.0), (Node("P"), 3.0),\
+    (Node("O"), 4.0), (Node("N"), 5.0), (Node("M"), 6.0), (Node("L"), 7.0),\
+    (Node("K"), 8.0), (Node("J"), 9.0), (Node("I"), 9.1), (Node("H"), 9.2),\
+    (Node("G"), 9.3), (Node("F"), 9.4), (Node("E"), 9.5), (Node("D"), 9.6),\
+    (Node("C"), 9.7), (Node("B"), 9.8), (Node("A"), 9.9)]
 
     """
     yield tree, root_depth

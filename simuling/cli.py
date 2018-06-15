@@ -101,6 +101,16 @@ def argparser():
         default=False,
         help="Echo the simulation parameters to comments in the CSV output"
         " file.")
+    processing = parser.add_argument_group(
+        "Processing")
+    processing.add_argument(
+        "--multiprocess", type=int,
+        default=1,
+        help="The number of parallel processes to run.")
+    processing.add_argument(
+        "--continue", action="store_true",
+        default=False,
+        help="Continue the simulation from the given output file.")
     return parser
 
 
@@ -137,6 +147,10 @@ def echo(args):
         if arg == "embed_parameters":
             continue
         if arg == "output_file":
+            continue
+        if arg == "multiprocess":
+            continue
+        if arg == "continue":
             continue
         if value is not None:
             try:

@@ -2,29 +2,14 @@ import random
 import collections
 from pathlib import Path
 
-from csvw import UnicodeDictReader, UnicodeWriter
+from csvw import UnicodeDictReader
 
 from .cli import (
     argparser, phylogeny, echo, parse_distribution_description,
     concept_weights)
 from .simulation import (
-    SemanticNetworkWithConceptWeight, Language, simulate)
-
-
-class CommentedUnicodeWriter (UnicodeWriter):
-    def __init__(self, f=None, dialect=None, **kw):
-        comment_prefix = kw.pop('commentPrefix', None)
-        super().__init__(f=f, dialect=dialect, **kw)
-        self.comment_prefix = comment_prefix
-
-    def writecomment(self, comment):
-        if self.comment_prefix is None:
-            raise ValueError(
-                'Cannot write comments in this csv dialect')
-        for row in comment.split('\n'):
-            self.f.write(self.comment_prefix)
-            self.f.write(row)
-            self.f.write('\n')
+    SemanticNetworkWithConceptWeight, Language, multiprocess_simulate, simulate)
+from .io import CommentedUnicodeWriter
 
 
 args = argparser().parse_args()
@@ -73,6 +58,7 @@ else:
         for c, concept in enumerate(semantics)}
     language = Language(raw_language, semantics)
     Language.max_word = len(raw_language)
+
 with CommentedUnicodeWriter(args.output_file, commentPrefix="# ") as writer:
     writer.writerow(
         ["Language_ID", "Parameter_ID", "Cognateset_ID", "Weight"])
@@ -81,13 +67,6 @@ with CommentedUnicodeWriter(args.output_file, commentPrefix="# ") as writer:
             writer.writecomment(
                 "--{:s} {:}".format(
                     arg, value))
-    for id, data in simulate(phylogeny, language):
-        with Path("test.log").open("a") as log:
-            for concept, words in data.items():
-                for word, weight in words.items():
-                    if weight:
-                        writer.writerow([
-                            id,
-                            concept,
-                            word,
-                            weight])
+    for id, data in simulate(phylogeny, language,
+                             writer=writer):
+        print("Language {:} generated.".format(id))

@@ -2,7 +2,6 @@
 
 """
 
-import random
 import argparse
 import tempfile
 from pathlib import Path
@@ -17,7 +16,7 @@ concept_weights = {
     "exponential": lambda degree: 2 ** degree}
 
 
-def parse_distribution_description(text, random=random):
+def parse_distribution_description(text, random):
     try:
         name, parameters = text.strip().split("(")
     except ValueError:
@@ -89,6 +88,16 @@ def argparser():
         help="If no tree is given, the log₂ of the maximum branch length"
         " of the long branch, i.e. N from the default value above."
         " (default: 20.)")
+    processing = parser.add_argument_group(
+        "Processing")
+    processing.add_argument(
+        "--resume", action="store_true",
+        default=False,
+        help="Resume a run from a previous partial output")
+    processing.add_argument(
+        "--multiprocess", type=int,
+        default=1,
+        help="The number of parallel processes to run.")
     output = parser.add_argument_group(
         "Output")
     output.add_argument(
@@ -101,16 +110,6 @@ def argparser():
         default=False,
         help="Echo the simulation parameters to comments in the CSV output"
         " file.")
-    processing = parser.add_argument_group(
-        "Processing")
-    processing.add_argument(
-        "--multiprocess", type=int,
-        default=1,
-        help="The number of parallel processes to run.")
-    processing.add_argument(
-        "--continue", action="store_true",
-        default=False,
-        help="Continue the simulation from the given output file.")
     return parser
 
 
@@ -150,7 +149,7 @@ def echo(args):
             continue
         if arg == "multiprocess":
             continue
-        if arg == "continue":
+        if arg == "resume":
             continue
         if value is not None:
             try:

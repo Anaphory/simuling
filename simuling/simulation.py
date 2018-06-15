@@ -4,12 +4,31 @@
 """
 
 import bisect
+import hashlib
 import collections
-import numpy.random as random
+import numpy.random
 
+import time
 import multiprocessing as mp
 
 import networkx
+
+
+def constant_zero():
+    """lambda: 0
+
+    A useful function for defaultdicts, which we need a name for in case of
+    pickling.
+
+    """
+    return 0
+
+
+# We need pickle-able functions for multiprocessing, so define this as named
+# function.
+def square(x):
+    """Square a number."""
+    return x**2
 
 
 class SemanticNetwork (networkx.Graph):
@@ -45,7 +64,7 @@ class SemanticNetwork (networkx.Graph):
     def concept_weight(self, concept):
         return len(self[concept]) ** 2
 
-    def random(self, random=random):
+    def random(self, random=numpy.random):
         try:
             max_heap = self._heap[-1]
         except AttributeError:
@@ -55,16 +74,17 @@ class SemanticNetwork (networkx.Graph):
                 max_heap += self.concept_weight(concept)
                 self._heap.append(max_heap)
         index = bisect.bisect(self._heap,
-                              random.random() * max_heap)
+                              random.rand() * max_heap)
         return list(self.nodes())[index]
 
 
 class SemanticNetworkWithConceptWeight (SemanticNetwork):
-    def __init__(self, *args, concept_weight=lambda degree: degree**2,
-                 **kwargs):
+    def __init__(self, *args, concept_weight=square, **kwargs):
         super().__init__(*args, **kwargs)
-        self.concept_weight = lambda concept: concept_weight(
-            len(self[concept]))
+        self._concept_weight = concept_weight
+
+    def concept_weight(self, concept):
+        return self._concept_weight(len(self[concept]))
 
 
 class WeightedBipartiteGraph (dict):
@@ -105,7 +125,7 @@ class Language (WeightedBipartiteGraph):
                     score[word] += weight * s_weight
         return score
 
-    def random_edge(self, random=random):
+    def random_edge(self, random=numpy.random):
         weights = []
         edges = []
         max_weight = 0
@@ -115,16 +135,16 @@ class Language (WeightedBipartiteGraph):
                     edges.append((concept, word))
                     max_weight += weight
                     weights.append(max_weight)
-        index = bisect.bisect(weights, random.random() * max_weight)
+        index = bisect.bisect(weights, random.rand() * max_weight)
         return edges[index]
 
-    def step(self):
+    def step(self, random=numpy.random):
         # Choose v_0
-        concept_1 = self.semantics.random()
+        concept_1 = self.semantics.random(random=random)
         # Choose v_1
-        concept_2 = self.semantics.random()
+        concept_2 = self.semantics.random(random=random)
         while concept_1 == concept_2:
-            concept_2 = self.semantics.random()
+            concept_2 = self.semantics.random(random=random)
         # Calculate scores x_w0 for v_0
         neighbors_1 = self.calculate_scores(concept_1)
         # Calculate scores x_w1 for v_1
@@ -167,13 +187,13 @@ class Language (WeightedBipartiteGraph):
             if self[confusing_meaning][confusing_word] <= 0:
                 del self[confusing_meaning][confusing_word]
         else:
-            concept, word = self.random_edge()
+            concept, word = self.random_edge(random=random)
             self[concept][word] -= 1
             if self[concept][word] <= 0:
                 del self[concept][word]
 
         # Remove a unit of weight.
-        concept, word = self.random_edge()
+        concept, word = self.random_edge(random=random)
         self[concept][word] -= 1
         if self[concept][word] <= 0:
             del self[concept][word]
@@ -192,7 +212,7 @@ class Language (WeightedBipartiteGraph):
     def copy(self):
         return Language(
             {concept: collections.defaultdict(
-                (lambda: 0),
+                constant_zero,
                 {word: weight
                  for word, weight in words.items()})
              for concept, words in self.items()},
@@ -206,14 +226,32 @@ class Language (WeightedBipartiteGraph):
                         name, concept, word, weight])
 
 
-def simulate(phylogeny, language, writer=None):
+def local_seed(node, raw_seed):
+    """Given a Node object and a raw seed, calculate a node-specific seed.
+
+    Currently, this function uses the node's name, so for equal raw seeds, the
+    local seeds of anonymous nodes will be identical.
+
+    """
+    name_hash = int(hashlib.sha256(
+        (node.name or "").encode("utf-8")).hexdigest(), 16)
+    return (name_hash + raw_seed) % 2**32
+
+
+def simulate(phylogeny, language,
+             seed=0, writer=None):
     """Run a simulation of a root language down a phylogeny."""
-    if phylogeny.name:
-        yield (phylogeny.name, language)
+    random = numpy.random.RandomState(local_seed(phylogeny, seed))
     for i in range(int(phylogeny.length)):
-        language.step()
-    for child in phylogeny.descendants:
-        for (name, language) in simulate(child, language.copy()):
+        language.step(random=random)
+
+    if phylogeny.name:
+        if writer:
+            language.write(phylogeny.name, writer)
+        yield (phylogeny.name, language)
+    for c, child in enumerate(phylogeny.descendants):
+        for (name, language) in simulate(child, language.copy(),
+                                         seed=seed):
             if writer:
                 language.write(name, writer)
             yield (name, language)
@@ -246,47 +284,79 @@ def walk_depth_order(tree, root_depth=0):
             del next_ones[highest]
 
 
-def multiprocess_simulate(phylogeny, language, writer=None):
-    """Run a simulation of a root language down a phylogeny.
+class Multiprocess ():
+        def __init__(self, n):
+            self.n = n
+            manager = mp.Manager()
+            self.generated_languages = manager.dict()
+            self.io_lock = manager.Lock()
 
-    As opposed to the `simulate` function, this function makes use of
-    multiprocessing. The implementation should be equivalent.
-
-    This function expects a tree where all nodes are uniquely named, and raises
-    ValueError otherwise.
-
-    """
-    with mp.Manager() as manager:
-        generated_languages = manager.dict()
-        generated_languages[None] = language
-        io_lock = manager.Lock()
-
-        def worker(node, height):
+        def worker(self, node_with_height):
+            node, height = node_with_height
             name = node.name
-            if name in generated_languages:
+            random = numpy.random.RandomState(local_seed(node, self.raw_seed))
+            if name in self.generated_languages:
                 raise ValueError("Duplicate node name or unnamed node found")
             parent = None if node.ancestor is None else node.ancestor.name
 
-            start_from = generated_languages.get(parent)
+            start_from = self.generated_languages.get(parent)
             while not start_from:
                 time.sleep(2)
-                start_from = generated_languages.get(parent)
+                start_from = self.generated_languages.get(parent)
 
             end_at = start_from.copy()
             for i in range(int(node.length)):
-                end_at.step()
+                end_at.step(random=random)
 
-            generated_languages[name] = end_at
+            self.generated_languages[name] = end_at
 
-            if writer:
-                io_lock.acquire()
-                language.write(name, writer)
-                io_lock.release()
+            return name, end_at
 
-            return name, language
+        def simulate_remainder(self, phylogeny, language=None,
+                               seed=0, writer=None):
+            """Run a simulation restricted to generating new languages.
 
-        p = multiprocessing.Pool(2)
+            Run a simulation of a root language down a phylogeny, skipping
+            nodes that have already been generated.
 
-        for result in p.imap(worker, walk_depth_order(phylogeny)):
-            yield result
+            This method is similar to the `simulate` method, but useful for
+            continuing from an interrupted simulation.
+
+            """
+            for name, language in self.generated_languages.items():
+                if writer:
+                    language.write(name, writer)
+                yield name, language
+            self.generated_languages[None] = language
+            self.raw_seed = seed
+            p = mp.Pool(self.n)
+            for name, language in p.imap(
+                    self.worker,
+                    ((node, height)
+                     for node, height in walk_depth_order(phylogeny)
+                     if node.name not in self.generated_languages)):
+                if writer:
+                    language.write(name, writer)
+                yield name, language
+
+        def simulate(self, phylogeny, language,
+                     seed=0, writer=None):
+            """Run a simulation of a root language down a phylogeny.
+
+            As opposed to the `simulate` function, this method makes use of
+            multiprocessing. The implementation should be equivalent.
+
+            This method tracks languages which have already been generated by
+            name, and therefore expects a tree where all nodes are uniquely
+            named, and raises ValueError otherwise.
+
+            """
+            self.generated_languages[None] = language
+            self.raw_seed = seed
+            p = mp.Pool(self.n)
+
+            for name, language in p.imap(self.worker, walk_depth_order(phylogeny)):
+                if writer:
+                    language.write(name, writer)
+                yield name, language
 

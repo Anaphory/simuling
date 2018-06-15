@@ -15,4 +15,3 @@ class CommentedUnicodeWriter (UnicodeWriter):
             self.f.write(self.comment_prefix)
             self.f.write(row)
             self.f.write('\n')
-

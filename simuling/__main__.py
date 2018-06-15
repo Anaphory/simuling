@@ -69,6 +69,10 @@ if args.wordlist:
         for name, lang in languages.items():
             simulator.generated_languages[name] = Language(lang, semantics)
         simulate = simulator.simulate_remainder
+        # Resuming when the root language is not available doesn't make any
+        # sense, so fill the root language with a nonsense value that will
+        # raise an error later. FIXME: Make the later error message more
+        # transparent.
         language = None
     else:
         if args.language is None:

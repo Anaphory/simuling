@@ -9,7 +9,7 @@ from csvw import UnicodeDictReader
 
 from .cli import (
     argparser, phylogeny, echo, parse_distribution_description,
-    concept_weights)
+    concept_weights, default_network)
 from .simulation import (SemanticNetworkWithConceptWeight, Language,
                          Multiprocess, simulate, constant_zero)
 from .io import CommentedUnicodeWriter
@@ -41,7 +41,7 @@ if args.semantic_network:
         args.semantic_network, args.weight_attribute)
 else:
     semantics = SemanticNetworkWithConceptWeight.load_from_gml(
-        (Path(__file__).absolute().parent / "network-3-families.gml").open(),
+        default_network.open(),
         args.weight_attribute)
 semantics.neighbor_factor = args.neighbor_factor
 

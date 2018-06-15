@@ -4,5 +4,6 @@ python:
 install:
   - python setup.py develop
 script: 
-  - py.test --pep8 --cov --doctest-glob='*.rst' --doctest-modules
-
+  - py.test tests/ --cov simuling/
+  - py.test simuling/ --doctest-modules --doctest-ignore-import-errors --cov simuling/ --cov-append
+  - py.test --pep8

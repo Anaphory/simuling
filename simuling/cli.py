@@ -8,6 +8,7 @@ from pathlib import Path
 
 import newick
 
+default_network = Path(__file__).absolute().parent / "network-3-families.gml"
 
 concept_weights = {
     "one": lambda degree: 1,

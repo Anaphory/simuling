@@ -1,36 +1,39 @@
-import random
+import sys
+import argparse
+
 import collections
+import numpy.random
 from pathlib import Path
 
-from csvw import UnicodeDictReader, UnicodeWriter
+from csvw import UnicodeDictReader
 
 from .cli import (
     argparser, phylogeny, echo, parse_distribution_description,
-    concept_weights)
-from .simulation import (
-    SemanticNetworkWithConceptWeight, Language, simulate)
+    concept_weights, default_network)
+from .simulation import (SemanticNetworkWithConceptWeight, Language,
+                         Multiprocess, simulate, constant_zero)
+from .io import CommentedUnicodeWriter
 
 
-class CommentedUnicodeWriter (UnicodeWriter):
-    def __init__(self, f=None, dialect=None, **kw):
-        comment_prefix = kw.pop('commentPrefix', None)
-        super().__init__(f=f, dialect=dialect, **kw)
-        self.comment_prefix = comment_prefix
+def concept_weight(concept):
+    return concept_weights[args.concept_weight](len(semantics[concept]))
 
-    def writecomment(self, comment):
-        if self.comment_prefix is None:
-            raise ValueError(
-                'Cannot write comments in this csv dialect')
-        for row in comment.split('\n'):
-            self.f.write(self.comment_prefix)
-            self.f.write(row)
-            self.f.write('\n')
+parser = argparser()
+args = parser.parse_args()
 
+if args.multiprocess != 1:
+    simulate = Multiprocess(args.multiprocess).simulate
+if args.resume:
+    resume = True
+    simulate = Multiprocess(args.multiprocess).simulate_remainder
+else:
+    resume = False
 
-args = argparser().parse_args()
+weight = parse_distribution_description(
+    args.weight,
+    random=numpy.random.RandomState(args.seed))
+
 phylogeny = phylogeny(args)
-
-random.seed(args.seed)
 
 
 if args.semantic_network:
@@ -38,41 +41,52 @@ if args.semantic_network:
         args.semantic_network, args.weight_attribute)
 else:
     semantics = SemanticNetworkWithConceptWeight.load_from_gml(
-        (Path(__file__).absolute().parent / "network-3-families.gml").open(),
+        default_network.open(),
         args.weight_attribute)
 semantics.neighbor_factor = args.neighbor_factor
-semantics.concept_weight = lambda concept: concept_weights[
-    args.concept_weight](len(semantics[concept]))
 
-weight = parse_distribution_description(args.weight)
+semantics.concept_weight = concept_weight
+
 if args.wordlist:
     languages = collections.OrderedDict()
-    reader = UnicodeDictReader(args.wordlist)
-    for line in reader:
-        language_id = line["Language_ID"]
-        if args.language and language_id != args.language:
-            continue
-        concept = line["Parameter_ID"]
-        try:
-            wt = int(line["Weight"])
-        except KeyError:
-            wt = weight()
-        word_weights = languages.setdefault(
-            language_id, {}).setdefault(
-                concept, collections.defaultdict(
-                    lambda: 0, {}))
-        word_weights[line["Cognateset_ID"]] = wt
-    if args.language is None:
-        args.language = list(languages)[-1]
-    language = Language(languages[args.language],
-                        semantics)
+    with UnicodeDictReader(args.wordlist) as reader:
+        for line in reader:
+            language_id = line["Language_ID"]
+            if not resume and args.language and language_id != args.language:
+                continue
+            concept = line["Parameter_ID"]
+            try:
+                wt = int(line["Weight"])
+            except KeyError:
+                wt = weight()
+            word_weights = languages.setdefault(
+                language_id, {}).setdefault(
+                    concept, collections.defaultdict(
+                        constant_zero, {}))
+            word_weights[line["Cognateset_ID"]] = wt
+    if resume:
+        simulator = Multiprocess(args.multiprocess)
+        for name, lang in languages.items():
+            simulator.generated_languages[name] = Language(lang, semantics)
+        simulate = simulator.simulate_remainder
+        # Resuming when the root language is not available doesn't make any
+        # sense, so fill the root language with a nonsense value that will
+        # raise an error later. FIXME: Make the later error message more
+        # transparent.
+        language = None
+    else:
+        if args.language is None:
+            args.language = list(languages)[-1]
+        language = Language(languages[args.language],
+                            semantics)
 else:
     raw_language = {
         concept: collections.defaultdict(
-            (lambda: 0), {c: weight()})
+            constant_zero, {c: weight()})
         for c, concept in enumerate(semantics)}
     language = Language(raw_language, semantics)
     Language.max_word = len(raw_language)
+
 with CommentedUnicodeWriter(args.output_file, commentPrefix="# ") as writer:
     writer.writerow(
         ["Language_ID", "Parameter_ID", "Cognateset_ID", "Weight"])
@@ -81,13 +95,7 @@ with CommentedUnicodeWriter(args.output_file, commentPrefix="# ") as writer:
             writer.writecomment(
                 "--{:s} {:}".format(
                     arg, value))
-    for id, data in simulate(phylogeny, language):
-        with Path("test.log").open("a") as log:
-            for concept, words in data.items():
-                for word, weight in words.items():
-                    if weight:
-                        writer.writerow([
-                            id,
-                            concept,
-                            word,
-                            weight])
+    for id, data in simulate(phylogeny, language,
+                             seed=args.seed,
+                             writer=writer):
+        print("Language {:} generated.".format(id))

@@ -2,13 +2,13 @@
 
 """
 
-import random
 import argparse
 import tempfile
 from pathlib import Path
 
 import newick
 
+default_network = Path(__file__).absolute().parent / "network-3-families.gml"
 
 concept_weights = {
     "one": lambda degree: 1,
@@ -17,7 +17,7 @@ concept_weights = {
     "exponential": lambda degree: 2 ** degree}
 
 
-def parse_distribution_description(text, random=random):
+def parse_distribution_description(text, random):
     try:
         name, parameters = text.strip().split("(")
     except ValueError:
@@ -89,6 +89,16 @@ def argparser():
         help="If no tree is given, the log₂ of the maximum branch length"
         " of the long branch, i.e. N from the default value above."
         " (default: 20.)")
+    processing = parser.add_argument_group(
+        "Processing")
+    processing.add_argument(
+        "--resume", action="store_true",
+        default=False,
+        help="Resume a run from a previous partial output")
+    processing.add_argument(
+        "--multiprocess", type=int,
+        default=1,
+        help="The number of parallel processes to run.")
     output = parser.add_argument_group(
         "Output")
     output.add_argument(
@@ -137,6 +147,10 @@ def echo(args):
         if arg == "embed_parameters":
             continue
         if arg == "output_file":
+            continue
+        if arg == "multiprocess":
+            continue
+        if arg == "resume":
             continue
         if value is not None:
             try:

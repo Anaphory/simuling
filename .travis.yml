@@ -6,5 +6,5 @@ install:
   - python setup.py develop
 script: 
   - py.test tests/ --cov simuling/
-  - py.test simuling/ --doctest-modules --doctest-ignore-import-errors --cov simuling/ --cov-append
+  - py.test simuling/ --doctest-modules --cov simuling/ --cov-append
   - py.test --pep8

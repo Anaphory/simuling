@@ -7,28 +7,27 @@ from pathlib import Path
 
 from csvw import UnicodeDictReader
 
-from .cli import (
-    argparser, phylogeny, echo, parse_distribution_description,
-    concept_weights, default_network)
+from .cli import (argparser, phylogeny as phylo_from_arg, echo,
+                  parse_distribution_description, concept_weights,
+                  default_network)
 from .simulation import (SemanticNetworkWithConceptWeight, Language,
                          Multiprocess, simulate, constant_zero)
 from .io import CommentedUnicodeWriter
 
 
-def concept_weight(concept):
-    return concept_weights[args.concept_weight](len(semantics[concept]))
-
-
-if __name__ == "__main__":
-    # This should not be necessary, but py.test tries to import this and fails.
+def main():
     parser = argparser()
     args = parser.parse_args()
 
+    def concept_weight(concept):
+        return concept_weights[args.concept_weight](len(semantics[concept]))
+
+    simulator = simulate
     if args.multiprocess != 1:
-        simulate = Multiprocess(args.multiprocess).simulate
+        simulator = Multiprocess(args.multiprocess).simulate
     if args.resume:
         resume = True
-        simulate = Multiprocess(args.multiprocess).simulate_remainder
+        simulator = Multiprocess(args.multiprocess).simulate_remainder
     else:
         resume = False
 
@@ -36,7 +35,7 @@ if __name__ == "__main__":
         args.weight,
         random=numpy.random.RandomState(args.seed))
 
-    phylogeny = phylogeny(args)
+    phylogeny = phylo_from_arg(args)
 
     if args.semantic_network:
         semantics = SemanticNetworkWithConceptWeight.load_from_gml(
@@ -71,7 +70,7 @@ if __name__ == "__main__":
             simulator = Multiprocess(args.multiprocess)
             for name, lang in languages.items():
                 simulator.generated_languages[name] = Language(lang, semantics)
-            simulate = simulator.simulate_remainder
+            simulator = simulator.simulate_remainder
             # Resuming when the root language is not available doesn't make any
             # sense, so fill the root language with a nonsense value that will
             # raise an error later. FIXME: Make the later error message more
@@ -99,7 +98,12 @@ if __name__ == "__main__":
                 writer.writecomment(
                     "--{:s} {:}".format(
                         arg, value))
-        for id, data in simulate(phylogeny, language,
+        for id, data in simulator(phylogeny, language,
                                  seed=args.seed,
                                  writer=writer):
             print("Language {:} generated.".format(id))
+
+
+if __name__ == "__main__":
+    # This should not be necessary, but py.test tries to import this and fails.
+    main()

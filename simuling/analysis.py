@@ -217,7 +217,7 @@ def image_name(key):
 
 
 def properties(file):
-    if not (file.name.startswith("trivial_long_") and
+    if not (file.name.startswith("long_branch_") and
             file.name.endswith(".csv")):
         return None
     properties = {}
@@ -252,7 +252,7 @@ def property_key(property):
     return key
 
 
-def semantic_width(data, column="Cognate_Set"):
+def semantic_width(data, column="Cognateset_ID"):
     """Calculate average synonym count.
 
     Calculate the average weighted semantic width in the language
@@ -275,7 +275,7 @@ def synonymity(data):
     represented by data.
 
     """
-    return semantic_width(data, column="Feature_ID")
+    return semantic_width(data, column="Parameter_ID")
 
 
 def load(key, path="../", sample_data=sample_data):

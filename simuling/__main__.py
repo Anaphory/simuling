@@ -15,12 +15,11 @@ from .simulation import (SemanticNetworkWithConceptWeight, Language,
 from .io import CommentedUnicodeWriter
 
 
-def main():
-    parser = argparser()
-    args = parser.parse_args()
-
+def prepare(parser):
     def concept_weight(concept):
         return concept_weights[args.concept_weight](len(semantics[concept]))
+
+    args = parser.parse_args()
 
     simulator = simulate
     if args.multiprocess != 1:
@@ -35,7 +34,7 @@ def main():
         args.weight,
         random=numpy.random.RandomState(args.seed))
 
-    phylogeny = phylo_from_arg(args)
+    args.phylogeny = phylo_from_arg(args)
 
     if args.semantic_network:
         semantics = SemanticNetworkWithConceptWeight.load_from_gml(
@@ -88,9 +87,13 @@ def main():
             for c, concept in enumerate(semantics)}
         language = Language(raw_language, semantics)
         Language.max_word = len(raw_language)
+    args.simulator = simulator
+    args.language = language
+    return args
 
+def run_and_write(args):
     with CommentedUnicodeWriter(
-            args.output_file, commentPrefix="# ") as writer:
+            args.output, commentPrefix="# ") as writer:
         writer.writerow(
             ["Language_ID", "Parameter_ID", "Cognateset_ID", "Weight"])
         if args.embed_parameters:
@@ -98,12 +101,15 @@ def main():
                 writer.writecomment(
                     "--{:s} {:}".format(
                         arg, value))
-        for id, data in simulator(phylogeny, language,
-                                 seed=args.seed,
-                                 writer=writer):
-            print("Language {:} generated.".format(id))
+        for id, data in args.simulator(args.phylogeny, args.language,
+                                       seed=args.seed,
+                                       writer=writer):
+            yield id, data
 
 
 if __name__ == "__main__":
     # This should not be necessary, but py.test tries to import this and fails.
-    main()
+    parser = argparser()
+    parameters = prepare(parser)
+    for id, data in run_and_write(parameters):
+        print("Language {:} generated.".format(id))

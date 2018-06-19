@@ -40,9 +40,9 @@ def new_output_file():
 def write_parameter_line(updater, arguments=default_properties):
     arguments = arguments.copy()
     arguments.update(updater)
-    arguments["--output-file"] = new_output_file()
+    arguments["--output"] = new_output_file()
     print("cat {:} || python3 -m simuling --embed ".format(
-        arguments["--output-file"]) + " ".join(
+        arguments["--output"]) + " ".join(
             "{:} {:}".format(argument.replace("_", "-"),
                              shlex.quote(str(value)))
             for argument, value in arguments.items()))

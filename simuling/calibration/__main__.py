@@ -11,19 +11,15 @@ steps.
 import itertools
 
 import os
-import sys
 import argparse
 import tempfile
 
 import csvw
 import newick
-import networkx
 
-from .compare_simulation_with_data import (
-    read_cldf)
-from pycldf.util import Path
+from clldutils.path import Path
 
-from .util import run_sims_and_calc_lk, cached_realdata
+from .util import cached_realdata
 
 from ..cli import argparser as basic_argparser
 
@@ -153,7 +149,6 @@ def main():
             args.root_language_data = root_language.copy()
 
             squared_error = 0
-            scores = {}
             for (l1, vocabulary1), (l2, vocabulary2) in (
                     itertools.combinations(run_and_write(args), 2)):
                 # Normalize the key, that is, the pair (l1, l2)
@@ -204,11 +199,11 @@ def main():
 
             min_error_at = max(sq_errors, key=sq_errors.get)
             try:
-                upper = min(i for i in sq_errors if i > max_lk_at)
+                upper = min(i for i in sq_errors if i > min_error_at)
             except ValueError:
                 pass
             try:
-                lower = max(i for i in sq_errors if i < max_lk_at)
+                lower = max(i for i in sq_errors if i < min_error_at)
             except ValueError:
                 pass
 

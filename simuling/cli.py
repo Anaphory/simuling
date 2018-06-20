@@ -4,7 +4,7 @@
 
 import argparse
 import tempfile
-from pathlib import Path
+from clldutils.path import Path
 
 import newick
 

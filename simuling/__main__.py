@@ -1,9 +1,6 @@
-import sys
-import argparse
 
 import collections
 import numpy.random
-from pathlib import Path
 
 from csvw import UnicodeDictReader
 

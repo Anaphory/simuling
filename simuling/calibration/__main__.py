@@ -94,7 +94,7 @@ def main():
     parser = argparser()
     args = prepare(parser)
     path = args.output
-    os.chdir(path)
+    os.chdir(str(path))
 
     raw_seed = args.seed
 

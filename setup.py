@@ -17,6 +17,7 @@ setup(
     },
     install_requires=[
         "networkx",
+        "matplotlib",
         "lingpy",
         "numpy",
         "pandas",

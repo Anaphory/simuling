@@ -15,6 +15,7 @@ import sys
 import argparse
 import tempfile
 
+import csvw
 import newick
 import networkx
 
@@ -120,91 +121,101 @@ def main():
 
 
     phylogeny = args.phylogeny
-    root_language = args.language
+    root_language = args.root_language_data
 
-    def shared_vocabulary(l1, l2):
-        score = 0
-        features = set(l1) | set(l2)
-        n_features = 0
-        for feature in features:
-            cognateset1 = set(word
-                              for word, weight in l1[feature].items()
-                              if weight > args.threshold)
-            cognateset2 = set(word
-                              for word, weight in l2[feature].items()
-                              if weight > args.threshold)
-            if cognateset1 | cognateset2:
-                # Due to the filtering, this can end up empty
-                score += (len(cognateset1 & cognateset2) /
-                        len(cognateset1 | cognateset2))
-                n_features += 1
-        return score / n_features
+    with csvw.UnicodeWriter(
+            Path("shared_vocabularies.csv").open("w")) as writer:
+        writer.writerow(["data", "scale", "error"] +
+                        ["{:}:{:}".format(l1, l2) for l1, l2 in realdata])
+        writer.writerow(["", "", ""] + list(realdata.values()))
 
-    def simulate_scale(scale, seed):
-        # FIXME: Use deepcopy or something.
-        args.phylogeny = scaled_copy_of(phylogeny, scale)
-        args.output = "calibration_{:f}_{:d}.csv".format(scale, seed)
-        args.seed = raw_seed + seed
-        args.language = root_language.copy()
-        results = {language: data for language, data in run_and_write(args)}
+        def shared_vocabulary(l1, l2):
+            score = 0
+            features = set(l1) | set(l2)
+            n_features = 0
+            for feature in features:
+                cognateset1 = set(word
+                                for word, weight in l1[feature].items()
+                                if weight > args.threshold)
+                cognateset2 = set(word
+                                for word, weight in l2[feature].items()
+                                if weight > args.threshold)
+                if cognateset1 | cognateset2:
+                    # Due to the filtering, this can end up empty
+                    score += (len(cognateset1 & cognateset2) /
+                            len(cognateset1 | cognateset2))
+                    n_features += 1
+            return score / n_features
 
-        squared_error = 0
-        for (l1, vocabulary1), (l2, vocabulary2) \
-                in itertools.combinations(results.items(), 2):
-            # Normalize the key, that is, the pair (l1, l2)
-            if l1 > l2:
-                l1, l2 = l2, l1
-            if ((l1, l2) in ignore_pairs or
-                l1 in ignore_singletons or
-                l2 in ignore_singletons):
-                continue
-            score = shared_vocabulary(vocabulary1, vocabulary2)
-            print(l1, l2, score)
+        def simulate_scale(scale, seed):
+            # FIXME: Use deepcopy or something.
+            args.phylogeny = scaled_copy_of(phylogeny, scale)
+            args.output = "calibration_{:f}_{:d}.csv".format(scale, seed)
+            args.seed = raw_seed + seed
+            args.root_language_data = root_language.copy()
+
+            squared_error = 0
+            scores = {}
+            for (l1, vocabulary1), (l2, vocabulary2) \
+                    in itertools.combinations(run_and_write(args), 2):
+                # Normalize the key, that is, the pair (l1, l2)
+                if l1 > l2:
+                    l1, l2 = l2, l1
+                if ((l1, l2) in ignore_pairs or
+                    l1 in ignore_singletons or
+                    l2 in ignore_singletons):
+                    continue
+                score = shared_vocabulary(vocabulary1, vocabulary2)
+                try:
+                    error = (realdata[l1, l2] - score)
+                    scores[l1, l2] = score
+                except KeyError:
+                    continue
+                squared_error += error ** 2
+
+            writer.writerow([
+                args.output,
+                scale,
+                squared_error] + [
+                    scores[l1, l2] for l1, l2 in realdata])
+            return squared_error
+
+        sq_errors = {
+            lower: mean(simulate_scale(lower, seed)
+                        for seed in range(args.sims)),
+            upper: mean(simulate_scale(upper, seed)
+                    for seed in range(args.sims))}
+
+        try:
+            # Take steps that are between the upper and lower scaling factor
+            # (geometrically evenly spaced, but that should not be important). As long
+            # as the two intermediate spots match the original data better than the
+            # border points, and the borders are more than 0.1% different, try to find
+            # a better fit by narrowing the distance between the borders, taking the
+            # middle points as new borders.
+            while upper / lower > 1.001:
+                for scale in [
+                        (lower**2 * upper) ** (1 / 3)
+                        (lower * upper**2) ** (1 / 3)]:
+                    sq_errors[scale] = mean(
+                        simulate_scale(scale, seed)
+                        for seed in range(args.sims))
+                    if (sq_errors[scale] > sq_errors[lower] and
+                        sq_errors[scale] > sq_errors[upper]):
+                        raise StopIteration
+
+            min_error_at = max(sq_errors, key=sq_errors.get)
             try:
-                error = (realdata[l1, l2] - score)
-            except KeyError:
-                continue
-            squared_error += error ** 2
+                upper = min(i for i in sq_errors if i > max_lk_at)
+            except ValueError:
+                pass
+            try:
+                lower = max(i for i in sq_errors if i < max_lk_at)
+            except ValueError:
+                pass
 
-        print(scale, seed, squared_error)
-        return squared_error
-
-    sq_errors = {
-        lower: mean(simulate_scale(lower, seed)
-                    for seed in range(args.sims)),
-        upper: mean(simulate_scale(upper, seed)
-                  for seed in range(args.sims))}
-
-    # Take steps that are between the upper and lower scaling factor
-    # (geometrically evenly spaced, but that should not be important). As long
-    # as the two intermediate spots match the original data better than the
-    # border points, and the borders are more than 0.1% different, try to find
-    # a better fit by narrowing the distance between the borders, taking the
-    # middle points as new borders.
-    try:
-        while upper / lower > 1.001:
-            for scale in [
-                    (lower**2 * upper) ** (1 / 3)
-                    (lower * upper**2) ** (1 / 3)]:
-                sq_errors[scale] = mean(
-                    simulate_scale(scale, seed)
-                    for seed in range(args.sims))
-                if (sq_errors[scale] > sq_errors[lower] and
-                    sq_errors[scale] > sq_errors[upper]):
-                    raise StopIteration
-
-        min_error_at = max(sq_errors, key=sq_errors.get)
-        try:
-            upper = min(i for i in sq_errors if i > max_lk_at)
-        except ValueError:
+        except (StopIteration, KeyboardInterrupt):
             pass
-        try:
-            lower = max(i for i in sq_errors if i < max_lk_at)
-        except ValueError:
-            pass
-
-    except StopIteration:
-        pass
 
     print("Simulation likelihoods:")
     for x in sorted(sq_errors):

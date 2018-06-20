@@ -152,6 +152,8 @@ def echo(args):
             continue
         if arg == "resume":
             continue
+        if arg == "root_language_data":
+            continue
         if value is not None:
             try:
                 value = value.name

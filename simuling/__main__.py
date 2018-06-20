@@ -88,7 +88,7 @@ def prepare(parser):
         language = Language(raw_language, semantics)
         Language.max_word = len(raw_language)
     args.simulator = simulator
-    args.language = language
+    args.root_language_data = language
     return args
 
 def run_and_write(args):
@@ -101,9 +101,11 @@ def run_and_write(args):
                 writer.writecomment(
                     "--{:s} {:}".format(
                         arg, value))
-        for id, data in args.simulator(args.phylogeny, args.language,
-                                       seed=args.seed,
-                                       writer=writer):
+        for id, data in args.simulator(
+                args.phylogeny, args.root_language_data,
+                seed=args.seed,
+                writer=writer):
+            print("Language {:} generated.".format(id))
             yield id, data
 
 
@@ -112,4 +114,4 @@ if __name__ == "__main__":
     parser = argparser()
     parameters = prepare(parser)
     for id, data in run_and_write(parameters):
-        print("Language {:} generated.".format(id))
+        pass

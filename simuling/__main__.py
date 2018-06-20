@@ -91,6 +91,7 @@ def prepare(parser):
     args.root_language_data = language
     return args
 
+
 def run_and_write(args):
     with CommentedUnicodeWriter(
             args.output, commentPrefix="# ") as writer:

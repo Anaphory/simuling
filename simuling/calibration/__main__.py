@@ -119,7 +119,6 @@ def main():
             except ValueError:
                 ignore_singletons.add(i)
 
-
     phylogeny = args.phylogeny
     root_language = args.root_language_data
 
@@ -135,15 +134,15 @@ def main():
             n_features = 0
             for feature in features:
                 cognateset1 = set(word
-                                for word, weight in l1[feature].items()
-                                if weight > args.threshold)
+                                  for word, weight in l1[feature].items()
+                                  if weight > args.threshold)
                 cognateset2 = set(word
-                                for word, weight in l2[feature].items()
-                                if weight > args.threshold)
+                                  for word, weight in l2[feature].items()
+                                  if weight > args.threshold)
                 if cognateset1 | cognateset2:
                     # Due to the filtering, this can end up empty
                     score += (len(cognateset1 & cognateset2) /
-                            len(cognateset1 | cognateset2))
+                              len(cognateset1 | cognateset2))
                     n_features += 1
             return score / n_features
 
@@ -156,14 +155,14 @@ def main():
 
             squared_error = 0
             scores = {}
-            for (l1, vocabulary1), (l2, vocabulary2) \
-                    in itertools.combinations(run_and_write(args), 2):
+            for ((l1, vocabulary1), (l2, vocabulary2) in
+                 itertools.combinations(run_and_write(args), 2)):
                 # Normalize the key, that is, the pair (l1, l2)
                 if l1 > l2:
                     l1, l2 = l2, l1
-                if ((l1, l2) in ignore_pairs or
-                    l1 in ignore_singletons or
-                    l2 in ignore_singletons):
+                if (((l1, l2) in ignore_pairs or
+                     l1 in ignore_singletons or
+                     l2 in ignore_singletons)):
                     continue
                 score = shared_vocabulary(vocabulary1, vocabulary2)
                 try:
@@ -184,15 +183,15 @@ def main():
             lower: mean(simulate_scale(lower, seed)
                         for seed in range(args.sims)),
             upper: mean(simulate_scale(upper, seed)
-                    for seed in range(args.sims))}
+                        for seed in range(args.sims))}
 
         try:
             # Take steps that are between the upper and lower scaling factor
-            # (geometrically evenly spaced, but that should not be important). As long
-            # as the two intermediate spots match the original data better than the
-            # border points, and the borders are more than 0.1% different, try to find
-            # a better fit by narrowing the distance between the borders, taking the
-            # middle points as new borders.
+            # (geometrically evenly spaced, but that should not be important).
+            # As long as the two intermediate spots match the original data
+            # better than the border points, and the borders are more than 0.1%
+            # different, try to find a better fit by narrowing the distance
+            # between the borders, taking the middle points as new borders.
             while upper / lower > 1.001:
                 for scale in [
                         (lower**2 * upper) ** (1 / 3)
@@ -200,8 +199,8 @@ def main():
                     sq_errors[scale] = mean(
                         simulate_scale(scale, seed)
                         for seed in range(args.sims))
-                    if (sq_errors[scale] > sq_errors[lower] and
-                        sq_errors[scale] > sq_errors[upper]):
+                    if ((sq_errors[scale] > sq_errors[lower] and
+                         sq_errors[scale] > sq_errors[upper])):
                         raise StopIteration
 
             min_error_at = max(sq_errors, key=sq_errors.get)

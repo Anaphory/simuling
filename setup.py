@@ -22,6 +22,7 @@ setup(
         "numpy",
         "pandas",
         "pytest",
+        "pycldf",
         "pytest-cov",
         "pytest-pep8",
         "sumatra",

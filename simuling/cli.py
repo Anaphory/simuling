@@ -102,7 +102,7 @@ def argparser():
     output = parser.add_argument_group(
         "Output")
     output.add_argument(
-        "--output-file", type=argparse.FileType("w"),
+        "--output", type=argparse.FileType("w"),
         default=tempfile.mkstemp()[0],
         help="The file to write output data to (in CLDF-like CSV)."
         " (default: A temporary file.)")
@@ -151,6 +151,8 @@ def echo(args):
         if arg == "multiprocess":
             continue
         if arg == "resume":
+            continue
+        if arg == "root_language_data":
             continue
         if value is not None:
             try:

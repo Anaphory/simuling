@@ -27,7 +27,6 @@ from .util import run_sims_and_calc_lk, cached_realdata
 
 from ..cli import argparser as basic_argparser
 
-from phyltr.commands.scale import Scale
 from ..__main__ import run_and_write, prepare
 
 

@@ -155,8 +155,8 @@ def main():
 
             squared_error = 0
             scores = {}
-            for ((l1, vocabulary1), (l2, vocabulary2) in
-                 itertools.combinations(run_and_write(args), 2)):
+            for (l1, vocabulary1), (l2, vocabulary2) in (
+                    itertools.combinations(run_and_write(args), 2)):
                 # Normalize the key, that is, the pair (l1, l2)
                 if l1 > l2:
                     l1, l2 = l2, l1

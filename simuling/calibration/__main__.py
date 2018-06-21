@@ -188,7 +188,7 @@ def main():
             # between the borders, taking the middle points as new borders.
             while upper / lower > 1.001:
                 for scale in [
-                        (lower**2 * upper) ** (1 / 3)
+                        (lower**2 * upper) ** (1 / 3),
                         (lower * upper**2) ** (1 / 3)]:
                     sq_errors[scale] = mean(
                         simulate_scale(scale, seed)

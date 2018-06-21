@@ -10,20 +10,123 @@ steps.
 
 import itertools
 
+import json
+import pandas
+
 import os
 import argparse
 import tempfile
+from clldutils.path import Path
 
 import csvw
 import newick
 
-from clldutils.path import Path
+from ..cli import argparser as basic_argparser,  run_and_write, prepare
 
-from .util import cached_realdata
 
-from ..cli import argparser as basic_argparser
+# TODO: Make the language reading code from cli generally useable and re-use it
+# here.
+def read_cldf(file, features=None, sample_threshold=0, top_word_only=True):
+    """Read a CLDF TSV file.
 
-from ..__main__ import run_and_write, prepare
+    Read a tsv file as output by the simulation and rename the columns
+    such that the cognate IDs become `value`.
+
+    Use features=None for all features, or supply a sequence of feature
+    IDs to filter.
+
+    """
+    sep = "\t"
+    if hasattr(file, 'name') and file.name.endswith("csv"):
+        sep = ","
+    elif hasattr(file, 'endswith') and file.endswith("csv"):
+        sep = ","
+    elif hasattr(file, 'seek'):
+        ...
+
+    data = pandas.read_csv(file, sep=sep, index_col="ID")
+    if "Parameter_ID" in data.columns:
+        if "Feature_ID" in data.columns:
+            raise ValueError(
+                "Two feature id columns: Parameter_ID and Feature_ID!")
+        data.columns = ["Feature_ID" if c == "Parameter_ID" else c
+                        for c in data.columns]
+    if features is None:
+        pass
+    else:
+        include = (data["Feature_ID"] == object())
+        for feature in features:
+            include |= data["Feature_ID"] == feature
+        data = data[include]
+    data = data[~pandas.isnull(data["Feature_ID"])]
+    if sample_threshold:
+        data = data[data["Weight"] > sample_threshold]
+    if top_word_only:
+        data.sort_values(by="Weight", inplace=True)
+        data = data.groupby([
+            "Feature_ID", "Language_ID"]).last().reset_index(drop=False)
+    return data
+
+
+def shared_vocabulary(vocab1, vocab2):
+    """Calculate the proportion of shared items between two wordlists.
+
+    For the pair of languages which are sampled in `vocab1` and
+    `vocab2`, calculate how many cognate-meaning pairs they
+    share. Multiple cognates in one meaning slot are counted as
+    |C∪D|/|C∩D|, or 1/|C∪D| if one of the meanings is unattested.
+
+    """
+    features_present_in_one = set(
+        vocab1["Feature_ID"]) | set(vocab2["Feature_ID"])
+    score = 0
+    for feature in features_present_in_one:
+        cognateset1 = set(vocab1["Cognate_Set"][
+            vocab1["Feature_ID"] == feature])
+        cognateset2 = set(vocab2["Cognate_Set"][
+            vocab2["Feature_ID"] == feature])
+        score += (len(cognateset1 & cognateset2) /
+                  len(cognateset1 | cognateset2))
+    return score / len(features_present_in_one)
+
+
+def pairwise_shared_vocabulary(data, verbose=True):
+    """Calculate the proportion of shared vocabulary from the data.
+
+    For every pair of languages, calculate how many cognate-meaning
+    pairs they share. Multiple cognates in one meaning slot are
+    counted as |C∪D|/|C∩D|, or 1/|C∪D| if one of the meanings is
+    unattested.
+
+    """
+    for (language1, vocabulary1), (language2, vocabulary2) \
+            in itertools.combinations(data.groupby("Language_ID"), 2):
+        score = shared_vocabulary(vocabulary1, vocabulary2)
+        if verbose:
+            print(language1, language2, score)
+        yield (language1, language2), score
+
+
+def cached_realdata(data):
+    try:
+        with open(os.path.join(
+                os.path.dirname(__file__),
+                "pairwise_shared_vocabulary.json")) as realdata_cache:
+            realdata = json.load(realdata_cache)
+        realdata_cache_filename = realdata.pop("FILENAME")
+        if realdata_cache_filename != data.name:
+            raise ValueError("Cached filename mismatches data file")
+    except (FileNotFoundError, ValueError):
+        realdata = {" ".join(pair): score
+                    for pair, score in pairwise_shared_vocabulary(
+                            read_cldf(data, sample_threshold=None,
+                                      top_word_only=False))}
+        realdata["FILENAME"] = data.name
+        with open(os.path.join(
+                os.path.dirname(__file__),
+                "pairwise_shared_vocabulary.json"), "w") as realdata_cache:
+            json.dump(realdata, realdata_cache)
+    return {tuple(key.split()): value for key, value in realdata.items()}
 
 
 def mean(x):

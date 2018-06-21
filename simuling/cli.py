@@ -2,11 +2,20 @@
 
 """
 
+import collections
+import numpy.random
+
 import argparse
 import tempfile
 from clldutils.path import Path
 
+from csvw import UnicodeDictReader
 import newick
+
+from .io import CommentedUnicodeWriter
+from .simulation import (simulate, Multiprocess, phylo_from_arg,
+                         SemanticNetworkWithConceptWeight, constant_zero,
+                         Language)
 
 default_network = Path(__file__).absolute().parent / "network-3-families.gml"
 
@@ -160,3 +169,98 @@ def echo(args):
             except AttributeError:
                 pass
             yield arg, value
+
+
+def prepare(parser):
+    def concept_weight(concept):
+        return concept_weights[args.concept_weight](len(semantics[concept]))
+
+    args = parser.parse_args()
+
+    simulator = simulate
+    if args.multiprocess != 1:
+        simulator = Multiprocess(args.multiprocess).simulate
+    if args.resume:
+        resume = True
+        simulator = Multiprocess(args.multiprocess).simulate_remainder
+    else:
+        resume = False
+
+    weight = parse_distribution_description(
+        args.weight,
+        random=numpy.random.RandomState(args.seed))
+
+    args.phylogeny = phylo_from_arg(args)
+
+    if args.semantic_network:
+        semantics = SemanticNetworkWithConceptWeight.load_from_gml(
+            args.semantic_network, args.weight_attribute)
+    else:
+        semantics = SemanticNetworkWithConceptWeight.load_from_gml(
+            default_network.open(),
+            args.weight_attribute)
+    semantics.neighbor_factor = args.neighbor_factor
+
+    semantics.concept_weight = concept_weight
+
+    if args.wordlist:
+        languages = collections.OrderedDict()
+        with UnicodeDictReader(args.wordlist) as reader:
+            for line in reader:
+                language_id = line["Language_ID"]
+                if not resume and (args.language and
+                                   language_id != args.language):
+                    continue
+                concept = line["Parameter_ID"]
+                try:
+                    wt = int(line["Weight"])
+                except KeyError:
+                    wt = weight()
+                word_weights = languages.setdefault(
+                    language_id, {}).setdefault(
+                        concept, collections.defaultdict(
+                            constant_zero, {}))
+                word_weights[line["Cognateset_ID"]] = wt
+        if resume:
+            simulator = Multiprocess(args.multiprocess)
+            for name, lang in languages.items():
+                simulator.generated_languages[name] = Language(lang, semantics)
+            simulator = simulator.simulate_remainder
+            # Resuming when the root language is not available doesn't make any
+            # sense, so fill the root language with a nonsense value that will
+            # raise an error later. FIXME: Make the later error message more
+            # transparent.
+            language = None
+        else:
+            if args.language is None:
+                args.language = list(languages)[-1]
+            language = Language(languages[args.language],
+                                semantics)
+    else:
+        raw_language = {
+            concept: collections.defaultdict(
+                constant_zero, {c: weight()})
+            for c, concept in enumerate(semantics)}
+        language = Language(raw_language, semantics)
+        Language.max_word = len(raw_language)
+    args.simulator = simulator
+    args.root_language_data = language
+    return args
+
+
+def run_and_write(args):
+    with CommentedUnicodeWriter(
+            args.output, commentPrefix="# ") as writer:
+        writer.writerow(
+            ["Language_ID", "Parameter_ID", "Cognateset_ID", "Weight"])
+        if args.embed_parameters:
+            for arg, value in echo(args):
+                writer.writecomment(
+                    "--{:s} {:}".format(
+                        arg, value))
+        for id, data in args.simulator(
+                args.phylogeny, args.root_language_data,
+                seed=args.seed,
+                writer=writer):
+            print("Language {:} generated.".format(id))
+            yield id, data

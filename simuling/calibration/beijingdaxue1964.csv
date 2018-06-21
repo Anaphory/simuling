@@ -1,4 +1,4 @@
-,ID,Language_name,Language_ID,Language_iso,Parameter_ID,Parameter_name,Source,Comment,Parameter_Chinese,Parameter_Pinyin,Value,Form,Segments,Cognate_Set,Cognate_Sets,Alignments,Order,Beida_ID,Page,Benzi,Benzi_in_source
+,ID,Language_name,Language_ID,Language_iso,Parameter_ID,Parameter_name,Source,Comment,Parameter_Chinese,Parameter_Pinyin,Value,Form,Segments,Cognateset_ID,Cognate_Sets,Alignments,Order,Beida_ID,Page,Benzi,Benzi_in_source
 0,16629,Beijing,beij1234,cmn,2188,Chinese New Year's Eve (chú xī 除夕),BeijingDaxue1964,,除夕,chú xī,ta⁵¹nian³⁵san⁵⁵ʂʅr³⁵,ta⁵¹nian³⁵san⁵⁵ʂʅr³⁵,t a ⁵¹ n i a n ³⁵ s a n ⁵⁵ ʂ */ʅ ³⁵,1,47 391 392 393,t a - - ⁵¹ + n i - a n - ³⁵ + s a n ⁵⁵ + ʂ */ʅ - - ³⁵,1,48,24,大 年 三 十,大年三十兒
 1,16630,Beijing,beij1234,cmn,2188,Chinese New Year's Eve (chú xī 除夕),BeijingDaxue1964,[2],除夕,chú xī,san⁵⁵ʂʅr³⁵uan²¹⁴₂₁ʂaŋ⁰,san⁵⁵ʂʅr³⁵uan²¹⁴₂₁ʂaŋ⁰,s a n ⁵⁵ ʂ */ʅ ³⁵ u a n ²¹/²¹⁴ ʂ a ŋ ⁰,2,392 393 394 96,s a n ⁵⁵ + ʂ */ʅ - - ³⁵ + - u a n - ²¹/²¹⁴ + ʂ a - ŋ ⁰,2,48,24,三 十 晚 上,三十兒晚上
 2,16631,Jinan,jina1245,cmn,2188,Chinese New Year's Eve (chú xī 除夕),BeijingDaxue1964,,除夕,chú xī,sæ̃²¹³ʂʅr⁴²,sæ̃²¹³ʂʅr⁴²,s æ̃ ∼ ²¹³ ʂ */ʅ ⁴²,3,392 393,s æ̃ ∼ ²¹³ + ʂ */ʅ - - ⁴²,1,48,24,三 十,三十兒

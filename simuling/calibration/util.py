@@ -44,7 +44,7 @@ def cached_realdata(data):
             raise ValueError("Cached filename mismatches data file")
     except (FileNotFoundError, ValueError):
         languages = read_wordlist(data, None, all_languages=True,
-                                  weight=10)
+                                  weight=lambda: 10)
         for (l1, vocabulary1), (l2, vocabulary2) in (
                 itertools.combinations(languages.items(), 2)):
             # Normalize the key, that is, the pair (l1, l2)
@@ -57,4 +57,5 @@ def cached_realdata(data):
                 os.path.dirname(__file__),
                 "pairwise_shared_vocabulary.json"), "w") as realdata_cache:
             json.dump(realdata, realdata_cache)
+        realdata_cache_filename = realdata.pop("FILENAME")
     return {tuple(key.split()): value for key, value in realdata.items()}

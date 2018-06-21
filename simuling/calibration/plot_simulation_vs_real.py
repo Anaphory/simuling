@@ -7,11 +7,13 @@ a tree on top of the real proportions.
 
 """
 
-import matplotlib.pyplot as plt
+import itertools
 
 import sys
 import os.path
 import argparse
+
+import matplotlib.pyplot as plt
 
 from .util import cached_realdata, shared_vocabulary, read_wordlist
 
@@ -55,19 +57,18 @@ def main(args=sys.argv):
         help="language pairs (separated by '-') to ignore")
     args = parser.parse_args(args)
 
-    x, names = cached_realdata(args.realdata)
+    realdata = cached_realdata(args.realdata)
     for pair in args.exclude:
         first, second = sorted(pair.split("-"))
-        try:
-            i = names.index((first, second))
-            del x[i]
-            del names[i]
-        except ValueError:
-            continue
-    print("point", "error", *["'{:}-{:}'".format(n1, n2) for n1, n2 in names],
-          sep="\t")
-    print("real", "0", *x, sep="\t")
-    plt.plot(x, x, "--", c="0.5")
+        realdata.pop((first, second), None)
+    print("point", "error",
+          *["'{:}-{:}'".format(n1, n2) for n1, n2 in realdata], sep="\t")
+    print("real", "0", *realdata.values(), sep="\t")
+
+    names = sorted(realdata, key=realdata.get)
+    x = [realdata[n] for n in names]
+
+    plt.plot(x, x, "-", c="0.5")
 
     ax = plt.gca()
     ax.set_xticks(x)
@@ -76,16 +77,33 @@ def main(args=sys.argv):
     parameters = []
     errors = []
     for sim in args.simulationdata:
-        y = plot_vocabulary(x, names, read_wordlist(sim, sample_threshold=4),
-                            name=sim.name)
-        error = (sum([(xi-yi)**2 for xi, yi in zip(x, y)])/len(x))**0.5
         try:
             p = float(os.path.basename(sim.name).split("_")[1])
         except (AttributeError, TypeError):
             p = float("nan")
+
+        scores = {}
+        squared_error = 0
+        for (l1, vocabulary1), (l2, vocabulary2) in (
+                itertools.combinations(read_wordlist(
+                    sim, semantics=None, all_languages=True).items(), 2)):
+            # Normalize the key, that is, the pair (l1, l2)
+            if l1 > l2:
+                l1, l2 = l2, l1
+            score = shared_vocabulary(vocabulary1, vocabulary2)
+            try:
+                error = (realdata[l1, l2] - score)
+                scores[l1, l2] = score
+            except KeyError:
+                continue
+            squared_error += error ** 2
+
+        y = [scores.get(n) for n in names]
+        plt.plot(x, y, "--", label=str(p))
+
+        print(sim.name, p, squared_error, *y, sep="\t")
         parameters.append(p)
-        errors.append(error)
-        print(sim.name, p, error, *y, sep="\t")
+        errors.append(squared_error)
 
     plt.legend()
 

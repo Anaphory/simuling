@@ -68,7 +68,7 @@ def main(args=sys.argv):
     names = sorted(realdata, key=realdata.get)
     x = [realdata[n] for n in names]
 
-    plt.plot(x, x, "-", c="0.5")
+    plt.plot(x, x, "--", c="0.5")
 
     ax = plt.gca()
     ax.set_xticks(x)
@@ -76,6 +76,7 @@ def main(args=sys.argv):
 
     parameters = []
     errors = []
+    colors = {}
     for sim in args.simulationdata:
         try:
             p = float(os.path.basename(sim.name).split("_")[1])
@@ -99,11 +100,18 @@ def main(args=sys.argv):
             squared_error += error ** 2
 
         y = [scores.get(n) for n in names]
-        plt.plot(x, y, "--", label=str(p))
+        if p in colors:
+            plt.plot(x, y, "-", c=colors[p])
+        else:
+            colors[p] = plt.plot(x, y, "-", label=p)[0]._color
 
         print(sim.name, p, squared_error, *y, sep="\t")
-        parameters.append(p)
-        errors.append(squared_error)
+        try:
+            mean_squared_error = squared_error / len(scores)
+            errors.append(mean_squared_error)
+            parameters.append(p)
+        except ZeroDivisionError:
+            continue
 
     plt.legend()
 

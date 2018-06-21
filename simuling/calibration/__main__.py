@@ -247,6 +247,7 @@ def main():
         def simulate_scale(scale, seed):
             # FIXME: Use deepcopy or something.
             args.phylogeny = scaled_copy_of(phylogeny, scale)
+            args.tree = args.phylogeny
             args.output = "calibration_{:f}_{:d}.csv".format(scale, seed)
             args.seed = raw_seed + seed
             args.root_language_data = root_language.copy()

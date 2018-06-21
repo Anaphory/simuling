@@ -123,10 +123,10 @@ def argparser():
     return parser
 
 
-def phylo_from_arg(args):
+def phylogeny(args):
     if args.tree is None:
-        phylogeny = newick.Node("0")
-        parent = phylogeny
+        tree = newick.Node("0")
+        parent = tree
         length = 0
         for i in range(args.branchlength + 1):
             new_length = 2 ** i
@@ -139,16 +139,16 @@ def phylo_from_arg(args):
     else:
         try:
             file = Path(args.tree).open()
-            phylogeny = newick.load(file)[0]
+            tree = newick.load(file)[0]
         except (OSError, FileNotFoundError):
             if ":" in args.tree or "(" in args.tree:
-                phylogeny = newick.loads(args.tree)[0]
+                tree = newick.loads(args.tree)[0]
             else:
                 raise ValueError(
                     "Argument for --tree looked like a filename, not like a"
                     " Newick tree, but no such file could be opened.")
-    args.tree = phylogeny.newick
-    return phylogeny
+    args.tree = tree.newick
+    return tree
 
 
 def echo(args):
@@ -190,7 +190,7 @@ def prepare(parser):
         args.weight,
         random=numpy.random.RandomState(args.seed))
 
-    args.phylogeny = phylo_from_arg(args)
+    args.phylogeny = phylogeny(args)
 
     if args.semantic_network:
         semantics = SemanticNetworkWithConceptWeight.load_from_gml(

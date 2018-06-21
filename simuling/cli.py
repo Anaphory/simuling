@@ -13,7 +13,7 @@ from csvw import UnicodeDictReader
 import newick
 
 from .io import CommentedUnicodeWriter
-from .simulation import (simulate, Multiprocess, phylo_from_arg,
+from .simulation import (simulate, Multiprocess,
                          SemanticNetworkWithConceptWeight, constant_zero,
                          Language)
 
@@ -123,7 +123,7 @@ def argparser():
     return parser
 
 
-def phylogeny(args):
+def phylo_from_arg(args):
     if args.tree is None:
         phylogeny = newick.Node("0")
         parent = phylogeny

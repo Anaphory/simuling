@@ -10,6 +10,7 @@ import tempfile
 from clldutils.path import Path
 
 from csvw import UnicodeDictReader
+from csvw.dsv_dialects import Dialect
 import newick
 
 from .io import CommentedUnicodeWriter
@@ -163,6 +164,10 @@ def echo(args):
             continue
         if arg == "root_language_data":
             continue
+        if arg == "phylogeny":
+            continue
+        if arg == "simulator":
+            continue
         if value is not None:
             try:
                 value = value.name
@@ -171,20 +176,50 @@ def echo(args):
             yield arg, value
 
 
-def prepare(parser):
-    def concept_weight(concept):
-        return concept_weights[args.concept_weight](len(semantics[concept]))
+def read_wordlist(wordlist, semantics,
+                  only_language=None, all_languages=False, weight=100):
+    languages = collections.OrderedDict()
+    with UnicodeDictReader(
+            wordlist, dialect=Dialect(commentPrefix="#")) as reader:
+        for line in reader:
+            language_id = line["Language_ID"]
+            if (only_language and language_id != only_language):
+                continue
+            concept = line["Parameter_ID"]
+            try:
+                wt = int(line["Weight"])
+            except KeyError:
+                wt = weight()
+            if language_id not in languages:
+                languages[language_id] = Language({}, semantics)
+            word = int(line["Cognateset_ID"])
+            languages[language_id][concept][word] = wt
+            Language.max_word = max(Language.max_word, word)
+    if all_languages:
+        return languages
+    else:
+        if only_language is None:
+            only_language = list(languages)[-1]
+        return languages[only_language]
 
+
+class concept_weight:
+    def __init__(self, weight, semantics):
+        self.weight = weight
+        self.semantics = semantics
+
+    def __call__(self, concept):
+        return concept_weights[self.weight](len(self.semantics[concept]))
+
+
+def prepare(parser):
     args = parser.parse_args()
 
     simulator = simulate
     if args.multiprocess != 1:
         simulator = Multiprocess(args.multiprocess).simulate
     if args.resume:
-        resume = True
         simulator = Multiprocess(args.multiprocess).simulate_remainder
-    else:
-        resume = False
 
     weight = parse_distribution_description(
         args.weight,
@@ -201,50 +236,33 @@ def prepare(parser):
             args.weight_attribute)
     semantics.neighbor_factor = args.neighbor_factor
 
-    semantics.concept_weight = concept_weight
+    semantics.concept_weight = concept_weight(args.concept_weight,
+                                              semantics)
 
-    if args.wordlist:
-        languages = collections.OrderedDict()
-        with UnicodeDictReader(args.wordlist) as reader:
-            for line in reader:
-                language_id = line["Language_ID"]
-                if not resume and (args.language and
-                                   language_id != args.language):
-                    continue
-                concept = line["Parameter_ID"]
-                try:
-                    wt = int(line["Weight"])
-                except KeyError:
-                    wt = weight()
-                word_weights = languages.setdefault(
-                    language_id, {}).setdefault(
-                        concept, collections.defaultdict(
-                            constant_zero, {}))
-                word_weights[line["Cognateset_ID"]] = wt
-        if resume:
-            simulator = Multiprocess(args.multiprocess)
-            for name, lang in languages.items():
-                simulator.generated_languages[name] = Language(lang, semantics)
-            simulator = simulator.simulate_remainder
-            # Resuming when the root language is not available doesn't make any
-            # sense, so fill the root language with a nonsense value that will
-            # raise an error later. FIXME: Make the later error message more
-            # transparent.
-            language = None
-        else:
-            if args.language is None:
-                args.language = list(languages)[-1]
-            language = Language(languages[args.language],
-                                semantics)
+    if args.resume:
+        mp = Multiprocess(args.multiprocess)
+        resume_from = mp.generated_languages
+        simulator = mp.simulate_remainder
+        # Resuming when the root language is not available doesn't make any
+        # sense, so fill the root language with a nonsense value that will
+        # raise an error later. FIXME: Make the later error message more
+        # transparent.
+        for language_id, language in read_wordlist(
+                args.wordlist, semantics,
+                all_languages=True, weight=weight).items():
+            resume_from[language_id] = language
+        args.root_language_data = None
+    elif args.wordlist:
+        args.root_language_data = read_wordlist(
+            args.wordlist, semantics, args.language, weight=weight)
     else:
         raw_language = {
             concept: collections.defaultdict(
                 constant_zero, {c: weight()})
             for c, concept in enumerate(semantics)}
-        language = Language(raw_language, semantics)
-        Language.max_word = len(raw_language)
+        args.root_language_data = Language(raw_language, semantics)
+
     args.simulator = simulator
-    args.root_language_data = language
     return args
 
 

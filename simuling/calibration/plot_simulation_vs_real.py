@@ -7,59 +7,13 @@ a tree on top of the real proportions.
 
 """
 
-import bisect
-
 import matplotlib.pyplot as plt
 
 import sys
 import os.path
 import argparse
 
-from . import compare_simulation_with_data
-from .compare_simulation_with_data import (
-    read_cldf)
-from .util import cached_realdata
-
-
-def ordered_pairwise_shared_vocabulary(data):
-    """Get ordered pairwise shared vocabulary of languages.
-
-    For every pair of languages in `data`, calculate the proportion of
-    features where they share values (usually the shared vocabulary
-    according to a word list).
-
-    Returns:
-
-    proportions – list of floats: The pairwise proportions of shared
-    vocabulary, in ascending order.
-
-    pairs – list of pairs: The language pairs, in the corresponding
-    order.
-
-    """
-    proportions = []
-    pairs = []
-    for (language1, language2), score in data.items():
-        i = bisect.bisect(proportions, score)
-        proportions.insert(i, score)
-        pairs.insert(i, (language1, language2))
-    return proportions, pairs
-
-
-def compatible_pairwise_shared_vocabulary(data, order):
-    """Get ordered shared vocabulary of languages in given order.
-
-    For every pair of languages listed in `order`, calculate the
-    proportion of shared vocabulary (as given by `data`), and return
-    them in precisely that order.
-
-    """
-    for language1, language2 in order:
-        vocabulary1 = data[data["Language_ID"] == language1]
-        vocabulary2 = data[data["Language_ID"] == language2]
-        score = compare_simulation_with_data.shared_vocabulary(
-            vocabulary1, vocabulary2)
-        yield score
+from .util import cached_realdata, shared_vocabulary, read_wordlist
 
 
 def plot_vocabulary(x, names, simulated, name=None, axis=None):
@@ -67,7 +21,7 @@ def plot_vocabulary(x, names, simulated, name=None, axis=None):
     if axis is None:
         axis = plt.gca()
 
-    y = list(compatible_pairwise_shared_vocabulary(simulated, names))
+    y = list(shared_vocabulary(simulated, names))
     axis.plot(x, y, label=name, marker="_")
     return y
 
@@ -101,8 +55,7 @@ def main(args=sys.argv):
         help="language pairs (separated by '-') to ignore")
     args = parser.parse_args(args)
 
-    x, names = ordered_pairwise_shared_vocabulary(
-        cached_realdata(args.realdata))
+    x, names = cached_realdata(args.realdata)
     for pair in args.exclude:
         first, second = sorted(pair.split("-"))
         try:
@@ -123,7 +76,7 @@ def main(args=sys.argv):
     parameters = []
     errors = []
     for sim in args.simulationdata:
-        y = plot_vocabulary(x, names, read_cldf(sim, sample_threshold=4),
+        y = plot_vocabulary(x, names, read_wordlist(sim, sample_threshold=4),
                             name=sim.name)
         error = (sum([(xi-yi)**2 for xi, yi in zip(x, y)])/len(x))**0.5
         try:

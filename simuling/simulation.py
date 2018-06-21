@@ -95,7 +95,7 @@ class WeightedBipartiteGraph (dict):
 
     """
     def __missing__(self, key):
-        self[key] = collections.defaultdict(lambda: 0)
+        self[key] = collections.defaultdict(constant_zero)
         return self[key]
 
     def add_edge(self, left, right, weight):

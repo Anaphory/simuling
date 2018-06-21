@@ -1,89 +1,36 @@
-#!/usr/bin/env python
-
 import os
 import json
-import csv
+import itertools
 
-from .compare_simulation_with_data import (
-    read_cldf,
-    estimate_normal_distribution,
-    normal_likelihood,
-    pairwise_shared_vocabulary)
+from ..cli import read_wordlist
 
 
-def simulate_and_write(tree, sample_threshold, n_sim=3, root=None,
-                       **parameters):
-    """Simulate evolution on tree and write results to file.
+def shared_vocabulary(l1, l2, threshold=4):
+    """Calculate the proportion of shared items between two languages.
 
-    Simulate lexical evolution on the tree described by `tree`,
-    returning a generator that yields a pandas.DataFrame representing
-    a CLDF Wordlist for each of the n_sim different simulations.
-
-    If `root` is specified, start the simulation from that language;
-    otherwise, initialize the simulation with a random language.
-
-    Side Effects
-    ------------
-    Writes a file in the current directory for each generated word list.
-
-    Parameters
-    ----------
-    tree: newick.Node
-    sample_threshold: int
-    n_sims: int
-    root: simuling.phylo.Language or None
-
-    Other named arguments are passed through to simuling.simulate.simulate
-
-    Yields
-    ------
-    wordlist: pandas.DataFrame
+    For the pair of languages which are sampled in `vocab1` and `vocab2`,
+    calculate how many cognate-meaning pairs they share. Multiple cognates in
+    one meaning slot are counted as |C∩D|/|C∪D|, which is a generalization of
+    picking 0 when the sets of cognates are disjoint and 1 when they match
+    exactly.
 
     """
-    for i in range(n_sim):
-        filename = "simulation_{:}_{:}.csv".format(parameters["scale"], i)
-        with open(filename, "w") as f:
-            writer = csv.writer(f)
-            writer.writerow(("ID", "Language_ID", "Feature_ID", "Value",
-                             "Weight", "Cognate_Set", "Concept_CogID"))
-            for dataframe in simulate(
-                    tree, root=root, **parameters):
-                writer.writerows(dataframe)
-        yield read_cldf(
-            filename, sample_threshold=sample_threshold,
-            top_word_only=False)
-
-
-def run_sims_and_calc_lk(tree, realdata, sample_threshold, n_sim=3,
-                         ignore=[], normal=False, root=None, **parameters):
-    """Run simulations and calculate their Normal likelihood.
-
-    Run `n` simulations and calculate the likelihood of `realdata`
-    under a Normal distribution assumption of pairwise shared vocabulary
-    proportions give the results of the simulations.
-
-    """
-    if normal:
-        normals = estimate_normal_distribution(simulate_and_write(
-            tree, sample_threshold=sample_threshold,
-            n_sim=n_sim, root=root, **parameters))
-        return normal_likelihood(realdata, normals,
-                                 ignore=ignore)
-    else:
-        neg_squared_error = 0
-        for simulation in simulate_and_write(
-                tree, sample_threshold=sample_threshold, n_sim=n_sim,
-                root=root, **parameters):
-            for (l1, l2), score in (
-                    pairwise_shared_vocabulary(simulation, False)):
-                if l1 > l2:
-                    l1, l2 = l2, l1
-                if (l1, l2) in ignore:
-                    continue
-                error = (realdata[l1, l2] - score)
-                print(l1, l2, score, error)
-                neg_squared_error -= error ** 2
-        return neg_squared_error / n_sim
+    score = 0
+    features = set(l1) | set(l2)
+    n_features = 0
+    for feature in features:
+        cognateset1 = set(word
+                          for word, weight in l1[feature].items()
+                          if threshold is None or weight > threshold)
+        cognateset2 = set(word
+                          for word, weight in l2[feature].items()
+                          if threshold is None or weight > threshold)
+        if cognateset1 | cognateset2:
+            # Due to the filtering, this can end up empty
+            score += (len(cognateset1 & cognateset2) /
+                      len(cognateset1 | cognateset2))
+            n_features += 1
+    return score / n_features
 
 
 def cached_realdata(data):
@@ -96,13 +43,19 @@ def cached_realdata(data):
         if realdata_cache_filename != data.name:
             raise ValueError("Cached filename mismatches data file")
     except (FileNotFoundError, ValueError):
-        realdata = {" ".join(pair): score
-                    for pair, score in pairwise_shared_vocabulary(
-                            read_cldf(data, sample_threshold=None,
-                                      top_word_only=False))}
+        languages = read_wordlist(data, None, all_languages=True,
+                                  weight=lambda: 10)
+        for (l1, vocabulary1), (l2, vocabulary2) in (
+                itertools.combinations(languages.items(), 2)):
+            # Normalize the key, that is, the pair (l1, l2)
+            if l1 > l2:
+                l1, l2 = l2, l1
+            score = shared_vocabulary(vocabulary1, vocabulary2)
+            realdata[" ".join((l1, l2))] = score
         realdata["FILENAME"] = data.name
         with open(os.path.join(
                 os.path.dirname(__file__),
                 "pairwise_shared_vocabulary.json"), "w") as realdata_cache:
             json.dump(realdata, realdata_cache)
+        realdata_cache_filename = realdata.pop("FILENAME")
     return {tuple(key.split()): value for key, value in realdata.items()}

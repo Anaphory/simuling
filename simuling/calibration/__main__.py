@@ -11,23 +11,16 @@ steps.
 import itertools
 
 import os
-import sys
 import argparse
 import tempfile
+from clldutils.path import Path
 
 import csvw
 import newick
-import networkx
 
-from .compare_simulation_with_data import (
-    read_cldf)
-from pycldf.util import Path
+from ..cli import argparser as basic_argparser, run_and_write, prepare
 
-from .util import run_sims_and_calc_lk, cached_realdata
-
-from ..cli import argparser as basic_argparser
-
-from ..__main__ import run_and_write, prepare
+from .util import cached_realdata, shared_vocabulary
 
 
 def mean(x):
@@ -98,7 +91,7 @@ def main():
     parser = argparser()
     args = prepare(parser)
     path = args.output
-    os.chdir(path)
+    os.chdir(str(path))
 
     raw_seed = args.seed
 
@@ -127,33 +120,14 @@ def main():
                         ["{:}:{:}".format(l1, l2) for l1, l2 in realdata])
         writer.writerow(["", "", ""] + list(realdata.values()))
 
-        def shared_vocabulary(l1, l2):
-            score = 0
-            features = set(l1) | set(l2)
-            n_features = 0
-            for feature in features:
-                cognateset1 = set(word
-                                  for word, weight in l1[feature].items()
-                                  if weight > args.threshold)
-                cognateset2 = set(word
-                                  for word, weight in l2[feature].items()
-                                  if weight > args.threshold)
-                if cognateset1 | cognateset2:
-                    # Due to the filtering, this can end up empty
-                    score += (len(cognateset1 & cognateset2) /
-                              len(cognateset1 | cognateset2))
-                    n_features += 1
-            return score / n_features
-
         def simulate_scale(scale, seed):
-            # FIXME: Use deepcopy or something.
             args.phylogeny = scaled_copy_of(phylogeny, scale)
+            args.tree = args.phylogeny.newick
             args.output = "calibration_{:f}_{:d}.csv".format(scale, seed)
             args.seed = raw_seed + seed
             args.root_language_data = root_language.copy()
 
             squared_error = 0
-            scores = {}
             for (l1, vocabulary1), (l2, vocabulary2) in (
                     itertools.combinations(run_and_write(args), 2)):
                 # Normalize the key, that is, the pair (l1, l2)
@@ -193,7 +167,7 @@ def main():
             # between the borders, taking the middle points as new borders.
             while upper / lower > 1.001:
                 for scale in [
-                        (lower**2 * upper) ** (1 / 3)
+                        (lower**2 * upper) ** (1 / 3),
                         (lower * upper**2) ** (1 / 3)]:
                     sq_errors[scale] = mean(
                         simulate_scale(scale, seed)
@@ -204,11 +178,11 @@ def main():
 
             min_error_at = max(sq_errors, key=sq_errors.get)
             try:
-                upper = min(i for i in sq_errors if i > max_lk_at)
+                upper = min(i for i in sq_errors if i > min_error_at)
             except ValueError:
                 pass
             try:
-                lower = max(i for i in sq_errors if i < max_lk_at)
+                lower = max(i for i in sq_errors if i < min_error_at)
             except ValueError:
                 pass
 

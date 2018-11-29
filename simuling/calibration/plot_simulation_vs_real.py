@@ -59,8 +59,13 @@ def main(args=sys.argv):
 
     realdata = cached_realdata(args.realdata)
     for pair in args.exclude:
-        first, second = sorted(pair.split("-"))
-        realdata.pop((first, second), None)
+        try:
+            first, second = sorted(pair.split("-"))
+            realdata.pop((first, second), None)
+        except ValueError:
+            for i in list(realdata):
+                if pair in i:
+                    realdata.pop(i)
     print("point", "error",
           *["'{:}-{:}'".format(n1, n2) for n1, n2 in realdata], sep="\t")
     print("real", "0", *realdata.values(), sep="\t")

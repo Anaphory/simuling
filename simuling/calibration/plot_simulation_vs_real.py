@@ -55,6 +55,10 @@ def main(args=sys.argv):
         default=[],
         action="append",
         help="language pairs (separated by '-') to ignore")
+    parser.add_argument(
+        "--threshold", type=int,
+        default=1,
+        help="Only include words with weights > THRESHOLD")
     args = parser.parse_args(args)
 
     realdata = cached_realdata(args.realdata)
@@ -68,7 +72,7 @@ def main(args=sys.argv):
                     realdata.pop(i)
     print("point", "error",
           *["'{:}-{:}'".format(n1, n2) for n1, n2 in realdata], sep="\t")
-    print("real", "0", *realdata.values(), sep="\t")
+    print("real", None, "0", *realdata.values(), sep="\t")
 
     names = sorted(realdata, key=realdata.get)
     x = [realdata[n] for n in names]
@@ -96,7 +100,8 @@ def main(args=sys.argv):
             # Normalize the key, that is, the pair (l1, l2)
             if l1 > l2:
                 l1, l2 = l2, l1
-            score = shared_vocabulary(vocabulary1, vocabulary2)
+            score = shared_vocabulary(vocabulary1, vocabulary2,
+                                      threshold=args.threshold)
             try:
                 error = (realdata[l1, l2] - score)
                 scores[l1, l2] = score
@@ -110,13 +115,13 @@ def main(args=sys.argv):
         else:
             colors[p] = plt.plot(x, y, "-", label=p)[0]._color
 
-        print(sim.name, p, squared_error, *y, sep="\t")
         try:
             mean_squared_error = squared_error / len(scores)
-            errors.append(mean_squared_error)
-            parameters.append(p)
         except ZeroDivisionError:
             continue
+        errors.append(mean_squared_error)
+        parameters.append(p)
+        print(sim.name, p, mean_squared_error, *y, sep="\t")
 
     plt.legend()
 

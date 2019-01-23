@@ -302,7 +302,9 @@ class Multiprocess ():
             name = node.name
             random = numpy.random.RandomState(local_seed(node, self.raw_seed))
             if name in self.generated_languages:
-                raise ValueError("Duplicate node name or unnamed node found")
+                raise ValueError(
+                    "Duplicate node name or unnamed node found: {:}".format(
+                        name))
             parent = None if node.ancestor is None else node.ancestor.name
 
             start_from = self.generated_languages.get(parent)

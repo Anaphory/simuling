@@ -21,7 +21,6 @@ setup(
         "lingpy",
         "numpy",
         "pandas",
-        "pytest",
         "pycldf",
         "pytest-cov",
         "pytest-pep8",

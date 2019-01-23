@@ -90,8 +90,9 @@ def main():
     """Run the CLI."""
     parser = argparser()
     args = prepare(parser)
-    path = args.output
-    os.chdir(str(path))
+    path = args.dir
+    Path(path).mkdir(parents=True, exist_ok=True)
+    os.chdir(path)
 
     raw_seed = args.seed
 

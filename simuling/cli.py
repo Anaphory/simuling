@@ -185,14 +185,20 @@ def read_wordlist(wordlist, semantics,
             language_id = line["Language_ID"]
             if (only_language and language_id != only_language):
                 continue
-            concept = line["Parameter_ID"]
             try:
-                wt = int(line["Weight"])
+                concept = line["Parameter_ID"]
+            except KeyError:
+                concept = line["Feature_ID"]
+            try:
+                wt = float(line["Weight"])
             except KeyError:
                 wt = weight()
             if language_id not in languages:
                 languages[language_id] = Language({}, semantics)
-            word = int(line["Cognateset_ID"])
+            try:
+                word = int(line["Cognateset_ID"])
+            except KeyError:
+                word = int(line["Concept_CogID"])
             languages[language_id][concept][word] = wt
             Language.max_word = max(Language.max_word, word)
     if all_languages:
@@ -215,11 +221,24 @@ class concept_weight:
 def prepare(parser):
     args = parser.parse_args()
 
-    simulator = simulate
+    args.simulator = simulate
+
     if args.multiprocess != 1:
-        simulator = Multiprocess(args.multiprocess).simulate
+        def simulator(phylogeny, language,
+                      seed=0, writer=None):
+            for r in Multiprocess(args.multiprocess).simulate(
+                    phylogeny, language,
+                    seed=0, writer=None):
+                yield r
+        args.simulator = simulator
     if args.resume:
-        simulator = Multiprocess(args.multiprocess).simulate_remainder
+        def simulator(phylogeny, language,
+                      seed=0, writer=None):
+            for r in Multiprocess(args.multiprocess).simulate_remainder(
+                    phylogeny, language,
+                    seed=0, writer=None):
+                yield r
+        args.simulator = simulator
 
     weight = parse_distribution_description(
         args.weight,
@@ -242,7 +261,7 @@ def prepare(parser):
     if args.resume:
         mp = Multiprocess(args.multiprocess)
         resume_from = mp.generated_languages
-        simulator = mp.simulate_remainder
+        args.simulator = mp.simulate_remainder
         # Resuming when the root language is not available doesn't make any
         # sense, so fill the root language with a nonsense value that will
         # raise an error later. FIXME: Make the later error message more
@@ -262,11 +281,11 @@ def prepare(parser):
             for c, concept in enumerate(semantics)}
         args.root_language_data = Language(raw_language, semantics)
 
-    args.simulator = simulator
     return args
 
 
 def run_and_write(args):
+    print(Path(args.output).absolute())
     with CommentedUnicodeWriter(
             args.output, commentPrefix="# ") as writer:
         writer.writerow(

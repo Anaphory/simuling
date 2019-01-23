@@ -3,6 +3,7 @@ python:
   - "3.5"
   - "3.6"
 install:
+  - pip install "pytest>=3.6" pytest_cov
   - python setup.py develop
 script: 
   - py.test tests/ --cov simuling/

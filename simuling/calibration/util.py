@@ -45,6 +45,7 @@ def cached_realdata(data):
     except (FileNotFoundError, ValueError):
         languages = read_wordlist(data, None, all_languages=True,
                                   weight=lambda: 10)
+        realdata = {}
         for (l1, vocabulary1), (l2, vocabulary2) in (
                 itertools.combinations(languages.items(), 2)):
             # Normalize the key, that is, the pair (l1, l2)

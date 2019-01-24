@@ -196,7 +196,6 @@ class Language (WeightedBipartiteGraph):
         self[concept][word] -= 1
         if self[concept][word] <= 0:
             del self[concept][word]
-        print(concept, word)
 
     def __str__(self):
         return ",\n".join([

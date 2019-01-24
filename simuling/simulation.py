@@ -57,7 +57,7 @@ class SemanticNetwork (networkx.Graph):
             return 0
         try:
             raw_weight = edge_properties[self.weight_attribute]
-        except KeyError:
+        except (KeyError, AttributeError):
             raw_weight = 1
         return self.neighbor_factor * raw_weight
 
@@ -103,8 +103,6 @@ class WeightedBipartiteGraph (dict):
 
 
 class Language (WeightedBipartiteGraph):
-    max_word = 0
-
     def __init__(self, dictionary, semantics):
         super().__init__(dictionary)
         self.semantics = semantics
@@ -156,8 +154,8 @@ class Language (WeightedBipartiteGraph):
             incumbent = max(words_for_c1_only, key=neighbors_1.get)
             self[concept_1][incumbent] += 1
         else:
-            self.add_edge(concept_1, Language.max_word, 1)
-            Language.max_word += 1
+            new_word = random.randint(2 ** 40)
+            self.add_edge(concept_1, new_word, 1)
         # Generate R_1
         words_for_c2_only = set(neighbors_2) - set(neighbors_1)
         # Adapt the language
@@ -165,8 +163,8 @@ class Language (WeightedBipartiteGraph):
             incumbent = max(words_for_c2_only, key=neighbors_2.get)
             self[concept_2][incumbent] += 1
         else:
-            self.add_edge(concept_2, Language.max_word, 1)
-            Language.max_word += 1
+            new_word = random.randint(2 ** 40)
+            self.add_edge(concept_2, new_word, 1)
 
         # Reduce confusing word.
         all_neighbors = self.weighted_neighbors(concept_1)
@@ -177,7 +175,7 @@ class Language (WeightedBipartiteGraph):
         for word, weight in neighbors_1.items():
             if word in neighbors_2:
                 for target, wt in all_neighbors.items():
-                    weight = self[target][word] * wt
+                    weight = self[target].get(word, 0) * wt
                     if weight > confusing_weight:
                         confusing_word = word
                         confusing_meaning = target
@@ -204,9 +202,9 @@ class Language (WeightedBipartiteGraph):
                 c,
                 ", ".join(
                     ["{:}: {:}".format(w, wt)
-                     for w, wt in ws.items()
+                     for w, wt in sorted(ws.items())
                      if wt > 0]))
-            for c, ws in self.items()
+            for c, ws in sorted(self.items())
             if ws])
 
     def copy(self):
@@ -250,11 +248,11 @@ def simulate(phylogeny, language,
             language.write(phylogeny.name, writer)
         yield (phylogeny.name, language)
     for c, child in enumerate(phylogeny.descendants):
-        for (name, language) in simulate(child, language.copy(),
-                                         seed=seed):
+        for (name, l) in simulate(child, language.copy(),
+                                  seed=seed):
             if writer:
                 language.write(name, writer)
-            yield (name, language)
+            yield (name, l)
 
 
 def walk_depth_order(tree, root_depth=0):
@@ -300,7 +298,6 @@ class Multiprocess ():
         def worker(self, node_with_height):
             node, height = node_with_height
             name = node.name
-            random = numpy.random.RandomState(local_seed(node, self.raw_seed))
             if name in self.generated_languages:
                 raise ValueError(
                     "Duplicate node name or unnamed node found: {:}".format(
@@ -312,6 +309,7 @@ class Multiprocess ():
                 time.sleep(2)
                 start_from = self.generated_languages.get(parent)
 
+            random = numpy.random.RandomState(local_seed(node, self.raw_seed))
             end_at = start_from.copy()
             for i in range(int(node.length)):
                 end_at.step(random=random)

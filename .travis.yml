@@ -1,11 +1,20 @@
+dist: xenial
 language: python
 python:
   - "3.5"
   - "3.6"
+matrix:
+  include:
+    - python: 3.7
+      dist: xenial
+      sudo: true
 install:
   - pip install "pytest>=3.6" pytest_cov
   - python setup.py develop
 script: 
-  - py.test tests/ --cov simuling/
+  - rm tests/trace.json || echo "Fine."
+  - PYTHONHASHSEED=0 py.test tests/ --cov simuling/
+  - PYTHONHASHSEED=0 py.test tests/ --cov simuling/
+  - rm tests/trace.json || echo "Fine."
   - py.test simuling/ --doctest-modules --cov simuling/ --cov-append
   - py.test --pep8

@@ -175,7 +175,7 @@ class Language (WeightedBipartiteGraph):
         for word, weight in neighbors_1.items():
             if word in neighbors_2:
                 for target, wt in all_neighbors.items():
-                    weight = self[target][word] * wt
+                    weight = self[target].get(word, 0) * wt
                     if weight > confusing_weight:
                         confusing_word = word
                         confusing_meaning = target

@@ -21,7 +21,7 @@ def data_cache():
 
 def test_random_concept(data_cache):
     nw = s.SemanticNetwork(
-        {"1": ["2"], "2": ["3"], "4": ["2"], "5": ["4"]})
+        {"c1": ["c2"], "c2": ["c3"], "c4": ["c2"], "c5": ["c4"]})
     random = numpy.random.RandomState(2)
     r1 = nw.random(random)
     random = numpy.random.RandomState(2)
@@ -38,7 +38,7 @@ def test_random_concept(data_cache):
 
 def test_weighted_random_concept(data_cache):
     nw = s.SemanticNetworkWithConceptWeight(
-        {"1": ["2"], "2": ["3"], "4": ["2"], "5": ["4"]},
+        {"c1": ["c2"], "c2": ["c3"], "c4": ["c2"], "c5": ["c4"]},
         concept_weight=lambda x: 1/x)
     random = numpy.random.RandomState(2)
     r1 = nw.random(random)
@@ -56,8 +56,8 @@ def test_weighted_random_concept(data_cache):
 
 def test_language_random_edge(data_cache):
     nw = s.SemanticNetwork(
-        {"1": ["2"], "2": ["3"], "4": ["2"], "5": ["4"]})
-    root = s.Language({"w1": {"1": 1}, "w5": {"5": 5}}, nw)
+        {"c1": ["c2"], "c2": ["c3"], "c4": ["c2"], "c5": ["c4"]})
+    root = s.Language({"c1": {1: 4}, "c5": {2: 4}}, nw)
     random = numpy.random.RandomState(2)
     e1 = root.random_edge(random)
     random = numpy.random.RandomState(2)
@@ -74,8 +74,8 @@ def test_language_random_edge(data_cache):
 
 def test_language_step(data_cache):
     nw = s.SemanticNetwork(
-        {"1": ["2"], "2": ["3"], "4": ["2"], "5": ["4"]})
-    l1 = s.Language({"w1": {"1": 1}, "w5": {"5": 5}}, nw)
+        {"c1": ["c2"], "c2": ["c3"], "c4": ["c2"], "c5": ["c4"]})
+    l1 = s.Language({"c1": {1: 1}, "c5": {5: 5}}, nw)
     l2 = l1.copy()
 
     random = numpy.random.RandomState(2)
@@ -96,7 +96,7 @@ def test_simulate(data_cache):
     phylogeny = newick.loads('(A:2,B:1)C;')[0]
     nw = s.SemanticNetwork(
         {"1": ["2"], "2": ["3"], "4": ["2"], "5": ["4"]})
-    l1 = s.Language({"w1": {"1": 1}, "w5": {"5": 5}}, nw)
+    l1 = s.Language({"c1": {1: 4}, "c5": {2: 4}}, nw)
     l2 = l1.copy()
 
     languages1 = {}

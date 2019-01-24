@@ -200,7 +200,6 @@ def read_wordlist(wordlist, semantics,
             except KeyError:
                 word = int(line["Concept_CogID"])
             languages[language_id][concept][word] = wt
-            Language.max_word = max(Language.max_word, word)
     if all_languages:
         return languages
     else:
@@ -285,7 +284,6 @@ def prepare(parser):
 
 
 def run_and_write(args):
-    print(Path(args.output).absolute())
     with CommentedUnicodeWriter(
             args.output, commentPrefix="# ") as writer:
         writer.writerow(

@@ -15,5 +15,6 @@ script:
   - rm tests/trace.json || echo "Fine."
   - PYTHONHASHSEED=0 py.test tests/ --cov simuling/
   - PYTHONHASHSEED=0 py.test tests/ --cov simuling/
+  - rm tests/trace.json || echo "Fine."
   - py.test simuling/ --doctest-modules --cov simuling/ --cov-append
   - py.test --pep8

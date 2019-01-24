@@ -201,7 +201,7 @@ class Language (WeightedBipartiteGraph):
             "{:}: {{{:}}}".format(
                 c,
                 ", ".join(
-                    ["{:}: {:}".format(w, wt)
+                    ["{:}: {:}".format(w, float(wt))
                      for w, wt in sorted(ws.items())
                      if wt > 0]))
             for c, ws in sorted(self.items())

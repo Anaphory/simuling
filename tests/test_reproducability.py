@@ -1,11 +1,14 @@
 import json
 from pathlib import Path
 import newick
+import tempfile
 import numpy.random
+from csvw import UnicodeWriter
 
 import pytest
 
 import simuling.simulation as s
+from simuling.cli import read_wordlist
 
 
 @pytest.fixture(scope="module")
@@ -141,4 +144,43 @@ def test_multiprocess(data_cache):
         data_cache["multiprocess"] = str(languages1)
     except AssertionError:
         data_cache["multiprocess"] = str(languages1)
+        raise
+
+
+def test_write_and_resume(data_cache):
+    phylogeny = newick.loads('(A:2)C:2;')[0]
+    nw = s.SemanticNetwork(
+        {"c1": ["c2"], "c2": ["c3"], "c4": ["c2"], "c5": ["c4"]})
+    l1 = s.Language({"c1": {1: 4}, "c5": {2: 4}}, nw)
+    l2 = l1.copy()
+
+    languages1 = {}
+    for name, language in s.simulate(phylogeny, l1, seed=0):
+        languages1[name] = str(language)
+
+    print()
+    languages2 = {}
+    process = s.Multiprocess(2)
+    with tempfile.TemporaryFile('w+') as f:
+        with UnicodeWriter(f) as writer:
+            writer.writerow(
+                ["Language_ID", "Parameter_ID", "Cognateset_ID", "Weight"])
+            for name, language in process.simulate(phylogeny, l2, seed=0,
+                                                   writer=writer):
+                break
+
+        f.seek(0)
+        wordlist = read_wordlist(f, nw, all_languages=True)
+        process = s.Multiprocess(2)
+        process.generated_languages.update(wordlist)
+        for name, language in process.simulate_remainder(phylogeny):
+            languages2[name] = str(language)
+
+    assert languages1 == languages2
+    try:
+        assert str(languages1) == data_cache["write_resume"]
+    except KeyError:
+        data_cache["write_resume"] = str(languages1)
+    except AssertionError:
+        data_cache["write_resume"] = str(languages1)
         raise

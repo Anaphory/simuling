@@ -252,7 +252,7 @@ def simulate(phylogeny, language,
         for (name, l) in simulate(child, language.copy(),
                                   seed=seed):
             if writer:
-                language.write(name, writer)
+                l.write(name, writer)
             yield (name, l)
 
 

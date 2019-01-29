@@ -116,8 +116,9 @@ class Language (WeightedBipartiteGraph):
 
     def calculate_scores(self, concept):
         score = {}
-        for s_concept, s_weight in self.weighted_neighbors(concept).items():
-            for word, weight in self[s_concept].items():
+        for s_concept, s_weight in sorted(
+                self.weighted_neighbors(concept).items()):
+            for word, weight in sorted(self[s_concept].items()):
                 if weight > 0:
                     score.setdefault(word, 0)
                     score[word] += weight * s_weight
@@ -201,7 +202,7 @@ class Language (WeightedBipartiteGraph):
             "{:}: {{{:}}}".format(
                 c,
                 ", ".join(
-                    ["{:}: {:}".format(w, wt)
+                    ["{:}: {:}".format(w, float(wt))
                      for w, wt in sorted(ws.items())
                      if wt > 0]))
             for c, ws in sorted(self.items())
@@ -251,7 +252,7 @@ def simulate(phylogeny, language,
         for (name, l) in simulate(child, language.copy(),
                                   seed=seed):
             if writer:
-                language.write(name, writer)
+                l.write(name, writer)
             yield (name, l)
 
 

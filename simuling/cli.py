@@ -177,7 +177,7 @@ def echo(args):
 
 
 def read_wordlist(wordlist, semantics,
-                  only_language=None, all_languages=False, weight=100):
+                  only_language=None, all_languages=False, weight=lambda: 100):
     languages = collections.OrderedDict()
     with UnicodeDictReader(
             wordlist, dialect=Dialect(commentPrefix="#")) as reader:
@@ -200,7 +200,6 @@ def read_wordlist(wordlist, semantics,
             except KeyError:
                 word = int(line["Concept_CogID"])
             languages[language_id][concept][word] = wt
-            Language.max_word = max(Language.max_word, word)
     if all_languages:
         return languages
     else:
@@ -285,7 +284,6 @@ def prepare(parser):
 
 
 def run_and_write(args):
-    print(Path(args.output).absolute())
     with CommentedUnicodeWriter(
             args.output, commentPrefix="# ") as writer:
         writer.writerow(

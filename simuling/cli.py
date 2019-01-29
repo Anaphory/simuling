@@ -177,7 +177,7 @@ def echo(args):
 
 
 def read_wordlist(wordlist, semantics,
-                  only_language=None, all_languages=False, weight=100):
+                  only_language=None, all_languages=False, weight=lambda: 100):
     languages = collections.OrderedDict()
     with UnicodeDictReader(
             wordlist, dialect=Dialect(commentPrefix="#")) as reader:
